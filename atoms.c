@@ -1,20 +1,26 @@
 #include "zwm.h"
 
+struct {
 #define INIT_ATOM(name) Atom name
+#include "atoms.h"
+} _atoms;
 #include "atoms.h"
 #undef INIT_ATOM
 
-#define NATOMS (((char*)&ZWM_LAST - (char*)&ZWM_FIRST))
+#define NATOMS ((int)(&_atoms.ZWM_LAST - &_atoms.ZWM_FIRST))
 
 void
 zwm_init_atoms(void) {
-#define INIT_ATOM(name) name = XInternAtom(dpy, #name, False)
+#define INIT_ATOM(name) _atoms.name = XInternAtom(dpy, #name, False)
+#include "atoms.h"
+#undef INIT_ATOM
+#define INIT_ATOM(name) name = _atoms.name;
 #include "atoms.h"
 #undef INIT_ATOM
 
      XChangeProperty(dpy, root,
 		     _NET_SUPPORTED, XA_ATOM, 32,
-		     PropModeReplace, (unsigned char *) &WM_NAME,
+		     PropModeReplace, (unsigned char *) &_atoms,
 		     NATOMS);
 }
 
@@ -29,7 +35,7 @@ zwm_x11_get_window_type(Window win)
     if(XGetWindowProperty(dpy, win, _NET_WM_WINDOW_TYPE, 0L, LONG_MAX, False,
                           XA_ATOM, &real, &format, &n, &extra,
                           (unsigned char **) &data) == Success && data){
-        Atom *atoms = (Atom *) data;
+        atoms = (Atom *) data;
 	for(i = 0; i < n; i++){
 		if (atoms[i] == _NET_WM_WINDOW_TYPE_DND ||
 	            atoms[i] == _NET_WM_WINDOW_TYPE_DESKTOP ||
