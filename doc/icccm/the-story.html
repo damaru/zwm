@@ -1,0 +1,86 @@
+<HTML>
+<HEAD>
+<TITLE>ICCCM: the story</TITLE>
+</HEAD>
+
+<BODY>
+
+<H1 ALIGN=center>ICCCM: the story</H1>
+
+This the ICCCM translated to HTML by <A HREF="http://tronche.com/">myself</A>. If
+you have any remark or comment about this HTML version,
+<A HREF="mailto:ch.tronche@computer.org">drop me a line</A>.
+
+<P>
+
+The manual is <A HREF="./">here</A>.
+
+<H1>Choices explained</H1>
+
+When putting a large document on the Web, It's always difficult to
+decide if you've to cut it to the subsubsub(sub)section level, or
+provide only a few documents, or only one document. The first method
+triggers the "click-click-click" syndrom: you can tell your office
+fellow is browsing through such a document just by listening her
+mouse's noise. The last one allows you to perform a find on the
+document, quite an advantage, but it increases the download time, and
+the probability for a transmission error to occur. So I choose method
+#2. The whole document is about 200 K, so by putting each section in a
+file, you get eleven sections of about 20 K. Sounds like a good choice.
+
+<P>
+
+I used the (deprecated ?) &lt;A NAME=&gt; to mark hyperlinks target, just
+because Netscape doesn't seem to handle the ID tag.
+
+<P>
+
+
+<H1>If you want the whole stuff in one file</H1>
+
+No need for a sophisticated, bandwith-wasting robot with the latest
+features (and leather seats). Just get every section (icccm/,
+sec-1.html to sec-8.html and sec-A.html to sec-C.html), then replace in
+each file {HREF="}[^#]*{#[^"]"} by \1\2 with your favorite stream
+editor. The names of the links are regular enough so that such a simple
+logic will work.
+
+<H1>The story</H1>
+
+Ok, for the purpose of the interested readers, here's the whole story
+of this translation. All I wanted to know was a bit about the
+colormap-installation-by-the-WM stuff (at 2 am). But I was unable to
+find a f**king HTML version of this f**king manual, even after I had a
+look at the <A HREF="http://www.x.org/">Consortium</A> server and queried all the
+f**king 
+<A HREF="/web-directory/science-and-technology/computer/network/www/data-discovery.html">web indexers</A>
+in the town. So I took the manual source in our
+old copy of X11R5 here, turned it into ASCII with groff, and started
+to write a few emacs macros to perform the conversion. Hard to get
+something sexy. Thus, I directly used the troff source. Easier. [Why
+Emacs lisp rather than PERL ? And why PERL rather than elisp ???]
+
+<P>
+
+After a few hours, I realized that starting with the latest release of
+the manual would be much more useful. I found this release in our R6
+sources, confident that only a few changes would allow my macros to do
+the job on the new manual. F**k !!! All these f**cking f-roff macros had
+changed...
+
+<P>
+
+One day later I had rewritten all the lisp code and, at least, had my
+<A HREF="./">manual</A>. Now, if you hope these macros could help you to turn some
+?roff code into something world-(wide-web-)distributable, you're badly
+mistaking. All I've written are a few hundreds of trash,
+ultra-specific code. Click <A HREF="convert.el">here</A> to be
+convinced. Then, STOP THE FUCK LAUGHING and tell me a better way to do
+it. And don't tell I like to write stupid code. I'm a software
+engineering guy, one of the toughest. My life is dedicated to software
+reuse and high-level methodologies... I would have preferred to spend all this time with my girlfriend
+(Hi honey !), doing... I wonder what ???
+
+<HR><ADDRESS><A HREF="http://tronche.com/">Christophe Tronche</A>, <A HREF="mailto:ch.tronche@computer.org">ch.tronche@computer.org</A></ADDRESS>
+</BODY>
+</HTML>

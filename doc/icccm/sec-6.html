@@ -1,0 +1,363 @@
+<HTML>
+<HEAD>
+<TITLE>ICCCM - Manipulation of Shared Resources</TITLE>
+</HEAD>
+
+<BODY>
+<H1><A NAME="s-6">6.</A> Manipulation of Shared Resources</H1>
+X Version 11 permits clients to manipulate a number of shared resources,
+for example, the input focus, the pointer, and colormaps.
+Conventions are required so that clients share resources in an
+orderly fashion.
+
+<H2><A NAME="s-6.1">6.1.</A> The Input Focus</H2>
+Clients that explicitly set the input focus must observe one of two modes:
+<UL>
+<LI> Locally active mode
+<LI> Globally active mode
+<OL>
+</UL>
+<P ALIGN=center> Conventions<P>
+<LI> Locally active clients should set the input focus to one of their windows 
+only when it is already in one of their windows
+or when they receive a WM_TAKE_FOCUS message.
+They should set the input field of the WM_HINTS structure to
+<B>True .</B>
+<LI> Globally active clients should set the input focus to one of their windows 
+only when they receive a button event and a passive-grabbed key event,
+or when they receive a WM_TAKE_FOCUS message.
+They should set the input field of the WM_HINTS structure to
+<B>False .</B>
+<LI> In addition, clients should use the timestamp of the event 
+that caused them to attempt to set the input focus as the time field on the 
+<B>SetInputFocus</B>
+request, not
+<B>CurrentTime .</B>
+</OL>
+
+<H2><A NAME="s-6.2">6.2.</A> The Pointer</H2>
+In general, clients should not warp the pointer.
+Window managers, however, may do so
+(for example, to maintain the invariant that the pointer is always
+in the window with the input focus).
+Other window managers may want to preserve the illusion that the user
+is in sole control of the pointer.
+<OL>
+<P ALIGN=center> Conventions<P>
+<LI> Clients should not warp the pointer.
+<LI> Clients that insist on warping the pointer should do so only
+with the src-window argument of the 
+<B>WarpPointer </B>
+request set to one of their windows.
+</OL>
+
+<H2><A NAME="s-6.3">6.3.</A> Grabs</H2>
+A client's attempt to establish a button or a key grab on a window
+will fail if some other client has already established a conflicting
+grab on the same window.
+The grabs, therefore, are shared resources,
+and their use requires conventions.
+<P>
+In conformance with the principle that clients should behave,
+as far as possible,
+when a window manager is running as they would when it is not,
+a client that has the input focus may assume that it can receive all 
+the available keys and buttons.
+<P ALIGN=center> Convention
+<BLOCKQUOTE>
+<P>Window managers should ensure that they provide some mechanism for
+their clients to receive events from all keys and all buttons,
+except for events involving keys whose KeySyms are registered as being for
+window management functions (for example, a hypothetical WINDOW KeySym).
+</BLOCKQUOTE>
+<P>
+In other words,
+window managers must provide some mechanism by which a client
+can receive events from every key and button (regardless of modifiers)
+unless and until the X Consortium registers some KeySyms as being reserved 
+for window management functions.
+Currently, no KeySyms are registered for window management functions.
+<P>
+Even so, clients are advised to allow the key and button combinations
+used to elicit program actions to be modified,
+because some window managers may choose not to observe this convention
+or may not provide a convenient method for the user to transmit events
+from some keys.
+<P ALIGN=center> Convention
+<BLOCKQUOTE>
+<P>Clients should establish button and key grabs only on windows that
+they own.
+</BLOCKQUOTE>
+<P>
+In particular, this convention means that a window manager that wishes 
+to establish a grab over the client's top-level window should either establish 
+the grab on the root, or reparent the window and establish the grab 
+on a proper ancestor.
+In some cases,
+a window manager may want to consume the event received,
+placing the window in a state where a subsequent such event will go to
+the client.
+Examples are:
+<UL>
+<LI> Clicking in a window to set focus with the click not being offered 
+to the client
+<LI> Clicking in a buried window to raise it, again, with the click not offered 
+to the client
+</UL>
+More typically,
+a window manager should add to rather than replace the client's semantics 
+for key+button combinations by allowing the event to be used by the client 
+after the window manager is done with it.
+To ensure this,
+the window manager should establish the grab on the parent 
+by using the following:
+<P>
+<PRE><CODE>
+pointer/keyboard-mode == Synchronous
+</CODE></PRE>
+<P>
+Then, the window manager should release the grab by using an
+<B>AllowEvents </B>
+request with the following specified:
+<P>
+<PRE><CODE>
+mode == ReplayPointer/Keyboard
+</CODE></PRE>
+<P>
+In this way,
+the client will receive the events as if they had not been intercepted.
+<P>
+Obviously,
+these conventions place some constraints on possible user interface policies.
+There is a trade-off here between freedom for window managers to implement
+their user interface policies and freedom for clients to implement theirs.
+The dilemma is resolved by:
+<UL>
+<LI> Allowing window managers to decide if and when a client will receive an
+event from any given key or button
+<LI> Placing a requirement on the window manager to provide some mechanism,
+perhaps a &quot;Quote&quot; key,
+by which the user can send an event from any key or button to the client
+
+</UL>
+<H2><A NAME="s-6.4">6.4.</A> Colormaps</H2>
+<A HREF="sec-4.html#s-4.1.8">Section 4.1.8</A> prescribes conventions for clients to communicate with the
+window manager about their colormap needs.  If your clients are
+<B>DirectColor</B>
+type applications,
+you should consult section 1<A HREF="sec-4.html#s-4.3">4.3</A> of <I>Xlib - C Language X Interface</I>
+for conventions connected with sharing standard colormaps.
+They should look for and create the properties described there on
+the root window of the appropriate screen.
+<P>
+The contents of the RGB_COLOR_MAP type property are as follows:
+<TABLE>
+<TR><TH COLSPAN=3><HR>
+<TR><TH ALIGN=left>Field	<TH ALIGN=left>Type	<TH ALIGN=left>Comments
+<TR><TH COLSPAN=3><HR>
+<TR><TD>colormap	<TD>COLORMAP	<TD>ID of the colormap described
+<TR><TD>red_max	<TD>CARD32	<TD>Values for pixel calculations
+<TR><TD>red_mult	<TD>CARD32
+<TR><TD>blue_max	<TD>CARD32
+<TR><TD>blue_mult	<TD>CARD32
+<TR><TD>base_pixel	<TD>CARD32
+<TR><TD>visual_id	<TD>VISUALID	<TD>Visual to which colormap belongs
+<TR><TD>kill_id	<TD>CARD32	<TD>ID for destroying the resources
+<TR><TH COLSPAN=3><HR>
+</TABLE>
+
+<P>
+When deleting or replacing an RGB_COLOR_MAP,
+it is not sufficient to delete the property;
+it is important to free the associated colormap resources as well.
+If kill_id is greater than one,
+the resources should be freed by issuing a 
+<B>KillClient</B>
+request with kill_id as the argument.
+If kill_id is one,
+the resources should be freed by issuing a
+<B>FreeColormap</B>
+request with colormap as the colormap
+argument.
+If kill_id is zero,
+no attempt should be made to free the resources.
+A client that creates an RGB_COLOR_MAP for which the colormap resource 
+is created specifically for this purpose should set kill_id to one 
+(and can create more than one such standard colormap 
+using a single connection).
+A client that creates an RGB_COLOR_MAP for which the colormap resource 
+is shared in some way (for example, is the default colormap 
+for the root window) should create an arbitrary resource and use its 
+resource ID for kill_id (and should create no other standard colormaps 
+on the connection).
+<P ALIGN=center> Convention
+<BLOCKQUOTE>
+<P>If an RGB_COLOR_MAP property is too short to contain the visual_id field,
+it can be assumed that the visual_id is the root visual 
+of the appropriate screen.
+If an RGB_COLOR_MAP property is too short to contain the kill_id field,
+a value of zero can be assumed.
+</BLOCKQUOTE>
+<P>
+During the connection handshake,
+the server informs the client of the default colormap for each screen.
+This is a colormap for the root visual,
+and clients can use it to improve the extent of colormap sharing
+if they use the root visual.
+
+<H2><A NAME="s-6.5">6.5.</A> The Keyboard Mapping</H2>
+The X server contains a table (which is read by 
+<B>GetKeyboardMapping</B>
+requests) that describes the set of symbols appearing 
+on the corresponding key for each keycode generated by the server.
+This table does not affect the server's operations in any way;
+it is simply a database used by clients that attempt to understand 
+the keycodes they receive.
+Nevertheless, it is a shared resource and requires conventions.
+<P>
+It is possible for clients to modify this table by using a
+<B>ChangeKeyboardMapping</B>
+request.
+In general, clients should not do this.
+In particular, this is not the way in which clients should implement 
+key bindings or key remapping.
+The conversion between a sequence of keycodes received from the server
+and a string in a particular encoding is a private matter for each client
+(as it must be in a world where applications may be using different
+encodings to support different languages and fonts).
+See the Xlib reference manual for converting keyboard events to text.
+<P>
+The only valid reason for using a
+<B>ChangeKeyboardMapping</B>
+request is when the symbols written on the keys have changed as, for example,
+when a Dvorak key conversion kit or a set of APL keycaps has been installed.
+Of course, a client may have to take the change to the keycap on trust.
+<P>
+The following illustrates a permissible interaction between a client 
+and a user:
+<DL>
+<DT> Client:<DD>
+&quot;You just started me on a server without a Pause key.
+Please choose a key to be the Pause key and press it now.&quot;
+<DT> User:<DD>
+Presses the Scroll Lock key
+<DT> Client:<DD>
+&quot;Adding Pause to the symbols on the Scroll Lock key: Confirm or Abort.&quot;
+<DT> User:<DD>
+Confirms
+<DT> Client:<DD>
+Uses a
+<B>ChangeKeyboardMapping</B>
+request to add Pause to the keycode that already contains Scroll Lock and
+issues this request, &quot;Please paint Pause on the Scroll Lock key.&quot;
+</DL>
+<P ALIGN=center> Convention
+<BLOCKQUOTE>
+<P>Clients should not use 
+<B>ChangeKeyboardMapping</B>
+requests.
+</BLOCKQUOTE>
+<P>
+If a client succeeds in changing the keyboard mapping table,
+all clients will receive 
+<B>MappingNotify (request==Keyboard)</B>
+events.
+There is no mechanism to avoid receiving these events.
+<P ALIGN=center> Convention
+<BLOCKQUOTE>
+<P>Clients receiving 
+<B>MappingNotify (request==Keyboard)</B>
+events should update any internal keycode translation tables they are using.
+</BLOCKQUOTE>
+
+<H2><A NAME="s-6.6">6.6.</A> The Modifier Mapping</H2>
+X Version 11 supports eight modifier bits of which three are preassigned 
+to Shift, Lock, and Control.
+Each modifier bit is controlled by the state of a set of keys,
+and these sets are specified in a table accessed by
+<B>GetModifierMapping</B>
+and
+<B>SetModifierMapping</B>
+requests.
+This table is a shared resource and requires conventions.
+<P>
+A client that needs to use one of the preassigned modifiers should assume 
+that the modifier table has been set up correctly to control these modifiers.
+The Lock modifier should be interpreted as Caps Lock or Shift Lock
+according as the keycodes in its controlling set include XK_Caps_Lock
+or XK_Shift_Lock.
+<P ALIGN=center> Convention
+<BLOCKQUOTE>
+<P>Clients should determine the meaning of a modifier bit from the KeySyms
+being used to control it.
+</BLOCKQUOTE>
+<P>
+A client that needs to use an extra modifier (for example, META) should do
+the following:
+<UL>
+<LI> Scan the existing modifier mappings.
+If it finds a modifier that contains a keycode whose set of KeySyms
+includes XK_Meta_L or XK_Meta_R,
+it should use that modifier bit.
+<LI> If there is no existing modifier controlled by  XK_Meta_L or XK_Meta_R,
+it should select an unused modifier bit (one with an empty controlling set)
+and do the following:
+<UL>
+<LI> If there is a keycode with XL_Meta_L in its set of KeySyms,
+add that keycode to the set for the chosen modifier.
+<LI> If there is a keycode with XL_Meta_R in its set of KeySyms,
+add that keycode to the set for the chosen modifier.
+<LI> If the controlling set is still empty,
+interact with the user to select one or more keys to be META.
+</UL>
+<LI> If there are no unused modifier bits,
+ask the user to take corrective action.
+<OL>
+</UL>
+<P ALIGN=center> Conventions<P>
+<LI> Clients needing a modifier not currently in use should assign keycodes
+carrying suitable KeySyms to an unused modifier bit.
+<LI> Clients assigning their own modifier bits should ask the user politely to
+remove his or her hands from the key in question if their 
+<B>SetModifierMapping</B>
+request returns a 
+<B>Busy</B>
+status.
+</OL>
+<P>
+There is no good solution to the problem of reclaiming assignments
+to the five nonpreassigned modifiers when they are no longer being used.
+<P ALIGN=center> Convention
+<BLOCKQUOTE>
+<P>The user must use
+<B>xmodmap</B>
+or some other utility to deassign obsolete modifier mappings by hand.
+</BLOCKQUOTE>
+<P>
+When a client succeeds in performing a 
+<B>SetModifierMapping</B>
+request,
+all clients will receive 
+<B>MappingNotify (request==Modifier)</B>
+events.
+There is no mechanism for preventing these events from being received.
+A client that uses one of the nonpreassigned modifiers that receives
+one of these events should do a 
+<B>GetModifierMapping</B>
+request to discover the new mapping,
+and if the modifier it is using has been cleared,
+it should reinstall the modifier.
+<P>
+Note that a
+<B>GrabServer</B>
+request must be used to make the 
+<B>GetModifierMapping </B>
+and
+<B>SetModifierMapping</B>
+pair in these transactions atomic.
+
+<HR>
+<A HREF="sec-5.html"><IMG SRC="/images/left.gif" WIDTH=31 HEIGHT=31 ALT="<"></A><A HREF="./"><IMG SRC="/images/up.gif" WIDTH=31 HEIGHT=31 ALT="^"></A><A HREF="sec-7.html"><IMG SRC="/images/right.gif" WIDTH=31 HEIGHT=31 ALT=">"></A>
+<P><HR><ADDRESS><A HREF="http://tronche.com/">Christophe Tronche</A>, <A HREF="mailto:ch.tronche@computer.org">ch.tronche@computer.org</A></ADDRESS>
+</BODY>
+</HTML>

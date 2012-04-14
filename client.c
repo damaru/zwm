@@ -6,7 +6,6 @@ DEFINE_GLOBAL_LIST_TAIL(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_NEXT(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_PREV(zwm_client,Client,node);
 
-DEFINE_GLOBAL_LIST_INSERT_AFTER(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_PUSH_HEAD(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_PUSH_TAIL(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_REMOVE(zwm_client,Client,node);
@@ -91,62 +90,6 @@ get_type(Window w)
 	}
 	return ZenNormalWindow;
 }
-#if 0
-static int
-check_panel(Window w)
-{
-	XWindowChanges wc;
-	if(zwm_x11_check_atom(w, _NET_WM_WINDOW_TYPE,
-			       	_NET_WM_WINDOW_TYPE_DOCK)
-	   ){
-
-		XSelectInput(dpy, w, PropertyChangeMask);
-		wc.border_width = 0;
-		XConfigureWindow(dpy, w, CWBorderWidth, &wc);
-		XMapWindow(dpy, w);
-		return 1;
-	}
-	return 0;
-}
-
-static int
-check_desktop(Window w)
-{
-	if(zwm_x11_check_atom(w, _NET_WM_WINDOW_TYPE,
-			       	_NET_WM_WINDOW_TYPE_DESKTOP)){
-		return 1;
-	}
-	return 0;
-}
-
-static
-int check_dialog(Window w)
-{
-	if (
-			zwm_x11_check_atom(w, _NET_WM_WINDOW_TYPE, _NET_WM_WINDOW_TYPE_DIALOG) ||
-			zwm_x11_check_atom(w, _NET_WM_WINDOW_TYPE, _NET_WM_STATE_MODAL) ||
-			zwm_x11_check_atom(w, _NET_WM_WINDOW_TYPE, _NET_WM_WINDOW_TYPE_SPLASH)
-			
-			){
-		return 1;
-	} else return 0;
-}
-#endif 
-void
-zwm_client_unban(Client *c) {
-	if (c->isbanned) {
-		c->isbanned = False;
-		XMoveWindow(dpy, c->win, c->x, c->y);
-	}
-}
-
-void
-zwm_client_ban(Client *c) {
-	if (c->type == ZenNormalWindow && !c->isbanned) {
-		c->isbanned = True;
-		XMoveWindow(dpy, c->win, c->x + 2 * screen[0].w, c->y );
-	}
-}
 
 void
 zwm_client_iconify(Client *c) {
@@ -158,25 +101,21 @@ zwm_client_iconify(Client *c) {
 		return;
 	}
 
-	c->state = IconicState;
-	zwm_event_emit(ZenClientState, c);
-	zwm_client_ban(c);
-	zwm_client_focus(NULL);
-	zwm_layout_arrange();
-	XMoveWindow(dpy, c->win, c->x + 2 * screen[0].w, c->y );
+	zwm_client_setstate(c, IconicState);
 }
 
 void
 zwm_client_setstate(Client *c, int state)
 {
 	c->state = state;
-	zwm_event_emit(ZenClientState, c);
-	if(zwm_client_visible(c))
-	{
-		zwm_client_unban(c);
+	if (state == NormalState){
+		XRaiseWindow(dpy, c->frame);
+		XRaiseWindow(dpy, c->win);
 	} else {
-		zwm_client_ban(c);
+		XLowerWindow(dpy, c->win);
+		XLowerWindow(dpy, c->frame);
 	}
+	zwm_event_emit(ZenClientState, c);
 	zwm_layout_arrange();
 	zwm_client_focus(NULL);
 }
@@ -286,8 +225,8 @@ void zwm_client_manage(Window w, XWindowAttributes *wa)
 			return;
 			break;
 		case ZenDockWindow:
+			c->border = 0;
 			XSelectInput(dpy, w, PropertyChangeMask);
-			wc.border_width = 0;
 			XConfigureWindow(dpy, w, CWBorderWidth, &wc);
 			XMapWindow(dpy, w);
 			break;
@@ -308,14 +247,15 @@ void zwm_client_manage(Window w, XWindowAttributes *wa)
 			break;
 	}
 
+	if(c->hastitle){
+		c->h += 20;
+		create_frame_window(c);
+	}
 	wc.x = c->x;
 	wc.y = c->y;
 	wc.width = c->w;
 	wc.height = c->h;
-	if(c->hastitle){
-		wc.border_width = c->border;
-		create_frame_window(c);
-	}
+	wc.border_width = c->border;
 	XConfigureWindow(dpy, w, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 	zwm_client_send_configure(c);
 	XMapWindow(dpy, c->win);
@@ -381,21 +321,16 @@ Bool
 zwm_client_visible(Client *c) 
 {
 	return c->state == NormalState &&
-		c->view == current_view &&
-		c->type == ZenNormalWindow;
+		c->view == current_view && 
+		(c->type == ZenNormalWindow || c->type == ZenDialogWindow) ;
 }
 
-
-/*
- * This should be called from restak()
- */
 void
 zwm_client_warp(Client *c)
 {
 	if(c) {
 		XSelectInput(dpy, c->win, StructureNotifyMask | PropertyChangeMask );
 		XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w / 2, c->h / 2);
-		// remove enter window events
 		zwm_event_flush_x11(EnterWindowMask);
 		XSelectInput(dpy, c->win, StructureNotifyMask | PropertyChangeMask | EnterWindowMask);
 	}
@@ -438,14 +373,9 @@ zwm_client_focus(Client *c)
 void
 zwm_client_raise(Client *c)
 {
-	XRaiseWindow(dpy, c->frame);
-	XRaiseWindow(dpy, c->win);
-	c->state = NormalState;
-	c->view = current_view;
-	zwm_client_unban(c);
-	zwm_layout_arrange();
+	zwm_client_setstate(c, NormalState);
+	zwm_client_set_view(c, current_view);
 	zwm_client_update_decoration(c);
-	zwm_event_emit(ZenClientState, c);
 }
 
 static void

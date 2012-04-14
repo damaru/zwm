@@ -1,0 +1,138 @@
+<HTML>
+<HEAD>
+<TITLE>ICCCM - Footnotes</TITLE>
+</HEAD>
+
+<BODY>
+
+<H1>Footnotes</H1>
+
+<FN><P>
+<A NAME="f-1">1.</A> The comment in the protocol specification for 
+<B>InternAtom </B>
+that ISO Latin-1 encoding should be used is in the nature of a convention;
+the server treats the string as a byte sequence.
+</FN>
+
+<FN><P>
+<A NAME="f-2">2.</A> At present, no part of the protocol requires requestors
+to send events to the owner of a selection.
+This restriction is imposed to prepare for possible future extensions.
+</FN>
+
+<FN><P>
+<A NAME="f-3">3.</A> The division between these two cases is a matter of judgement
+on the part of the software developer.
+</FN>
+
+<FN><P>
+<A NAME="f-4">4.</A> This requirement is new in version <A HREF="sec-2.html#s-2.0">2.0</A>, and in general, existing
+clients do not conform to this requirement.  To prevent these clients
+from breaking, no existing targets should be extended to take
+parameters until sufficient time has passed for clients to be updated.
+Note that the MULTIPLE target was defined to take parameters in version
+<A HREF="sec-1.html#s-1.0">1.0</A> and its definition is not changing.  There is thus no conformance
+problem with MULTIPLE.
+</FN>
+
+<FN><P>
+<A NAME="f-5">5.</A> Earlier versions of this document erroneously specified that conversion of
+the PIXMAP target return a property of type DRAWABLE instead of PIXMAP.
+Implementors should be aware of this and may want to support the DRAWABLE
+type as well to allow for compatibility with older clients.
+</FN>
+
+<FN><P>
+<A NAME="f-6">6.</A> The targets ENCAPSULATED_POSTSCRIPT and ENCAPSULATED_POSTSCRIPT_INTERCHANGE
+are equivalent to the targets _ADOBE_EPS and _ADOBE_EPSI (respectively) that
+appear in the selection targets registry.  The _ADOBE_ targets are
+deprecated, but clients are encouraged to continue to support them for
+backward compatibility.
+</FN>
+
+<FN><P>
+<A NAME="f-7">7.</A> This definition is ambiguous, as the selection may be converted into any of
+several targets which may return differing amounts of data.  The requestor
+has no way of knowing which, if any, of these targets corresponds to the
+result of LENGTH.  Clients are advised that no guarantees can be made about
+the result of a conversion to LENGTH; its use is thus deprecated.
+</FN>
+
+<FN><P>
+<A NAME="f-8">8.</A> Note that this is different from STRING, where many byte values are
+forbidden, and from COMPOUND_TEXT, where, for example, inserting the
+sequence 27,\ 40,\ 66 (designate ASCII into GL) at the start does not alter
+the meaning.
+</FN>
+
+<FN><P>
+<A NAME="f-9">9.</A> These properties were called INCREMENTAL in an earlier draft.
+The protocol for using them has changed, 
+and so the name has changed to avoid confusion.
+</FN>
+
+<FN><P>
+<A NAME="f-10">10.</A> We use the notation data[n] to indicate the n<SUP>th</SUP> element 
+of the LISTofINT8, LISTofINT16, or LISTofINT32 in the data field of the 
+<B>ClientMessage ,</B>
+according to the format field.
+The list is indexed from zero.
+</FN>
+
+<FN><P>
+<A NAME="f-11">11.</A> This obsolete protocol was described in the July 27, 1988
+draft of the ICCCM.
+Windows using it can also be detected because their WM_HINTS properties are
+four bytes longer than expected.
+Window managers are free to support clients using the obsolete protocol
+in a backwards compatibility mode.
+</FN>
+
+<FN><P>
+<A NAME="f-12">12.</A> Earlier versions of these conventions prohibited clients from
+reading the WM_STATE property.  Clients operating under the earlier
+conventions used the technique of tracking
+<B>ReparentNotify</B>
+events to wait for the top-level window to be reparented back to the root
+window.  This is still a valid technique; however, it works only for
+reparenting window managers, and the WM_STATE technique is to be preferred.
+</FN>
+
+<FN><P>
+<A NAME="f-13">13.</A> The type field of the 
+<B>ClientMessage </B>
+event (called the message_type field by Xlib) should not be confused with
+the code field of the event itself,
+which will have the value 33 
+<B>( ClientMessage ).</B>
+</FN>
+
+<FN><P>
+<A NAME="f-14">14.</A> This is true even if the client set the backing-store attribute to 
+<B>Always .</B>
+The backing-store attribute is a only a hint, 
+and the server may stop maintaining backing store contents at any time.
+</FN>
+
+<FN><P>
+<A NAME="f-15">15.</A> As a special case, clients not wishing to implement a selection
+request may simply issue a
+<B>GetSelectionOwner</B>
+request on the appropriate WM_S<I>n</I> selection.  If this selection is owned,
+clients may assume that the window manager complies with ICCCM version <A HREF="sec-2.html#s-2.0">2.0</A>
+or later.
+</FN>
+
+<FN><P>
+<A NAME="f-16">16.</A> This convention has changed since earlier drafts because of the 
+introduction of the protocol in the next section.
+In the public review draft,
+there was ambiguity as to whether WM_SAVE_YOURSELF was a checkpoint 
+or a shutdown facility.
+It is now unambiguously a checkpoint facility;
+if a shutdown facility is judged to be necessary,
+a separate WM_PROTOCOLS protocol will be developed and registered 
+with the X Consortium.
+</FN>
+</BODY>
+</HTML>

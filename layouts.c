@@ -34,7 +34,6 @@ void zwm_layout_animate(void)
 	for(c = zwm_client_head();
 			c;
 			c = zwm_client_next(c)) {
-
 		if(config.anim_steps && !c->noanim && zwm_client_visible(c) /*&& c->x >= 0 && c->x <= screen[0].w*/ ){
 			c->dx = (c->x - c->ox)/config.anim_steps;
 			c->dy = (c->y - c->oy)/config.anim_steps;
@@ -49,7 +48,7 @@ void zwm_layout_animate(void)
 		for(c = zwm_client_head();
 				c;
 				c = zwm_client_next(c)) {
-			if(!c->noanim && zwm_client_visible(c)){
+			if(!c->noanim){
 				c->ox += c->dx;
 				c->oy += c->dy;
 				c->ow += c->dw;
@@ -59,23 +58,12 @@ void zwm_layout_animate(void)
 			}
 		}
 	}
-
-	for(c = zwm_client_head();
-			c;
-			c = zwm_client_next(c)) {
-		//if (c->noanim) {
-		//	XSync(dpy, False);
-		//}
-		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
-		zwm_client_update_decoration(c);
-	}
-
 }
+
 
 void zwm_layout_arrange(void)
 {
 	Client *c;
-	int i = 0;
 	for(c = zwm_client_head();
 	       	c;
 	       	c = zwm_client_next(c)) {
@@ -85,11 +73,11 @@ void zwm_layout_arrange(void)
 		c->oy = c->y;
 		c->ow = c->w;
 		c->oh = c->h;
-		if(zwm_client_visible(c)) {
-			zwm_client_unban(c);
-			c->sid = i++;
-		} else {
-			c->sid = 0;
+
+		if( (c->type == ZenNormalWindow ||
+			c->type == ZenDialogWindow) && 
+			!zwm_client_visible(c)  ) {
+			zwm_layout_moveresize(c, screen[0].w+2, c->y,c->w, c->h);
 		}
 	}
 	
@@ -156,17 +144,14 @@ layout_floating(void) {
 	       	c;
 	       	c = zwm_client_next(c)) {
 		if(zwm_client_visible(c)) {
-			zwm_client_unban(c);
 			zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
-		} else {
-			zwm_client_ban(c);
 		}
 	}
 }
 
-static float mb = 0;
+static float mb = 0.1;
 
-#define ZWMBORDER (mb * screen[0].w)
+#define ZWMBORDER (mb * screen[0].h)
 
 static void
 max_arrange(void) {
@@ -175,7 +160,7 @@ max_arrange(void) {
 	int i = 0, j = 0;
 
 	for( c = zwm_client_head(); c && j == 0; c = zwm_client_next(c)) {
-		if(zwm_client_visible(c) && !c->isfloating && !c->isbanned){
+		if(zwm_client_visible(c) && !c->isfloating && c->state != IconicState){
 			int w = screen[i].w - (int)(ZWMBORDER*2) - 2*c->border ;
 			int h = screen[i].h - (int)(ZWMBORDER*2) - 2*c->border ;
 			int x = screen[i].x + ZWMBORDER;
@@ -189,7 +174,7 @@ max_arrange(void) {
 
 
 	for(i = 0; c; c = zwm_client_next(c)) {
-		if(zwm_client_visible(c) && !c->isfloating && !c->isbanned){
+		if(zwm_client_visible(c) && !c->isfloating && c->state != IconicState){
 			if(!second) {
 				second = c;
 			}
@@ -347,7 +332,7 @@ void
 zwm_layout_init(void)
 {
 	zwm_layout_register((ZenLFunc)layout_floating, "floating");
-	zwm_layout_register((ZenLFunc)grid, "grid");
+//	zwm_layout_register((ZenLFunc)grid, "grid");
 	zwm_layout_register((ZenLFunc)max_arrange, "max");
 	zwm_layout_register((ZenLFunc)tile, "tile");
 }

@@ -1,0 +1,51 @@
+<HTML>
+<HEAD>
+<TITLE>ICCCM - Suggested Protocol Revisions</TITLE>
+</HEAD>
+
+<BODY>
+<H1><A NAME="s-B">B.</A> Suggested Protocol Revisions</H1>
+During the development of these conventions,
+a number of inadequacies have been discovered in the
+core X11 protocol.
+They are summarized here as input to an eventual protocol revision
+design process.
+<UL>
+<LI> There is no way for anyone to find out the last-change time of
+a selection.
+The
+<B>GetSelectionOwner</B>
+request should be changed to return the last-change time as well as the owner.
+<LI> There is no way for a client to find out which selection atoms are valid.
+<LI> There would be no need for WM_TAKE_FOCUS if the 
+<B>FocusIn</B>
+event contained a timestamp and a previous-focus field.
+This could avoid the potential race condition.
+There is space in the event for this information;
+it should be added at the next protocol revision.
+<LI> There is a race condition in the
+<B>InstallColormap </B>
+request.
+It does not take a timestamp and may be executed after the top-level colormap
+has been uninstalled.
+The next protocol revision should provide the timestamp in the
+<B>InstallColormap ,</B>
+<B>UninstallColormap ,</B>
+<B>ListInstalledColormaps </B>
+requests and in the 
+<B>ColormapNotify</B>
+event.
+The timestamp should be used in a similar way to the last-focus-change
+time for the input focus.  The lack of timestamps in these packets is the
+reason for restricting colormap installation to the window manager.
+<LI> The protocol needs to be changed to provide some way of identifying
+the Visual and the Screen of a colormap.
+<LI> There should be some way to reclaim assignments to the five non-preassigned
+modifiers when they are no longer needed.  The manual method is unpleasantly
+low-tech.
+</UL>
+<HR>
+<A HREF="sec-A.html"><IMG SRC="/images/left.gif" WIDTH=31 HEIGHT=31 ALT="<"></A><A HREF="./"><IMG SRC="/images/up.gif" WIDTH=31 HEIGHT=31 ALT="^"></A><A HREF="sec-C.html"><IMG SRC="/images/right.gif" WIDTH=31 HEIGHT=31 ALT=">"></A>
+<P><ADDRESS><A HREF="http://tronche.com/">Christophe Tronche</A>, <A HREF="mailto:ch.tronche@computer.org">ch.tronche@computer.org</A></ADDRESS>
+</BODY>
+</HTML>

@@ -106,12 +106,10 @@ struct Client
 	int focused;
 	int type;
 	int view;
-	int sid;
 	int noanim;
 	int hastitle;
 	int anim_steps;
 	Bool isfloating;
-	Bool isbanned;
 	char name[256];
 	ZenListNode node;
 	Client *next;
@@ -135,8 +133,6 @@ void zwm_client_mouseresize(Client *c);
 void zwm_client_focus(Client *c);
 void zwm_client_moveresize(Client *c, int,int,int,int);
 void zwm_client_raise(Client *c);
-void zwm_client_ban(Client *c);
-void zwm_client_unban(Client *c);
 void zwm_client_send_configure(Client *c);
 void zwm_client_update_decoration(Client *c);
 Bool zwm_client_visible(Client *c);
@@ -295,7 +291,6 @@ void zwm_panel_init(void);
 void zwm_keypress_init(void);
 void zwm_exec(const char *arg);
 typedef struct ZenEventHandler ZenEventHandler;
-
 void zwm_client_move(Client *c, int x, int y);
 struct ZenEventHandler
 {

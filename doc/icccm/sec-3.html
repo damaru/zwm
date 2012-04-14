@@ -1,0 +1,55 @@
+<HTML>
+<HEAD>
+<TITLE>ICCCM - Peer-to-Peer Communication by Means of Cut Buffers</TITLE>
+</HEAD>
+
+<BODY>
+<H1><A NAME="s-3">3.</A> Peer-to-Peer Communication by Means of Cut Buffers</H1>
+The cut buffer mechanism is much simpler but much less powerful 
+than the selection mechanism.
+The selection mechanism is active in that it provides a link 
+between the owner and requestor clients.
+The cut buffer mechanism is passive;
+an owner places data in a cut buffer from which a requestor retrieves
+the data at some later time.
+<P>
+The cut buffers consist of eight properties on the root of screen zero,
+named by the predefined atoms CUT_BUFFER0 to CUT_BUFFER7.
+These properties must, at present, have type STRING and format 8.
+A client that uses the cut buffer mechanism must initially ensure that
+all eight properties exist by using
+<B>ChangeProperty </B>
+requests to append zero-length data to each.
+<P>
+A client that stores data in the cut buffers (an owner) first must rotate the
+ring of buffers by plus 1 by using
+<B>RotateProperties </B>
+requests to rename each buffer;
+that is, CUT_BUFFER0 to CUT_BUFFER1, CUT_BUFFER1 to CUT_BUFFER2, ...,
+and CUT_BUFFER7 to CUT_BUFFER0.
+It then must store the data into CUT_BUFFER0 by using a
+<B>ChangeProperty </B>
+request in mode 
+<B>Replace .</B>
+<P>
+A client that obtains data from the cut buffers should use a
+<B>GetProperty </B>
+request to retrieve the contents of CUT_BUFFER0.
+<P>
+In response to a specific user request,
+a client may rotate the cut buffers by minus 1 by using 
+<B>RotateProperties </B>
+requests to rename each buffer;
+that is, CUT_BUFFER7 to CUT_BUFFER6, CUT_BUFFER6 to CUT_BUFFER5, ...,
+and CUT_BUFFER0 to CUT_BUFFER7.
+<P>
+Data should be stored to the cut buffers
+and the ring rotated only when requested by explicit user action.
+Users depend on their mental model of cut buffer operation
+and need to be able to identify operations that transfer data to and fro.
+
+<HR>
+<A HREF="sec-2.html"><IMG SRC="/images/left.gif" WIDTH=31 HEIGHT=31 ALT="<"></A><A HREF="./"><IMG SRC="/images/up.gif" WIDTH=31 HEIGHT=31 ALT="^"></A><A HREF="sec-4.html"><IMG SRC="/images/right.gif" WIDTH=31 HEIGHT=31 ALT=">"></A>
+<P><ADDRESS><A HREF="http://tronche.com/">Christophe Tronche</A>, <A HREF="mailto:ch.tronche@computer.org">ch.tronche@computer.org</A></ADDRESS>
+</BODY>
+</HTML>

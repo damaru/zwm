@@ -5,7 +5,7 @@
 void
 expose(XEvent *e) {
 	Client *c;
-	XButtonPressedEvent *ev = &e->xexpose;
+	XExposeEvent *ev = &e->xexpose;
 	 if((c = zwm_client_get(ev->window))) {
 		 zwm_client_update_decoration(c);
 	 }

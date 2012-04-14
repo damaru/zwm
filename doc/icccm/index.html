@@ -1,0 +1,311 @@
+<HTML>
+<HEAD>
+<TITLE>Inter-Client Communication Conventions Manual</TITLE>
+</HEAD>
+
+<BODY>
+<H1 ALIGN=center>
+Inter-Client Communication Conventions Manual<P>
+Version 2.0<P>
+<A HREF="http://www.x.org/">X Consortium</A> Standard<P>
+X Version 11, Release 6
+</H1>
+<HR>
+<H2 ALIGN=center>
+David Rosenthal<P>
+Sun Microsystems, Inc.
+</H2>
+<BR><BR><BR>
+<H2 ALIGN=center>
+Version 2 edited by Stuart W. Marks<P>
+SunSoft, Inc.
+</H2>
+<BR><BR><BR>
+<H3 ALIGN=center>
+Converted to HTML by <A HREF="the-story.html">Christophe Tronche</A><P>
+Laboratoire de Recherche en Informatique
+</H3>
+<HR>
+X Window System is a trademark of X Consortium, Inc.
+<P>
+<P>
+Copyright &#169; 1988, 1991, 1993, 1994
+X Consortium
+<P>
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+<P>
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+<P>
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+<P>
+Except as contained in this notice, the name of the X Consortium shall
+not be used in advertising or otherwise to promote the sale, use or
+other dealings in this Software without prior written authorization
+from the X Consortium.
+<P>
+Copyright &#169; 1987, 1988, 1989, 1993, 1994
+Sun Microsystems, Inc.
+<P>
+Permission to use, copy, modify, and distribute this documentation 
+for any purpose and without fee is hereby granted, provided 
+that the above copyright notice and this permission 
+notice appear in all copies.
+Sun Microsystems makes no representations about the 
+suitability for any purpose of the information in this document. 
+This documentation is provided as is without express or implied warranty. 
+<HR>
+<H1>Preface to Version 2.0</H1>
+The goal of the ICCCM Version 2.0 effort was to add new facilities, to fix
+problems with earlier drafts, and to improve readability and
+understandability, while maintaining compatibility with the earlier
+versions.  This document is the product of over two years of discussion among
+the members of the X Consortium's <B>wmtalk</B> working group.  The following
+people deserve thanks for their contributions:
+<TABLE>
+<TR><TD>Gabe Beged-Dov	<TD>Bill Janssen
+<TR><TD>Chan Benson	<TD>Vania Joloboff
+<TR><TD>Jordan Brown	<TD>Phil Karlton
+<TR><TD>Larry Cable	<TD>Kaleb Keithley
+<TR><TD>Ellis Cohen	<TD>Mark Manasse
+<TR><TD>Donna Converse	<TD>Ralph Mor
+<TR><TD>Brian Cripe	<TD>Todd Newman
+<TR><TD>Susan Dahlberg	<TD>Bob Scheifler
+<TR><TD>Peter Daifuku	<TD>Keith Taylor
+<TR><TD>Andrew deBlois	<TD>Jim VanGilder
+<TR><TD>Clive Feather	<TD>Mike Wexler
+<TR><TD>Stephen Gildea	<TD>Michael Yee
+<TR><TD>Christian Jacobi
+</TABLE>
+<P>
+It has been a privilege for me to work with this fine group of people.<P>
+<AU>
+Stuart W. Marks<BR>
+December 1993
+</AU>
+<HR>
+<H1>Preface to Version 1.1</H1>
+David Rosenthal had overall architectural responsibility 
+for the conventions defined in this document;
+he wrote most of the text and edited the document, 
+but its the development has been a communal effort.
+The details were thrashed out in meetings at the January 1988 MIT X Conference
+and at the 1988 Summer Usenix conference,
+and through months (and megabytes) of argument
+on the <I>wmtalk</I>
+mail alias.
+Thanks are due to everyone who contributed,
+and especially to the following people.
+<P>
+For the Selection section:
+<UL plain>
+<LI>Jerry Farrell
+<LI>Phil Karlton
+<LI>Loretta Guarino Reid
+<LI>Mark Manasse
+<LI>Bob Scheifler
+</UL>
+<P>
+For the Cut-Buffer section:
+</UL plain>
+<LI>Andrew Palay.
+</UL>
+<P>
+For the Window and Session Manager sections:
+<TABLE>
+<TR><TD>Todd Brunhoff	<TD>Matt Landau
+<TR><TD>Ellis Cohen	<TD>Mark Manasse
+<TR><TD>Jim Fulton	<TD>Bob Scheifler
+<TR><TD>Hania Gajewska	<TD>Ralph Swick
+<TR><TD>Jordan Hubbard	<TD>Mike Wexler
+<TR><TD>Kerry Kimbrough	<TD>Glenn Widener
+<TR><TD>Audrey Ishizaki
+</TABLE>
+<P>
+For the Device Color Characterization section:
+<UL plain>
+<LI>Keith Packard.
+</UL>
+<P>
+In addition, thanks are due to those who contributed to the public review:
+<TABLE>
+<TR><TD>Gary Combs	<TD>John Irwin
+<TR><TD>Errol Crary	<TD>Vania Joloboff
+<TR><TD>Nancy Cyprych	<TD>John Laporta
+<TR><TD>John Diamant	<TD>Ken Lee
+<TR><TD>Clive Feather	<TD>Stuart Marks
+<TR><TD>Burns Fisher	<TD>Alan Mimms
+<TR><TD>Richard Greco	<TD>Colas Nahaboo
+<TR><TD>Tim Greenwood	<TD>Mark Patrick
+<TR><TD>Kee Hinckley	<TD>Steve Pitschke
+<TR><TD>Brian Holt	<TD>Brad Reed
+<TR><TD>John Interrante	<TD>John Thomas
+</TABLE>
+
+<H1>Table of contents</H1>
+<UL>
+<LI><A HREF="sec-1.html#s-1">1.  Introduction</A>
+<UL>
+<LI><A HREF="sec-1.html#s-1.1">1.1. Evolution of the Conventions</A>
+<LI><A HREF="sec-1.html#s-1.2">1.2.  Atoms</A>
+<UL>
+<LI><A HREF="sec-1.html#s-1.2.1">1.2.1. What Are Atoms?</A>
+<LI><A HREF="sec-1.html#s-1.2.2">1.2.2. Predefined Atoms</A>
+<LI><A HREF="sec-1.html#s-1.2.3">1.2.3. Naming Conventions</A>
+<LI><A HREF="sec-1.html#s-1.2.4">1.2.4.  Semantics</A>
+<LI><A HREF="sec-1.html#s-1.2.5">1.2.5. Name Spaces</A>
+<LI><A HREF="sec-1.html#s-1.2.6">1.2.6. Discriminated Names</A>
+</UL></UL>
+<LI><A HREF="sec-2.html#s-2">2. Peer-to-Peer Communication by Means of Selections</A>
+<UL>
+<LI><A HREF="sec-2.html#s-2.1">2.1. Acquiring Selection Ownership</A>
+<LI><A HREF="sec-2.html#s-2.2">2.2. Responsibilities of the Selection Owner</A>
+<LI><A HREF="sec-2.html#s-2.3">2.3. Giving Up Selection Ownership</A>
+<UL>
+<LI><A HREF="sec-2.html#s-2.3.1">2.3.1. Voluntarily Giving Up Selection Ownership</A>
+<LI><A HREF="sec-2.html#s-2.3.2">2.3.2. Forcibly Giving Up Selection Ownership</A>
+</UL>
+<LI><A HREF="sec-2.html#s-2.4">2.4. Requesting a Selection</A>
+<LI><A HREF="sec-2.html#s-2.5">2.5. Large Data Transfers</A>
+<LI><A HREF="sec-2.html#s-2.6">2.6. Use of Selection Atoms</A>
+<UL>
+<LI><A HREF="sec-2.html#s-2.6.1">2.6.1. Selection Atoms</A>
+<UL>
+<LI><A HREF="sec-2.html#s-2.6.1.1">2.6.1.1. The PRIMARY Selection</A>
+<LI><A HREF="sec-2.html#s-2.6.1.2">2.6.1.2. The SECONDARY Selection</A>
+<LI><A HREF="sec-2.html#s-2.6.1.3">2.6.1.3. The CLIPBOARD Selection</A>
+</UL>
+<LI><A HREF="sec-2.html#s-2.6.2">2.6.2. Target Atoms</A>
+<LI><A HREF="sec-2.html#s-2.6.3">2.6.3. Selection Targets with Side Effects</A>
+<UL>
+<LI><A HREF="sec-2.html#s-2.6.3.1">2.6.3.1. DELETE</A>
+<LI><A HREF="sec-2.html#s-2.6.3.2">2.6.3.2. INSERT_SELECTION</A>
+<LI><A HREF="sec-2.html#s-2.6.3.3">2.6.3.3. INSERT_PROPERTY</A>
+</UL></UL>
+<LI><A HREF="sec-2.html#s-2.7">2.7. Use of Selection Properties</A>
+<UL>
+<LI><A HREF="sec-2.html#s-2.7.1">2.7.1. TEXT Properties</A>
+<LI><A HREF="sec-2.html#s-2.7.2">2.7.2. INCR Properties</A>
+<LI><A HREF="sec-2.html#s-2.7.3">2.7.3. DRAWABLE Properties</A>
+<LI><A HREF="sec-2.html#s-2.7.4">2.7.4. SPAN Properties</A>
+</UL>
+<LI><A HREF="sec-2.html#s-2.8">2.8. Manager Selections</A>
+</UL>
+<LI><A HREF="sec-3.html#s-3">3. Peer-to-Peer Communication by Means of Cut Buffers</A>
+<LI><A HREF="sec-4.html#s-4">4. Client to Window Manager Communication</A>
+<UL>
+<LI><A HREF="sec-4.html#s-4.1">4.1. Client's Actions</A>
+<UL>
+<LI><A HREF="sec-4.html#s-4.1.1">4.1.1. Creating a Top-Level Window</A>
+<LI><A HREF="sec-4.html#s-4.1.2">4.1.2. Client Properties</A>
+<UL>
+<LI><A HREF="sec-4.html#s-4.1.2.1">4.1.2.1. WM_NAME Property</A>
+<LI><A HREF="sec-4.html#s-4.1.2.2">4.1.2.2. WM_ICON_NAME Property</A>
+<LI><A HREF="sec-4.html#s-4.1.2.3">4.1.2.3. WM_NORMAL_HINTS Property</A>
+<LI><A HREF="sec-4.html#s-4.1.2.4">4.1.2.4. WM_HINTS Property</A>
+<LI><A HREF="sec-4.html#s-4.1.2.5">4.1.2.5. WM_CLASS Property</A>
+<LI><A HREF="sec-4.html#s-4.1.2.6">4.1.2.6. WM_TRANSIENT_FOR Property</A>
+<LI><A HREF="sec-4.html#s-4.1.2.7">4.1.2.7. WM_PROTOCOLS Property</A>
+<LI><A HREF="sec-4.html#s-4.1.2.8">4.1.2.8. WM_COLORMAP_WINDOWS Property</A>
+<LI><A HREF="sec-4.html#s-4.1.2.9">4.1.2.9. WM_CLIENT_MACHINE Property</A>
+</UL>
+<LI><A HREF="sec-4.html#s-4.1.3">4.1.3. Window Manager Properties</A>
+<UL>
+<LI><A HREF="sec-4.html#s-4.1.3.1">4.1.3.1. WM_STATE Property</A>
+<LI><A HREF="sec-4.html#s-4.1.3.2">4.1.3.2. WM_ICON_SIZE Property</A>
+</UL>
+<LI><A HREF="sec-4.html#s-4.1.4">4.1.4. Changing Window State</A>
+<LI><A HREF="sec-4.html#s-4.1.5">4.1.5. Configuring the Window</A>
+<LI><A HREF="sec-4.html#s-4.1.6">4.1.6. Changing Window Attributes</A>
+<LI><A HREF="sec-4.html#s-4.1.7">4.1.7. Input Focus</A>
+<LI><A HREF="sec-4.html#s-4.1.8">4.1.8. Colormaps</A>
+<LI><A HREF="sec-4.html#s-4.1.9">4.1.9. Icons</A>
+<LI><A HREF="sec-4.html#s-4.1.10">4.1.10. Pop-up Windows</A>
+<LI><A HREF="sec-4.html#s-4.1.11">4.1.11. Window Groups</A>
+</UL>
+<LI><A HREF="sec-4.html#s-4.2">4.2. Client Responses to Window Manager Actions</A>
+<UL>
+<LI><A HREF="sec-4.html#s-4.2.1">4.2.1. Reparenting</A>
+<LI><A HREF="sec-4.html#s-4.2.2">4.2.2. Redirection of Operations</A>
+<LI><A HREF="sec-4.html#s-4.2.3">4.2.3. Window Move</A>
+<LI><A HREF="sec-4.html#s-4.2.4">4.2.4. Window Resize</A>
+<LI><A HREF="sec-4.html#s-4.2.5">4.2.5. Iconify and Deiconify</A>
+<LI><A HREF="sec-4.html#s-4.2.6">4.2.6. Colormap Change</A>
+<LI><A HREF="sec-4.html#s-4.2.7">4.2.7. Input Focus</A>
+<LI><A HREF="sec-4.html#s-4.2.8">4.2.8. ClientMessage Events</A>
+<UL>
+<LI><A HREF="sec-4.html#s-4.2.8.1">4.2.8.1. Window Deletion</A>
+</UL>
+<LI><A HREF="sec-4.html#s-4.2.9">4.2.9. Redirecting Requests</A>
+</UL>
+<LI><A HREF="sec-4.html#s-4.3">4.3. Communication with the Window Manager by Means of Selections</A>
+<LI><A HREF="sec-4.html#s-4.4">4.4. Summary of Window Manager Property Types</A>
+</UL>
+<LI><A HREF="sec-5.html#s-5">5. Session Management</A>
+<UL>
+<LI><A HREF="sec-5.html#s-5.1">5.1. Client Support for Session Management</A>
+<LI><A HREF="sec-5.html#s-5.2">5.2. Window Manager Support for Session Management</A>
+</UL>
+<LI><A HREF="sec-6.html#s-6">6. Manipulation of Shared Resources</A>
+<UL>
+<LI><A HREF="sec-6.html#s-6.1">6.1. The Input Focus</A>
+<LI><A HREF="sec-6.html#s-6.2">6.2. The Pointer</A>
+<LI><A HREF="sec-6.html#s-6.3">6.3. Grabs</A>
+<LI><A HREF="sec-6.html#s-6.4">6.4. Colormaps</A>
+<LI><A HREF="sec-6.html#s-6.5">6.5. The Keyboard Mapping</A>
+<LI><A HREF="sec-6.html#s-6.6">6.6. The Modifier Mapping</A>
+</UL>
+<LI><A HREF="sec-7.html#s-7">7. Device Color Characterization</A>
+<UL>
+<LI><A HREF="sec-7.html#s-7.1">7.1. XYZ <-> RGB Conversion Matrices</A>
+<LI><A HREF="sec-7.html#s-7.2">7.2. Intensity <-> RGB Value Conversion</A>
+</UL>
+<LI><A HREF="sec-8.html#s-8">8. Conclusion</A>
+<UL>
+<LI><A HREF="sec-8.html#s-8.1">8.1. The X Registry</A>
+</UL>
+<LI><A HREF="sec-A.html#s-A">A. Revision History</A>
+<UL>
+<LI><A HREF="sec-A.html#s-A.1">A.1. The X11R2 Draft</A>
+<LI><A HREF="sec-A.html#s-A.2">A.2. The July 27, 1988 Draft</A>
+<LI><A HREF="sec-A.html#s-A.3">A.3. The Public Review Drafts</A>
+<LI><A HREF="sec-A.html#s-A.4">A.4. Version 1.0, July 1989</A>
+<LI><A HREF="sec-A.html#s-A.5">A.5. Version 1.1</A>
+<LI><A HREF="sec-A.html#s-A.6">A.6. Public Review Draft, December 1993</A>
+<LI><A HREF="sec-A.html#s-A.7">A.7. Version 2.0, April 1994</A>
+</UL>
+<LI><A HREF="sec-B.html#s-B">B. Suggested Protocol Revisions</A>
+<LI><A HREF="sec-C.html#s-C">C. Obsolete Session Manager Conventions</A>
+<UL>
+<LI><A HREF="sec-C.html#s-C.1">C.1. Properties</A>
+<UL>
+<LI><A HREF="sec-C.html#s-C.1.1">C.1.1. WM_COMMAND Property</A>
+<LI><A HREF="sec-C.html#s-C.1.2">C.1.2. WM_CLIENT_MACHINE Property</A>
+</UL>
+<LI><A HREF="sec-C.html#s-C.2">C.2. Termination</A>
+<LI><A HREF="sec-C.html#s-C.3">C.3. Client Responses to Session Manager Actions</A>
+<UL>
+<LI><A HREF="sec-C.html#s-C.3.1">C.3.1. Saving Client State</A>
+<LI><A HREF="sec-C.html#s-C.3.2">C.3.2. Window Deletion</A>
+</UL>
+<LI><A HREF="sec-C.html#s-C.4">C.4. Summary of Session Manager Property Types</A>
+</UL>
+<LI><A HREF="footnotes.html">Footnotes</A>
+</UL>
+<P>
+<A HREF="../">More X documentation...</A>
+<HR><ADDRESS><A HREF="http://tronche.com/">Christophe Tronche</A>, <A HREF="mailto:ch.tronche@computer.org">ch.tronche@computer.org</A></ADDRESS>
+</BODY>
+</HTML>
