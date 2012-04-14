@@ -35,6 +35,11 @@ zwm_ewmh_set_client_list(void *p, void *p2) {
 	}
 	zwm_x11_set_atoms(root, _NET_CLIENT_LIST, XA_WINDOW, wins, n);
 	zwm_x11_set_atoms(root, _NET_CLIENT_LIST_STACKING, XA_WINDOW, wins, n);
+
+	c = p;
+	if(c && zwm_x11_check_atom(c->win, _NET_WM_STATE, _NET_WM_STATE_FULLSCREEN)){
+		zwm_client_fullscreen(c);
+	}
 	XFlush(dpy);
 }
 
@@ -59,26 +64,21 @@ zwm_ewmh_client_unmap(Client *cli, void *p2) {
 /* called on setting current_view */
 void
 zwm_ewmh_set_desktops(void *p1, void *p2) {
-	char buf[1024], *pos;
+	char*  names[10];
 	int i;
-	int len = 0;
-
 	zwm_x11_set_atoms(root, _NET_NUMBER_OF_DESKTOPS, XA_CARDINAL, &num_views, 1);
-
-	pos = buf;
-	for(i = 0; i < num_views; i++) {
-		pos += sprintf(pos, "%d", i); 
-		pos++;
+	for (i = 0; i < num_views; i++) {
+		names[i] = malloc(10);
+		sprintf(names[i], "%d",i);
 	}
-
-	len = pos - buf;
-
-	zwm_x11_set_atoms(root,_NET_DESKTOP_NAMES, UTF8_STRING,
-			(unsigned long *) buf, len);
-
+	XTextProperty text_prop;
+	Xutf8TextListToTextProperty(dpy, names, num_views, XUTF8StringStyle, &text_prop);
+	XSetTextProperty(dpy, root, &text_prop, _NET_DESKTOP_NAMES);
+	for (i = 0; i < num_views; i++) {
+		free(names[i]);
+	}
 	zwm_x11_set_atoms(root, _NET_CURRENT_DESKTOP, XA_CARDINAL,
-		       	(unsigned long *) &current_view, 1);
-
+			(unsigned long *) &current_view, 1);
 }
 
 /* called from set view */
@@ -86,9 +86,7 @@ void
 zwm_ewmh_set_window_desktop(Client *c, void *p) {
 	Window win = c->win;
 	unsigned long view = c->view;
-	zwm_x11_set_atoms(win,
-			_NET_WM_DESKTOP, XA_CARDINAL, 
-			&view, 1);
+	zwm_x11_set_atoms(win, _NET_WM_DESKTOP, XA_CARDINAL, &view, 1);
 }
 
 /* no caller yet */
@@ -97,8 +95,7 @@ zwm_ewmh_client_state(Client *c , void *p) {
 	Window win = c->win;
 	long data[] = {c->state, None};
 	//printf("set state %s %d\n",c->name, c->state);
-	zwm_x11_set_atoms(win, WM_STATE, WM_STATE,
-		       	(unsigned long *)data, 2);
+	zwm_x11_set_atoms(win, WM_STATE, WM_STATE, (unsigned long *)data, 2);
 }
 #if 0
 /* no caller yet */
