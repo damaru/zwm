@@ -53,7 +53,7 @@ typedef struct ZenGeom ZenGeom;
 #define MAX_SCREENS 32
 extern ZenGeom screen[MAX_SCREENS];
 extern int screen_count;
-
+extern int scr;
 extern unsigned int border_w;
 extern Bool running;
 
@@ -65,6 +65,7 @@ extern Display *dpy;
 extern Window root;
 extern unsigned int xcolor_normal;
 extern unsigned int xcolor_focus;
+extern unsigned int xcolor_focus_bg;
 extern unsigned int xcolor_floating;
 extern unsigned int xcolor_bg;
 extern unsigned int numlockmask;
@@ -106,6 +107,7 @@ struct Client
 	int view;
 	int sid;
 	int noanim;
+	int hastitle;
 	int anim_steps;
 	Bool isfloating;
 	Bool isbanned;
@@ -194,6 +196,7 @@ typedef struct
 
 	const char *normal_border_color;
 	const char *focus_border_color;
+	const char *focus_bg_color;
 	const char *floating_border_color;
 	const char *bg_color;
 
@@ -292,6 +295,7 @@ void zwm_keypress_init(void);
 void zwm_exec(const char *arg);
 typedef struct ZenEventHandler ZenEventHandler;
 
+void zwm_client_move(Client *c, int x, int y);
 struct ZenEventHandler
 {
 	ZenEFunc handler;
@@ -299,6 +303,5 @@ struct ZenEventHandler
 	void *priv;
 	ZenEventHandler *next;
 };
-
 
 #endif

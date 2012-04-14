@@ -1,6 +1,6 @@
 #include "zwm.h"
 
-static int scr;
+int scr;
 Display *dpy;
 Window root;
 
@@ -18,6 +18,7 @@ unsigned int xcolor_normal;
 unsigned int xcolor_focus;
 unsigned int xcolor_floating;
 unsigned int xcolor_bg;
+unsigned int xcolor_focus_bg;
 unsigned int numlockmask = 0;
 GC gc;
 XFontStruct *font;
@@ -34,6 +35,7 @@ ZenConfig config =
 	.screen_h = 0,
 	.normal_border_color = "#9AA3BF",
 	.focus_border_color = "#F49435",
+	.focus_bg_color = "#BFB19A",
 	.floating_border_color = "#0B2882",
 	.bg_color = "#888",
 	.opacity = 0.9,
@@ -238,6 +240,7 @@ zwm_init(void) {
 	xcolor_focus = zwm_get_color(config.focus_border_color);
 	xcolor_floating = zwm_get_color(config.floating_border_color);
 	xcolor_bg = zwm_get_color(config.bg_color);
+	xcolor_focus_bg = zwm_get_color(config.focus_bg_color);
 	load_font(&font);
 	gc = XCreateGC(dpy, root, 0, NULL);
 	XSetFont (dpy, gc, font->fid);
