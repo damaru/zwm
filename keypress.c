@@ -121,6 +121,20 @@ void zwm_bindkey(const char* keyname, void *f, const char *arg)
 	XSetErrorHandler(p);
 }
 
+static void
+set_view(const char *arg) {
+	int v =  atoi(arg);
+	if(sel) {
+		zwm_client_set_view(sel, v);
+	}
+}
+
+static void
+goto_view(const char *arg) {
+	int v = atoi(arg);
+	zwm_current_view(v);
+}
+
 void zwm_keypress_init(void)
 {
 	zwm_event_register(KeyPress, (ZenEFunc)keypress, NULL);
@@ -144,5 +158,10 @@ void zwm_keypress_init(void)
 	zwm_bindkey("Ctrl-Alt-r", zwm_restart, NULL);
 	zwm_bindkey("Ctrl-Shift-Return", zwm_spawn, "simshell");
 	zwm_bindkey("Alt-F11", zwm_panel_toggle, NULL);
-	zwm_bindkey("Alt-F10", zwm_exec, "windowlab");
+	zwm_bindkey("Alt-1", goto_view, "0");
+	zwm_bindkey("Alt-Shift-1", set_view, "0");
+	zwm_bindkey("Alt-2", goto_view, "1");
+	zwm_bindkey("Alt-Shift-2", set_view, "1");
+	zwm_bindkey("Alt-3", goto_view, "2");
+	zwm_bindkey("Alt-Shift-3", set_view, "2");
 }
