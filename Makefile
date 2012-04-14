@@ -1,4 +1,5 @@
 all:
+	cscope -b
 	cd build && cmake ../ && make
 clean:
 	rm -rvf build/*
