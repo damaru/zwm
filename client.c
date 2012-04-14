@@ -233,7 +233,8 @@ void
 zwm_client_update_decoration(Client *c)
 {
 	int color = xcolor_focus;
-	int fill = xcolor_focus;
+	int fill = xcolor_focus_bg;
+
 	if(c->type != ZenNormalWindow && c->type != ZenDialogWindow){
 		return;
 	}
@@ -244,15 +245,16 @@ zwm_client_update_decoration(Client *c)
 	}
 
 	XSetWindowBorder(dpy, c->win, color);
-	XSetWindowBackground(dpy, c->frame, fill);
-	XSetWindowBorder(dpy, c->frame, color);
-	XSetForeground(dpy, gc, fill);
-	XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, 20);
-	//XSetForeground(dpy, gc, WhitePixel(dpy,0));//TODO make fontgc
-	XSetForeground(dpy, gc, xcolor_bg);//TODO make fontgc
-	XDrawString(dpy, c->frame, gc, 5, font->ascent+font->descent-2, c->name, strlen(c->name));
-	XSetForeground(dpy, gc, BlackPixel(dpy,0));//TODO make fontgc
-	XDrawString(dpy, c->frame, gc, 4, font->ascent+font->descent-2-1, c->name, strlen(c->name));
+	if(c->frame) {
+		XSetWindowBackground(dpy, c->frame, fill);
+		XSetWindowBorder(dpy, c->frame, color);
+		XSetForeground(dpy, gc, fill);
+		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, 20);
+		XSetForeground(dpy, gc, xcolor_bg);//TODO make fontgc
+		XDrawString(dpy, c->frame, gc, 5, font->ascent+font->descent-2, c->name, strlen(c->name));
+		XSetForeground(dpy, gc, BlackPixel(dpy,0));//TODO make fontgc
+		XDrawString(dpy, c->frame, gc, 4, font->ascent+font->descent-2-1, c->name, strlen(c->name));
+	}
 }
 
 
