@@ -78,6 +78,7 @@ enum
 	ZenNormalWindow,
 	ZenDockWindow,
 	ZenDialogWindow,
+	ZenSplashWindow,
 	ZenDesktopWindow
 };
 

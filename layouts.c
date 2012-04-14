@@ -41,8 +41,7 @@ void zwm_layout_animate(void)
 			c->dw = (c->w - c->ow)/config.anim_steps;
 			c->dh = (c->h - c->oh)/config.anim_steps;
 			//resize , but not move
-			XMoveResizeWindow(dpy, c->win, c->ox, c->oy, c->w, c->h);
-			XMoveResizeWindow(dpy, c->frame, c->ox, c->oy-20, c->w, 20);
+			zwm_client_moveresize(c, c->ox, c->oy, c->w, c->h);
 			XSync(dpy, False);
 		} 
 	}
@@ -55,8 +54,7 @@ void zwm_layout_animate(void)
 				c->oy += c->dy;
 				c->ow += c->dw;
 				c->oh += c->dh;
-				XMoveWindow(dpy, c->win, c->ox, c->oy);
-				XMoveWindow(dpy, c->frame, c->ox, c->oy-20);
+				zwm_client_moveresize(c, c->ox, c->oy, c->w, c->h);
 				XSync(dpy, False);
 			}
 		}
@@ -65,11 +63,10 @@ void zwm_layout_animate(void)
 	for(c = zwm_client_head();
 			c;
 			c = zwm_client_next(c)) {
-		if (c->noanim) {
-			XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h);
-			XSync(dpy, False);
-		}
-		XMoveResizeWindow(dpy, c->frame, c->x, c->y-20, c->w, 20);
+		//if (c->noanim) {
+		//	XSync(dpy, False);
+		//}
+		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 		zwm_client_update_decoration(c);
 	}
 
@@ -100,14 +97,13 @@ void zwm_layout_arrange(void)
 #define DOANIM
 #ifdef DOANIM
 	zwm_layout_animate();
-#else
+#endif
 	for(c = zwm_client_head();
 		    c;
 		    c = zwm_client_next(c)) {
 		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 		zwm_client_update_decoration(c);
 	}
-#endif
 }
 
 void zwm_layout_register(ZenLFunc f, char *name)
@@ -181,9 +177,9 @@ max_arrange(void) {
 	for( c = zwm_client_head(); c && j == 0; c = zwm_client_next(c)) {
 		if(zwm_client_visible(c) && !c->isfloating && !c->isbanned){
 			int w = screen[i].w - (int)(ZWMBORDER*2) - 2*c->border ;
-			int h = screen[i].h - (int)(ZWMBORDER*2) - 2*c->border -(20*config.show_title) ;
+			int h = screen[i].h - (int)(ZWMBORDER*2) - 2*c->border ;
 			int x = screen[i].x + ZWMBORDER;
-			int y = screen[i].y + ZWMBORDER + (20*config.show_title);
+			int y = screen[i].y + ZWMBORDER ;
 			c->noanim = 0;
 			zwm_layout_moveresize(c, x, y , w, h);
 			j++;
@@ -200,9 +196,9 @@ max_arrange(void) {
 
 			c->noanim = 0;
 			int w = screen[i].w - (int)(ZWMBORDER*2) - 2*c->border ;
-			int h = screen[i].h - (int)(ZWMBORDER*2) - 2*c->border - (20*config.show_title) ;
+			int h = screen[i].h - (int)(ZWMBORDER*2) - 2*c->border ;
 			int x = screen[i].x + ZWMBORDER;
-			int y = screen[i].y + ZWMBORDER + (20*config.show_title);
+			int y = screen[i].y + ZWMBORDER;
 			zwm_layout_moveresize(c, x + screen[i].w, y, w, h );
 			//zwm_layout_moveresize(c, x, y, w, h );
 			if(i < screen_count-1)i++;
@@ -211,12 +207,12 @@ max_arrange(void) {
 	if(second){
 		second->noanim = 1;
 		int w = screen[i].w - (int)(ZWMBORDER*2) - 2*second->border ;
-		int h = screen[i].h - (int)(ZWMBORDER*2) - 2*second->border - (20*config.show_title);
+		int h = screen[i].h - (int)(ZWMBORDER*2) - 2*second->border ;
 		int x = screen[i].x + ZWMBORDER;
-		int y = screen[i].y + ZWMBORDER + (20*config.show_title);
+		int y = screen[i].y + ZWMBORDER ;
 
 //		zwm_layout_moveresize(second, x, y, w, h );
-		zwm_layout_moveresize(second, x - screen[i].w, y - 0*screen[i].h, w, h );
+		zwm_layout_moveresize(second, x - screen[i].w, y, w, h );
 	}
 }
 
@@ -240,7 +236,7 @@ grid() {
 
 	if(screen_count > 1 && c)
 	{
-		zwm_client_moveresize(c, screen[0].x, screen[0].y,
+		zwm_layout_moveresize(c, screen[0].x, screen[0].y,
 					screen[0].w - 2*config.border_width,
 				       	screen[0].h - 2*config.border_width);
 		c = zwm_client_next_visible(zwm_client_next(c));
@@ -265,8 +261,8 @@ grid() {
 			/* adjust height/width of last row/column's windows */
 			ah = ((i + 1) % rows == 0) ? screen[0].h - ch * rows : 0;
 			aw = (i >= rows * (cols - 1)) ? screen[0].w - cw * cols : 0;
-			zwm_client_moveresize(c, cx, cy+20, cw - 2 + aw - config.border_width,
-				       	ch - 2  + ah -  config.border_width-20);
+			zwm_layout_moveresize(c, cx, cy, cw - 2 + aw - config.border_width,
+				       	ch - 2  + ah -  config.border_width);
 			i++;
 		}
 	}
@@ -291,6 +287,61 @@ void zwm_layout_cycle(const char *arg) {
 	zwm_event_emit(ZenClientMap, c);
 }
 
+void
+tile() {
+	Client *c = zwm_client_head();
+	unsigned int i, n;
+	int b;
+	int B;
+	if(c) {
+	       	b = c->border;
+       		B = 2*c->border;
+
+	} else
+	       	return;
+
+	for(n = 0, c = zwm_client_next_visible(c); c;
+		       	c = zwm_client_next_visible(zwm_client_next(c)))
+	{
+			if(zwm_client_visible(c) && !c->isfloating){
+				c->noanim = 0;
+				n++;
+			}
+
+	}
+
+	for(i = 0, c = zwm_client_head();
+			c;
+			c = zwm_client_next_visible(zwm_client_next(c))) {
+
+		if(zwm_client_visible(c) && !c->isfloating){
+
+				c->noanim = 0;
+			if(n == 1 ){
+				zwm_layout_moveresize(c, b + screen[0].x, b +
+						screen[0].y ,  
+						screen[0].w - B-b,
+						screen[0].h - B);
+			} else {
+				if( i == 0)
+				{
+					zwm_layout_moveresize(c,
+							b+screen[0].x,
+							b+screen[0].y,
+							(screen[0].w / 2) - B,
+							screen[0].h - B );
+				} else {
+					int h = (screen[0].h/ (n-1));
+					zwm_layout_moveresize(c, screen[0].x + (screen[0].w/2)+B ,
+							screen[0].y+(i-1)*h ,
+							(screen[0].w/2)-2*B ,
+							h );
+				}
+				i++;
+			}
+		}
+	}
+}
 /* initialize default layout */
 void
 zwm_layout_init(void)
@@ -298,4 +349,5 @@ zwm_layout_init(void)
 	zwm_layout_register((ZenLFunc)layout_floating, "floating");
 	zwm_layout_register((ZenLFunc)grid, "grid");
 	zwm_layout_register((ZenLFunc)max_arrange, "max");
+	zwm_layout_register((ZenLFunc)tile, "tile");
 }

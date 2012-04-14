@@ -92,11 +92,11 @@ configurerequest(XEvent *e) {
 			if(ev->value_mask & CWX)
 				c->x = ev->x;
 			if(ev->value_mask & CWY)
-				c->y = ev->y;
+				c->y = ev->y-20;
 			if(ev->value_mask & CWWidth)
 				c->w = ev->width;
 			if(ev->value_mask & CWHeight)
-				c->h = ev->height;
+				c->h = ev->height+20;
 			if((c->x + c->w) > screen[0].w && c->isfloating)
 				c->x = screen[0].w / 2 - c->w / 2; /* center in x direction */
 			if((c->y + c->h) > screen[0].h && c->isfloating)
@@ -107,7 +107,7 @@ configurerequest(XEvent *e) {
 				zwm_client_send_configure(c);
 
 			if(zwm_client_visible(c))
-				XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h);
+				zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 		} else {
 			zwm_client_send_configure(c);
 			if(!zwm_client_visible(c))
@@ -129,9 +129,6 @@ configurerequest(XEvent *e) {
 	{
 		zwm_event_emit(ZenClientConfigure,c);
 	}
-
-	XSync(dpy, False);
-
 }
 
 void
@@ -173,7 +170,6 @@ propertynotify(XEvent *e) {
 	Window trans;
 	XPropertyEvent *ev = &e->xproperty;
 	DBG_ENTER();
-
 	if(ev->state == PropertyDelete)
 		return; /* ignore */
 	if((c = zwm_client_get(ev->window))){ 
@@ -229,7 +225,6 @@ void zwm_event(int fd, int mode, void *data)
 			zwm_event_emit(ZenX11Event, &ev);
 		}
 	}
-	XSync(dpy, False); 
 }
 void
 zwm_event_loop(void) {

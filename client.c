@@ -32,15 +32,15 @@ zwm_client_send_configure(Client *c) {
 	ce.event = c->win;
 	ce.window = c->win;
 	ce.x = c->x;
-	ce.y = c->y;
+	ce.y = c->y+20;
 	ce.width = c->w;
-	ce.height = c->h;
+	ce.height = c->h-20;
 	ce.border_width = c->border;
 	ce.above = None;
 	ce.override_redirect = False;
 	XSendEvent(dpy, c->win, False, StructureNotifyMask, (XEvent *)&ce);
 
-	ce.y = c->y-20;
+	ce.y = c->y;
 	ce.height = 20;
 	XSendEvent(dpy, c->frame, False, StructureNotifyMask, (XEvent *)&ce);
 }
@@ -78,7 +78,14 @@ get_type(Window w)
 	CHECK_RET(_NET_WM_WINDOW_TYPE_DOCK, ZenDockWindow);
 	CHECK_RET(_NET_WM_WINDOW_TYPE_NORMAL, ZenNormalWindow);
 	CHECK_RET(_NET_WM_WINDOW_TYPE_DIALOG, ZenDialogWindow);
+	CHECK_RET(_NET_WM_WINDOW_TYPE_UTILITY, ZenDialogWindow);
 	CHECK_RET(_NET_WM_WINDOW_TYPE_DESKTOP, ZenDesktopWindow);
+	CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZenSplashWindow);
+	CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLBAR, ZenSplashWindow);
+	CHECK_RET(_NET_WM_WINDOW_TYPE_DND, ZenSplashWindow);
+	CHECK_RET(_NET_WM_WINDOW_TYPE_MENU, ZenSplashWindow);
+	CHECK_RET(_NET_WM_WINDOW_TYPE_DROPDOWN_MENU, ZenSplashWindow);
+	CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLTIP, ZenSplashWindow);
 	if(zwm_x11_check_atom(w, _NET_WM_WINDOW_TYPE, _NET_WM_STATE_MODAL)){
 		return ZenDialogWindow;
 	}
@@ -273,7 +280,6 @@ void zwm_client_manage(Window w, XWindowAttributes *wa)
 	}
 
 	Client *c = zwm_alloc_client(w, wa);
-#if 1
 	c->type = get_type(w);
 	switch (c->type) {
 		case ZenDesktopWindow:
@@ -286,67 +292,35 @@ void zwm_client_manage(Window w, XWindowAttributes *wa)
 			XMapWindow(dpy, w);
 			break;
 		case ZenDialogWindow:
+			c->hastitle = 1;
 			c->type = ZenNormalWindow;
+		case ZenSplashWindow:
 			c->isfloating = True;
 			c->x = wa->x?wa->x:((screen[0].w - wa->width)/2);
 			c->y = wa->y?wa->y:((screen[0].h - wa->height)/2);
 			c->w = wa->width?wa->width:(screen[0].w/2);
 			c->h = wa->height?wa->height:(screen[0].h/2);
+			wc.border_width = 0;
 			num_floating++;
+			break;
 		case ZenNormalWindow:
-			wc.border_width = c->border;
-			XConfigureWindow(dpy, w, CWBorderWidth, &wc);
-			//XSetWindowBorder(dpy, w, xcolor_normal);
-			zwm_client_send_configure(c); /* propagates border_width, if size doesn't change */
-			XSelectInput(dpy, w, StructureNotifyMask | PropertyChangeMask | EnterWindowMask);
-			XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h); /* some windows require this */
-			XMapWindow(dpy, c->win);
-			create_frame_window(c);
-			c->focused = True;
-			grabbuttons(c, True);
-		//	zwm_client_send_configure(c); /* propagates border_width, if size doesn't change */
-			zwm_client_update_decoration(c);
-	}
-#else
-
-	if(check_panel(w))
-	{
-		c->type = ZenDockWindow;
-	} else if(check_desktop(w))
-	{
-		c->type = ZenDesktopWindow;
-		return;
+			c->hastitle = 1;
+			break;
 	}
 
-	if(check_dialog(w)){
-		//c->type = ZenDialogWindow;
-		c->isfloating = True;
-		c->x = wa->x?wa->x:((screen[0].w - wa->width)/2);
-		c->y = wa->y?wa->y:((screen[0].h - wa->height)/2);
-		c->w = wa->width?wa->width:(screen[0].w/2);
-		c->h = wa->height?wa->height:(screen[0].h/2);
-		num_floating++;
-	}
-
-	if(c->type == ZenNormalWindow) {
-
+	wc.x = c->x;
+	wc.y = c->y;
+	wc.width = c->w;
+	wc.height = c->h;
+	if(c->hastitle){
 		wc.border_width = c->border;
-		XConfigureWindow(dpy, w, CWBorderWidth, &wc);
-		//XSetWindowBorder(dpy, w, xcolor_normal);
-		zwm_client_send_configure(c); /* propagates border_width, if size doesn't change */
-		XSelectInput(dpy, w, StructureNotifyMask | PropertyChangeMask | EnterWindowMask);
-		XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h); /* some windows require this */
-		XMapWindow(dpy, c->win);
 		create_frame_window(c);
-		c->focused = True;
-		grabbuttons(c, True);
-		zwm_client_send_configure(c); /* propagates border_width, if size doesn't change */
-		zwm_client_update_decoration(c);
-
-
-		printf("manage %s %p %p\n",c->name, c->win, c->frame);
 	}
-#endif
+	XConfigureWindow(dpy, w, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
+	zwm_client_send_configure(c);
+	XMapWindow(dpy, c->win);
+	zwm_client_update_decoration(c);
+
 	zwm_client_push_head(c);
 	zwm_event_emit(ZenClientMap, c);
 	zwm_layout_arrange();
@@ -365,8 +339,6 @@ zwm_client_unmanage(Client *c) {
 	zwm_event_emit(ZenClientUnmap, c);
 	XGrabServer(dpy);
 	XSetErrorHandler(xerrordummy);
-	XUnmapWindow(dpy, c->frame);	
-	XDestroyWindow(dpy, c->win);
 	zwm_client_remove(c);
 	if(c->isfloating){
 		num_floating--;
@@ -376,7 +348,10 @@ zwm_client_unmanage(Client *c) {
 	}
 
 	XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
-
+	if(c->frame){
+		XUnmapWindow(dpy, c->frame);
+		XDestroyWindow(dpy, c->frame);
+	}
 	free(c);
 
 	XSync(dpy, False);
@@ -499,35 +474,34 @@ grabbuttons(Client *c, Bool focused) {
 	}
 }
 
+void zwm_client_move(Client *c, int x, int y)
+{
+	c->x =  x;
+	c->y =  y;
+	if(c->frame){
+		XMoveWindow(dpy, c->win, x, y + 20);
+		XMoveWindow(dpy, c->frame, x, y);
+	}else {
+		XMoveWindow(dpy, c->win, x, y );
+	}
+}
+
+
 void
 zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 {
-	XWindowChanges wc; 
 
-//	printf("movresize %s %d %d %d %d\n",c->name, x,y,w,h);
-	if(w <= 0 || h <= 0)
-		return;
-	//if(c->x != x || c->y != y || c->w != w || c->h != h) {
-
-//		XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h);
-		c->x = wc.x = x;
-		c->y = wc.y = y;
-		c->w = wc.width = w;
-		c->h = wc.height = h;
-		wc.border_width = c->border;
-//		XConfigureWindow(dpy, c->win, CWX | CWY | CWWidth | CWHeight | CWBorderWidth, &wc);
-		XConfigureWindow(dpy, c->win, CWX | CWY | CWWidth | CWHeight | CWBorderWidth, &wc);
-#if 0
-		wc.height = h + 20;
-		wc.height = y - 20;
-		XConfigureWindow(dpy, c->frame, CWX | CWY | CWWidth | CWHeight | CWBorderWidth, &wc);
-#endif
-		zwm_client_send_configure(c);
-		//XMoveResizeWindow(dpy, c->frame, c->x, c->y-20, c->w, c->h+20);
-		zwm_event_emit(ZenClientResize, c);
-		XMoveResizeWindow(dpy, c->frame, c->x, c->y-20, c->w, 20);
-		XSync(dpy, False);
-//	}
+	c->x =  x;
+	c->y =  y;
+	c->w =  w;
+	c->h =  h;
+	if(c->frame){
+		XMoveResizeWindow(dpy, c->win, x, y+20, w, h-20);
+		XMoveResizeWindow(dpy, c->frame, x, y, w, 20);
+	} else {
+		XMoveResizeWindow(dpy, c->win, x, y, w, h);
+	}
+	XSync(dpy, False);
 }
 
 void
