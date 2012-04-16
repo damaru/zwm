@@ -39,7 +39,7 @@ ZenConfig config =
 	.floating_border_color = "#0B2882",
 	.bg_color = "#888",
 	.opacity = 0.9,
-	.anim_steps = 30,
+	.anim_steps = 80,
 	.show_title = 1,
 };
 
@@ -203,7 +203,6 @@ zwm_init(void) {
 
 	XSetErrorHandler(xerror);
 	/* init atoms */
-	//zwm_user_init();
 	zwm_init_atoms();
 	zwm_event_init();
 	zwm_layout_init();
@@ -212,8 +211,6 @@ zwm_init(void) {
 
 	init_numlock_mask();
 
-	//zwm_init_config();
-	//zwm_userfuncs_init();
 	zwm_ewmh_init();
 	zwm_panel_init();
 	zwm_keypress_init();
@@ -318,7 +315,6 @@ zwm_restart(const char *p) {
 	execlp( "zwm", "", NULL);
 	fprintf(stderr, "restart failed");
 }
-
 
 void zwm_spawn(const char *cmd)
 {

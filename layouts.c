@@ -21,6 +21,13 @@ const char *zwm_current_layout(void)
 
 void zwm_layout_moveresize(Client *c, int x, int y, int w, int h)
 {
+	if(c->noanim) {
+		c->noanim = 0;
+		c->ox = c->x;
+		c->oy = c->y;
+		c->ow = c->w;
+		c->oh = c->h;
+	}
 	c->x  = x;
 	c->y  = y;
 	c->w  = w;
@@ -31,18 +38,20 @@ void zwm_layout_animate(void)
 {
 	int i;
 	Client *c;
+	if(!config.anim_steps)
+	{
+		return;
+	}
 	for(c = zwm_client_head();
 			c;
 			c = zwm_client_next(c)) {
-		if(config.anim_steps && !c->noanim && zwm_client_visible(c) /*&& c->x >= 0 && c->x <= screen[0].w*/ ){
+		if(!c->noanim){
 			c->dx = (c->x - c->ox)/config.anim_steps;
 			c->dy = (c->y - c->oy)/config.anim_steps;
-			c->dw = (c->w - c->ow)/config.anim_steps;
-			c->dh = (c->h - c->oh)/config.anim_steps;
 			//resize , but not move
 			zwm_client_moveresize(c, c->ox, c->oy, c->w, c->h);
 			XSync(dpy, False);
-		} 
+		}
 	}
 	for(i = 0; i<config.anim_steps; i++){
 		for(c = zwm_client_head();
@@ -51,8 +60,6 @@ void zwm_layout_animate(void)
 			if(!c->noanim){
 				c->ox += c->dx;
 				c->oy += c->dy;
-				c->ow += c->dw;
-				c->oh += c->dh;
 				zwm_client_moveresize(c, c->ox, c->oy, c->w, c->h);
 				XSync(dpy, False);
 			}
@@ -60,37 +67,42 @@ void zwm_layout_animate(void)
 	}
 }
 
-
 void zwm_layout_arrange(void)
 {
 	Client *c;
 	for(c = zwm_client_head();
 	       	c;
 	       	c = zwm_client_next(c)) {
-		c->noanim = 1;
+		
+		if (zwm_client_visible(c) && c->bpos.w) {
+			zwm_client_restore_geometry(c, &c->bpos);
+			//XRaiseWindow(dpy, c->frame);
+			//XRaiseWindow(dpy, c->win);
+			c->bpos.w = 0;
+		}
+
 		c->anim_steps = config.anim_steps;
-		c->ox = c->x;
-		c->oy = c->y;
-		c->ow = c->w;
-		c->oh = c->h;
 
 		if( (c->type == ZenNormalWindow ||
 			c->type == ZenDialogWindow) && 
 			!zwm_client_visible(c)  ) {
-			zwm_layout_moveresize(c, screen[0].w+2, c->y,c->w, c->h);
+			if (c->bpos.w == 0) {
+				zwm_client_save_geometry(c, &c->bpos);
+			}
+			zwm_layout_moveresize(c, screen[0].w+2+c->x, c->y,c->w, c->h);
 		}
 	}
 	
 	sel_layout->handler();
-#define DOANIM
-#ifdef DOANIM
+
 	zwm_layout_animate();
-#endif
+
 	for(c = zwm_client_head();
 		    c;
 		    c = zwm_client_next(c)) {
 		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 		zwm_client_update_decoration(c);
+		c->noanim = 1;
 	}
 }
 
@@ -149,7 +161,7 @@ layout_floating(void) {
 	}
 }
 
-static float mb = 0.1;
+static float mb = 0;
 
 #define ZWMBORDER (mb * screen[0].h)
 

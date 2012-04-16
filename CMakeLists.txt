@@ -7,6 +7,6 @@ if(NOT X11_FOUND)
 endif(NOT X11_FOUND)
 set(LIBS ${LIBS} ${X11_LIBRARIES} "-lzen -lXinerama -lXcomposite -lXrender -lXfixes -lXdamage -lm")
 set(CMAKE_C_FLAGS "-g -Wall ")
-add_executable(zwm zwm.h atoms.c client.c cursor.c events.c layouts.c user.c
+add_executable(zwm zwm.h atoms.c client.c cursor.c events.c layouts.c
 	zwm.c keypress.c ewmh.c panel.c)
 target_link_libraries(zwm ${LIBS})

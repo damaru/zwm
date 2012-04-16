@@ -5,7 +5,6 @@ DEFINE_GLOBAL_LIST_HEAD(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_TAIL(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_NEXT(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_PREV(zwm_client,Client,node);
-
 DEFINE_GLOBAL_LIST_PUSH_HEAD(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_PUSH_TAIL(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_REMOVE(zwm_client,Client,node);
@@ -111,13 +110,14 @@ zwm_client_setstate(Client *c, int state)
 	if (state == NormalState){
 		XRaiseWindow(dpy, c->frame);
 		XRaiseWindow(dpy, c->win);
+		zwm_client_focus(c);
 	} else {
 		XLowerWindow(dpy, c->win);
 		XLowerWindow(dpy, c->frame);
+		//zwm_client_focus(NULL);
 	}
 	zwm_event_emit(ZenClientState, c);
 	zwm_layout_arrange();
-	zwm_client_focus(NULL);
 }
 
 void zwm_client_scan(void)
@@ -260,7 +260,7 @@ void zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_client_send_configure(c);
 	XMapWindow(dpy, c->win);
 	zwm_client_update_decoration(c);
-
+	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_push_head(c);
 	zwm_event_emit(ZenClientMap, c);
 	zwm_layout_arrange();
@@ -448,10 +448,9 @@ zwm_client_fullscreen(Client *c)
 void
 zwm_client_float(Client *c)
 {
-	c->isfloating = True;
-	num_floating++;
-	c->color = xcolor_floating;
-	zwm_layout_arrange();
+	if(!c->isfloating){
+		zwm_client_toggle_floating(c);
+	}
 }
 
 
@@ -616,11 +615,15 @@ void zwm_auto_view(int v)
 void
 zwm_client_set_view(Client *c, int v)
 {
-	c->view = v;
-	zwm_client_focus(NULL);
-	zwm_auto_view(v);
-	zwm_layout_arrange();
-	zwm_event_emit(ZenClientView, c);
+	if (c->view != v) {
+		c->view = v;
+		if (c == sel) {
+			zwm_client_focus(NULL);
+		}
+		zwm_auto_view(v);
+		zwm_layout_arrange();
+		zwm_event_emit(ZenClientView, c);
+	}
 }
 
 void
@@ -657,9 +660,10 @@ zwm_client_toggle_floating(Client *c) {
 	if(c->isfloating){
 		num_floating++;
 		c->color = xcolor_floating;
-		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
+		zwm_client_restore_geometry(c, &c->fpos);
 	} else {
 		num_floating--;
+		zwm_client_save_geometry(c, &c->fpos);
 		c->color = xcolor_normal;
 	}
 	zwm_layout_arrange();
@@ -751,4 +755,18 @@ zwm_focus_next(const char *arg) {
 		zwm_client_warp(c);
 	}
 }
+
+void zwm_client_save_geometry(Client *c, ZenGeom *g)
+{
+	g->x = c->x;
+	g->y = c->y;
+	g->w = c->w;
+	g->h = c->h;
+}
+
+void zwm_client_restore_geometry(Client *c, ZenGeom *g)
+{
+	zwm_layout_moveresize(c, g->x, g->y, g->w, g->h);
+}
+
 

@@ -97,6 +97,8 @@ struct Client
 	double oy;
 	double ow;
 	double oh;
+	ZenGeom fpos;
+	ZenGeom bpos;
 	int border;
 	int color;
 	int oborder;
@@ -289,7 +291,6 @@ void zwm_panel_toggle(const char *args);
 void zwm_ewmh_init(void);
 void zwm_panel_init(void);
 void zwm_keypress_init(void);
-void zwm_exec(const char *arg);
 typedef struct ZenEventHandler ZenEventHandler;
 void zwm_client_move(Client *c, int x, int y);
 struct ZenEventHandler
@@ -300,4 +301,6 @@ struct ZenEventHandler
 	ZenEventHandler *next;
 };
 
+void zwm_client_save_geometry(Client *c, ZenGeom *g);
+void zwm_client_restore_geometry(Client *c, ZenGeom *g);
 #endif

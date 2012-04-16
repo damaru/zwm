@@ -135,6 +135,22 @@ goto_view(const char *arg) {
 	zwm_current_view(v);
 }
 
+
+static void banish(const char *arg)
+{
+	if(sel){
+		zwm_client_set_view(sel, ((current_view+1)%2));
+	}
+}
+
+static void flip(const char *arg)
+{
+	if(sel){
+		int next = (current_view + 1) % 2;
+		zwm_current_view(next);
+	}
+}
+
 void zwm_keypress_init(void)
 {
 	zwm_event_register(KeyPress, (ZenEFunc)keypress, NULL);
@@ -164,4 +180,7 @@ void zwm_keypress_init(void)
 	zwm_bindkey("Alt-Shift-2", set_view, "1");
 	zwm_bindkey("Alt-3", goto_view, "2");
 	zwm_bindkey("Alt-Shift-3", set_view, "2");
+
+	zwm_bindkey("Alt-l", banish, NULL);
+	zwm_bindkey("Alt-h", flip, "simshell");
 }
