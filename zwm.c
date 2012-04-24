@@ -1,4 +1,8 @@
 #include "zwm.h"
+#include <stdio.h>
+#include <X11/extensions/Xinerama.h>
+#include <locale.h>
+#include <sys/wait.h>
 
 int scr;
 Display *dpy;
@@ -14,34 +18,12 @@ unsigned int border_w;
 ZenGeom screen[MAX_SCREENS];
 
 /* X color definitions */
-unsigned int xcolor_normal;
-unsigned int xcolor_focus;
-unsigned int xcolor_floating;
-unsigned int xcolor_bg;
-unsigned int xcolor_focus_bg;
 unsigned int numlockmask = 0;
 GC gc;
-XFontStruct *font;
+XftFont *xfont;
+XftFont *ifont;
 
-/* appearance */
-ZenConfig config = 
-{
-	.auto_view = 1,
-	.border_width = 1,
-	.fake_screens = 1,
-	.screen_x = 0,
-	.screen_y = 0,
-	.screen_w = 0,
-	.screen_h = 0,
-	.normal_border_color = "#9AA3BF",
-	.focus_border_color = "#F49435",
-	.focus_bg_color = "#BFB19A",
-	.floating_border_color = "#0B2882",
-	.bg_color = "#888",
-	.opacity = 0.9,
-	.anim_steps = 80,
-	.show_title = 1,
-};
+#include "config.h"
 
 static int
 other_wm_handler(Display *dsply, XErrorEvent *ee) {
@@ -50,25 +32,15 @@ other_wm_handler(Display *dsply, XErrorEvent *ee) {
 	return -1;
 }
 
-void
-load_font (XFontStruct **font_info)
+static void load_font ()
 {
-  char *fontname = "-*-terminus-bold-r-*-*-18-*-*-*-*-*-*-*";
-  /* Load font and get font information structure */
-  if ((*font_info = XLoadQueryFont (dpy, fontname)) == NULL)
-    {
-      (void) fprintf (stderr, "zwm: Cannot open 9x15 font\n");
-      exit (-1);
-    }
+	xfont = XftFontOpenXlfd(dpy, scr, config.font);
+	ifont = XftFontOpenXlfd(dpy, scr, config.icons);
 }
-
 
 static void
 zwm_check(void) {
 	XSetErrorHandler(other_wm_handler);
-
-	/* this causes an an X error if some other window manager is running
-	 * */
 	XSelectInput(dpy, root, SubstructureRedirectMask);
 	XSync(dpy, False);
 	XSetErrorHandler(NULL);
@@ -88,12 +60,10 @@ zwm_get_color(const char *colstr)
 }
 
 void
-zwm_update_screen_geometry(void) {
+zwm_update_screen_geometry(Bool init) {
 	screen_count = 0;
 	int i;
-ZenGeom vscreen = {0, 0, 0, 0};
 
-#ifdef CONFIG_XINERAMA
 	if ( XineramaIsActive(dpy) ) 
 	{
 		int nscreen;
@@ -102,9 +72,7 @@ ZenGeom vscreen = {0, 0, 0, 0};
 		ZWM_DEBUG("Xinerama is active\n");
 
 		for( i = 0; i< nscreen; i++ ) {
-		
 			if( i == 0 || (info[i].x_org != info[i-1].x_org)) {
-
 				ZWM_DEBUG( "Screen %d %d: (%d) %d+%d+%dx%d\n", i,screen_count,
 				       	info[i].screen_number,
 					info[i].x_org, info[i].y_org,
@@ -119,7 +87,6 @@ ZenGeom vscreen = {0, 0, 0, 0};
 		}
 		XFree(info);
 	} else 
-#endif
 	{
 		ZWM_DEBUG("Xinerama is not active\n");
 		screen_count = 1;
@@ -142,44 +109,13 @@ ZenGeom vscreen = {0, 0, 0, 0};
 		screen[1].h = DisplayHeight(dpy, scr);
 		screen_count = 2;
 	}
-#if 0
-	for(i = 0; i< screen_count; i++){
-		if(config.screen_x)
-			screen[i].x = config.screen_x;
-		if(config.screen_y)
-			screen[i].y = config.screen_y;
-		if(config.screen_w)
-			screen[i].w = config.screen_w;
-		if(config.screen_h)
-			screen[i].h = config.screen_h;
-		ZWM_DEBUG( "Screen %d %d:  %d+%d+%dx%d\n", i,screen_count,
-			       	 screen[i].x,  screen[i].y,
-				 screen[i].w , screen[i].h);
+
+	if(init){
+		for(i=0;i<screen_count;i++)
+			zwm_screen_set_view(i, i);
 	}
-#endif
-	for(i = 0; i< screen_count; i++){
-		if(vscreen.x >= screen[i].x)
-			vscreen.x = screen[i].x;
-		if(vscreen.y >= screen[i].y)
-			vscreen.y = screen[i].y;
-		
-		vscreen.w += screen[i].w ;
-
-		if(vscreen.h < screen[i].h)
-			vscreen.h = screen[i].h;
-
-		ZWM_DEBUG( "Virtual Screen %d %d:  %d+%d+%dx%d\n", i,screen_count,
-			       	 vscreen.x,  vscreen.y,
-				vscreen.w , vscreen.h);
-	}
-
-	config.screen_x = vscreen.x;
-	config.screen_y = vscreen.y;
-	config.screen_w = vscreen.w;
-	config.screen_h = vscreen.h;
-
 	zwm_event_emit(ZenScreenSize, NULL);
-	zwm_layout_arrange();
+	zwm_layout_dirty();
 }
 
 void 
@@ -195,6 +131,12 @@ init_numlock_mask(void)
 				numlockmask = (1 << i);
 		}
 	XFreeModifiermap(modmap);
+}
+
+static int
+xerror(Display *dpy, XErrorEvent *ee) {
+
+	return 0;
 }
 
 void
@@ -216,7 +158,7 @@ zwm_init(void) {
 	zwm_keypress_init();
 
 	/* init geometry */
-	zwm_update_screen_geometry();
+	zwm_update_screen_geometry(True);
 	
 	/* select for events */
 	swa.event_mask = SubstructureRedirectMask |
@@ -233,17 +175,15 @@ zwm_init(void) {
 	XSelectInput(dpy, root, swa.event_mask);
 
 	/* init appearance */
-	xcolor_normal = zwm_get_color(config.normal_border_color);
-	xcolor_focus = zwm_get_color(config.focus_border_color);
-	xcolor_floating = zwm_get_color(config.floating_border_color);
-	xcolor_bg = zwm_get_color(config.bg_color);
-	xcolor_focus_bg = zwm_get_color(config.focus_bg_color);
-	load_font(&font);
+	config.xcolor_nborder = zwm_get_color(config.normal_border_color);
+	config.xcolor_fborder = zwm_get_color(config.focus_border_color);
+	config.xcolor_nbg = zwm_get_color(config.normal_bg_color);
+	config.xcolor_fbg = zwm_get_color(config.focus_bg_color);
+	config.xcolor_nshadow = zwm_get_color(config.normal_shadow_color);
+	config.xcolor_fshadow = zwm_get_color(config.focus_shadow_color);
 	gc = XCreateGC(dpy, root, 0, NULL);
-	XSetFont (dpy, gc, font->fid);
-
+	load_font();
 	zwm_spawn("~/.zwm/init");
-
 	zwm_client_scan();
 }
 
@@ -256,9 +196,16 @@ zwm_cleanup(void) {
 	XSync(dpy, False);
 }
 
+void zwm_quit(const char *arg);
+void
+sig(int s)
+{
+	zwm_event_quit(NULL);
+}
+
 int
 main(int argc, char *argv[]) {
-	setlocale(LC_CTYPE, "");
+	setlocale(LC_ALL, getenv("LANG"));
 
 	if(!(dpy = XOpenDisplay(getenv("DISPLAY"))))
 	{
@@ -273,7 +220,11 @@ main(int argc, char *argv[]) {
 	zwm_check();
 
 	zwm_init();
+	signal(SIGINT, sig);
+	signal(SIGTERM, sig);
+	signal(SIGHUP, sig);
 	zwm_event_loop();
+	zwm_quit(NULL);
 	zwm_cleanup();
 
 	XCloseDisplay(dpy);
@@ -306,11 +257,12 @@ zwm_free(void *p)
 
 void
 zwm_restart(const char *p) {
-
-	/* The double-fork construct avoids zombie processes and keeps the code
-	 * clean from stupid signal handlers. */
-	if(dpy)
-		close(ConnectionNumber(dpy));
+	Client *c = zwm_client_head();
+	while(c){
+		zwm_client_unmanage(c);
+		c = zwm_client_head();
+	}
+	XCloseDisplay(dpy);
 	setsid();
 	execlp( "zwm", "", NULL);
 	fprintf(stderr, "restart failed");
@@ -323,8 +275,6 @@ void zwm_spawn(const char *cmd)
 		shell = "/bin/sh";
 	if(!cmd)
 		return;
-	/* The double-fork construct avoids zombie processes and keeps the code
-	 * clean from stupid signal handlers. */
 	if(fork() == 0) {
 		if(fork() == 0) {
 			if(dpy)

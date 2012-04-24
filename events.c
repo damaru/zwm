@@ -1,9 +1,6 @@
 #include "zwm.h"
 
-#define SNAP			1	/* snap pixel */
-
-void
-expose(XEvent *e) {
+static void expose(XEvent *e) {
 	Client *c;
 	XExposeEvent *ev = &e->xexpose;
 	 if((c = zwm_client_get(ev->window))) {
@@ -11,7 +8,15 @@ expose(XEvent *e) {
 	 }
 }
 
-void
+typedef void (*ButtonFunc)(Client *);
+
+static ButtonFunc bfuncs[] = {
+	zwm_client_iconify,
+	zwm_client_toggle_floating,
+	zwm_client_kill,
+};
+
+static void
 buttonpress(XEvent *e) {
 	Client *c;
 	XButtonPressedEvent *ev = &e->xbutton;
@@ -20,9 +25,14 @@ buttonpress(XEvent *e) {
 	 if((c = zwm_client_get(ev->window))) {
 		zwm_client_focus(c);
 
-//		if(CLEANMASK(ev->state) != MODKEY) return;
-
 		if(ev->button == Button1) {
+			int j = c->w - 3*config.title_height;
+			if(ev->x > j )
+			{
+				int i = (ev->x - j)/config.title_height;
+				if(i < 3) bfuncs[i](c);
+				return;
+			}
 			zwm_client_raise(c);
 			zwm_client_mousemove(c);
 		}
@@ -35,17 +45,7 @@ buttonpress(XEvent *e) {
 	}
 }
 
-void
-mappingnotify(XEvent *e) {
-	XMappingEvent *ev = &e->xmapping;
-	DBG_ENTER();
-
-	XRefreshKeyboardMapping(ev);
-//	if(ev->request == MappingKeyboard)
-//		keypress(NULL);
-}
-
-void
+static void
 maprequest(XEvent *e) {
 	static XWindowAttributes wa;
 	XMapRequestEvent *ev = &e->xmaprequest;
@@ -64,7 +64,7 @@ maprequest(XEvent *e) {
 	}
 }
 
-void
+static void
 configurenotify(XEvent *e) {
 	XConfigureEvent *ev = &e->xconfigure;
 
@@ -73,11 +73,11 @@ configurenotify(XEvent *e) {
 		DBG_ENTER();
 		screen[0].w = ev->width;
 		screen[0].h = ev->height;
-		zwm_update_screen_geometry();
+		zwm_update_screen_geometry(False);
 	}
 }
 
-void
+static void
 configurerequest(XEvent *e) {
 	Client *c;
 	XConfigureRequestEvent *ev = &e->xconfigurerequest;
@@ -86,31 +86,26 @@ configurerequest(XEvent *e) {
 
 	c = zwm_client_get(ev->window);
 	if(c && c->type == ZenNormalWindow) {
-//		c->ismax = False;
-		if( c->isfloating ) {	
-
+		if( c->isfloating ) {
 			if(ev->value_mask & CWX)
 				c->x = ev->x;
 			if(ev->value_mask & CWY)
-				c->y = ev->y-20;
+				c->y = ev->y;
 			if(ev->value_mask & CWWidth)
-				c->w = ev->width;
+				c->w = ev->width+2*c->border;
 			if(ev->value_mask & CWHeight)
-				c->h = ev->height+20;
-			if((c->x + c->w) > screen[0].w && c->isfloating)
-				c->x = screen[0].w / 2 - c->w / 2; /* center in x direction */
-			if((c->y + c->h) > screen[0].h && c->isfloating)
-				c->y =  screen[0].h / 2 - c->h / 2; /* center in y direction */
+				c->h = ev->height+config.title_height+c->border;
 
 			if((ev->value_mask & (CWX | CWY))
 			&& !(ev->value_mask & (CWWidth | CWHeight)))
-				zwm_client_send_configure(c);
+				zwm_x11_configure_window(c);
 
-			if(zwm_client_visible(c))
-				zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
+			if(zwm_client_visible(c, c->view))
+			zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
+
 		} else {
-			zwm_client_send_configure(c);
-			if(!zwm_client_visible(c))
+			zwm_x11_configure_window(c);
+			if(!zwm_client_visible(c, c->view))
 				zwm_client_raise(c);
 		}
 	} else {
@@ -131,7 +126,7 @@ configurerequest(XEvent *e) {
 	}
 }
 
-void
+static void
 destroynotify(XEvent *e) {
 	Client *c;
 	XDestroyWindowEvent *ev = &e->xdestroywindow;
@@ -141,17 +136,7 @@ destroynotify(XEvent *e) {
 		zwm_client_unmanage(c);
 }
 
-void
-leavenotify(XEvent *e) {
-	XCrossingEvent *ev = &e->xcrossing;
-	DBG_ENTER();
-
-	if((ev->window == root) && !ev->same_screen) {
-		//zwm_client_focus(NULL);
-	}
-}
-
-void
+static void
 enternotify(XEvent *e) {
 	Client *c;
 	XCrossingEvent *ev = &e->xcrossing;
@@ -164,7 +149,7 @@ enternotify(XEvent *e) {
 		zwm_client_focus(c);
 }
 
-void
+static void
 propertynotify(XEvent *e) {
 	Client *c;
 	Window trans;
@@ -177,9 +162,8 @@ propertynotify(XEvent *e) {
 			default: break;
 			case XA_WM_TRANSIENT_FOR:
 				XGetTransientForHint(dpy, ev->window, &trans);
-			//	if(!c->isfloating && (c->isfloating = (getclient(trans) != NULL)))
 				if((zwm_client_get(trans) != NULL))
-					zwm_layout_arrange();
+					zwm_layout_dirty();
 				break;
 			case XA_WM_NORMAL_HINTS:
 				//updatesizehints(c);
@@ -193,7 +177,7 @@ propertynotify(XEvent *e) {
 }
 
 
-void
+static void
 unmapnotify(XEvent *e) {
 	Client *c;
 	XUnmapEvent *ev = &e->xunmap;
@@ -203,9 +187,6 @@ unmapnotify(XEvent *e) {
 		zwm_client_unmanage(c);
 
 }
-
-void keypress(XEvent *e);
-Bool running = True;
 
 void
 zwm_event_flush_x11(long mask)
@@ -224,8 +205,15 @@ void zwm_event(int fd, int mode, void *data)
 		} else {
 			zwm_event_emit(ZenX11Event, &ev);
 		}
+		zwm_layout_rearrange();
 	}
 }
+
+void zwm_event_quit(void)
+{
+	zen_events_quit();
+}
+
 void
 zwm_event_loop(void) {
 	XSync(dpy, False);
@@ -245,12 +233,10 @@ void zwm_event_init()
 	zen_events_init();
 	zwm_event_register(ButtonPress, (ZenEFunc)buttonpress, NULL);
 	zwm_event_register(Expose, (ZenEFunc)expose, NULL);
-	zwm_event_register(LeaveNotify, (ZenEFunc)leavenotify, NULL);
 	zwm_event_register(EnterNotify, (ZenEFunc)enternotify, NULL);
 	zwm_event_register(ConfigureRequest, (ZenEFunc)configurerequest, NULL);
 	zwm_event_register(ConfigureNotify, (ZenEFunc)configurenotify, NULL);
 	zwm_event_register(DestroyNotify, (ZenEFunc)destroynotify, NULL);
-//	zwm_event_register(MappingNotify, (ZenEFunc)mappingnotify, NULL);
 	zwm_event_register(MapRequest, (ZenEFunc)maprequest, NULL);
 	zwm_event_register(UnmapNotify, (ZenEFunc)unmapnotify, NULL);
 	zwm_event_register(PropertyNotify, (ZenEFunc)propertynotify, NULL);

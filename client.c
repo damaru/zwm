@@ -1,4 +1,6 @@
 #include "zwm.h"
+#include <string.h>
+#include <stdio.h>
 
 DEFINE_GLOBAL_LIST_DEFINE(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_HEAD(zwm_client,Client,node);
@@ -9,83 +11,68 @@ DEFINE_GLOBAL_LIST_PUSH_HEAD(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_PUSH_TAIL(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_REMOVE(zwm_client,Client,node);
 
+#define REPARENT 1
+
+const char *iconr = "0.r";
 unsigned int num_floating = 0;
 static int privcount = 0;
 static void grabbuttons(Client *c, Bool focused);
-
 Client *sel = NULL;
 
-void zwm_auto_view(int v);
-
-/*
- * send size information to the client
- */
 void
-zwm_client_send_configure(Client *c) {
-	XConfigureEvent ce;
-	if(c->type != ZenNormalWindow)
-		return;
-	ce.type = ConfigureNotify;
-	ce.display = dpy;
-	ce.event = c->win;
-	ce.window = c->win;
-	ce.x = c->x;
-	ce.y = c->y+20;
-	ce.width = c->w;
-	ce.height = c->h-20;
-	ce.border_width = c->border;
-	ce.above = None;
-	ce.override_redirect = False;
-	XSendEvent(dpy, c->win, False, StructureNotifyMask, (XEvent *)&ce);
+zwm_x11_configure_window(Client *c) {
+	XWindowChanges wc;
+	int th = 0;
 
-	ce.y = c->y;
-	ce.height = 20;
-	XSendEvent(dpy, c->frame, False, StructureNotifyMask, (XEvent *)&ce);
-}
+	if(c->hastitle){
+		th = config.title_height;
+	}
 
-/* There's no way to check accesses to destroyed windows, thus those cases are
- * ignored (especially on UnmapNotify's).  Other types of errors call Xlibs
- * default error handler, which may call exit.  */
-int
-xerror(Display *dpy, XErrorEvent *ee) {
+	wc.x = c->x;
+	wc.y = c->y+th;
+	wc.width = c->w;
+	wc.height = c->h-th;
+	wc.border_width = c->border;
 
-#if 0
-	if(ee->error_code == BadWindow
-	|| (ee->request_code == X_SetInputFocus && ee->error_code == BadMatch)
-	|| (ee->request_code == X_PolyText8 && ee->error_code == BadDrawable)
-	|| (ee->request_code == X_PolyFillRectangle && ee->error_code == BadDrawable)
-	|| (ee->request_code == X_PolySegment && ee->error_code == BadDrawable)
-	|| (ee->request_code == X_ConfigureWindow && ee->error_code == BadMatch)
-	|| (ee->request_code == X_GrabKey && ee->error_code == BadAccess)
-	|| (ee->request_code == X_CopyArea && ee->error_code == BadDrawable))
-		return 0;
-	fprintf(stderr, "dwm: fatal error: request code=%d, error code=%d\n",
-		ee->request_code, ee->error_code);
-//	return xerrorxlib(dpy, ee); /* may call exit */
+#ifdef REPARENT
+	if(c->hastitle){
+		wc.x = 0;
+		wc.y = th;
+		wc.width = c->w - c->border;
+		wc.height = c->h - th - c->border;
+		wc.border_width = 0;
+	}
 #endif
-	return 0;
+	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 }
-
 
 static int
 get_type(Window w)
 {
-	Atom t =  zwm_x11_get_window_type(w);
-#define CHECK_RET(a, b) do{if(t == a){return b;}}while(0)
-
-	CHECK_RET(_NET_WM_WINDOW_TYPE_DOCK, ZenDockWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_NORMAL, ZenNormalWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_DIALOG, ZenDialogWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_UTILITY, ZenDialogWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_DESKTOP, ZenDesktopWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZenSplashWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLBAR, ZenSplashWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_DND, ZenSplashWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_MENU, ZenSplashWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_DROPDOWN_MENU, ZenSplashWindow);
-	CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLTIP, ZenSplashWindow);
-	if(zwm_x11_check_atom(w, _NET_WM_WINDOW_TYPE, _NET_WM_STATE_MODAL)){
+	if(zwm_x11_check_atom(w, _NET_WM_STATE, _NET_WM_STATE_FULLSCREEN)){
+		return ZenFullscreenWindow;
+	} else if(zwm_x11_check_atom(w, _NET_WM_WINDOW_TYPE, _NET_WM_STATE_MODAL)){
 		return ZenDialogWindow;
+	} else {
+		Atom a[32];
+		unsigned long left;
+		unsigned long i;
+		unsigned long n = zwm_x11_get_atoms(w, _NET_WM_WINDOW_TYPE, XA_ATOM, 
+				a, 32, &left);
+		for(i = 0; i<n; i++) {
+#define CHECK_RET(t, r) do{if(a[i] == t){return r;}}while(0)
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DOCK, ZenDockWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_NORMAL, ZenNormalWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DIALOG, ZenDialogWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_UTILITY, ZenDialogWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DESKTOP, ZenDesktopWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZenSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLBAR, ZenSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DND, ZenSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_MENU, ZenSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DROPDOWN_MENU, ZenSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLTIP, ZenSplashWindow);
+		}
 	}
 	return ZenNormalWindow;
 }
@@ -114,10 +101,10 @@ zwm_client_setstate(Client *c, int state)
 	} else {
 		XLowerWindow(dpy, c->win);
 		XLowerWindow(dpy, c->frame);
-		//zwm_client_focus(NULL);
+		zwm_client_refocus();
 	}
 	zwm_event_emit(ZenClientState, c);
-	zwm_layout_arrange();
+	zwm_layout_dirty();
 }
 
 void zwm_client_scan(void)
@@ -126,14 +113,16 @@ void zwm_client_scan(void)
 	XWindowAttributes wa;
 	unsigned int num;
 	int i;
-
 	XQueryTree(dpy, root, &d1, &d2, &wins, &num);
 	for (i = 0; i < num; i++) {
         	XGetWindowAttributes(dpy, wins[i], &wa);
 		if (wa.map_state == IsViewable) {
-			zwm_client_manage(wins[i], &wa);
+			XUnmapWindow(dpy, wins[i]);
+			Client *c = zwm_client_manage(wins[i], &wa);
+			if(c)c->ignore=1;
 		}
 	}
+
 	if(wins)
 		XFree(wins);
 }
@@ -148,15 +137,13 @@ Client *zwm_alloc_client(Window w, XWindowAttributes *wa)
 	c->w = wa->width;
 	c->h = wa->height;
 	c->state =  NormalState;
-	c->view = current_view;
+	c->view = zwm_current_view();
 	c->border = config.border_width;
-	c->color = xcolor_normal;
 	c->type = ZenNormalWindow;
 	zen_list_node_init(&c->node);
 	zwm_client_update_name(c);
 	return c;
 }
-
 
 static void create_frame_window(Client *c)
 {
@@ -167,80 +154,119 @@ static void create_frame_window(Client *c)
 	pattr.event_mask = StructureNotifyMask | SubstructureRedirectMask | SubstructureNotifyMask |
 		ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask |
 		EnterWindowMask;
-	c->frame =  XCreateWindow(dpy, root, c->x, c->y, c->w, 20, 1,
+	c->frame =  XCreateWindow(dpy, root, c->x, c->y, c->w, config.title_height, c->border,
 			DefaultDepth(dpy, scr), CopyFromParent, DefaultVisual(dpy, scr),
 			CWOverrideRedirect|CWBackPixel|CWBorderPixel|CWEventMask, &pattr);
 	if(config.show_title)XMapWindow(dpy,c->frame);
 	XSetClassHint(dpy, c->frame, &hint);
-	//XReparentWindow(dpy, c->win, c->frame, 0, 20);
+	XRaiseWindow(dpy, c->frame);
+#ifdef REPARENT
+		XReparentWindow(dpy, c->win, c->frame, 0, config.title_height);
+		XMoveResizeWindow(dpy, c->win, 0, config.title_height, c->w, c->h-config.title_height);
+#endif
 }
 
 void
 zwm_client_update_decoration(Client *c)
 {
-	int color = xcolor_focus;
-	int fill = xcolor_focus_bg;
+	int color = config.xcolor_fborder;
+	int fill = config.xcolor_fbg;
+	char title[1024];
 
-	if(c->type != ZenNormalWindow && c->type != ZenDialogWindow){
+	if(!c->hastitle){
 		return;
 	}
 
 	if(c->focused == False){
-		color = c->color;
-		fill = xcolor_normal;
+		color = config.xcolor_nborder;
+		fill = config.xcolor_nbg;
 	}
 
 	XSetWindowBorder(dpy, c->win, color);
 	if(c->frame) {
+		XGlyphInfo info;
+		XftTextExtentsUtf8(dpy, ifont, (FcChar8*)iconr, strlen(iconr), &info);
+		int iw= info.width;
+		int ih= info.height;
+
+		sprintf(title, "%s", c->name );
 		XSetWindowBackground(dpy, c->frame, fill);
 		XSetWindowBorder(dpy, c->frame, color);
 		XSetForeground(dpy, gc, fill);
-		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, 20);
-		XSetForeground(dpy, gc, xcolor_bg);//TODO make fontgc
-		XDrawString(dpy, c->frame, gc, 5, font->ascent+font->descent-2, c->name, strlen(c->name));
-		XSetForeground(dpy, gc, BlackPixel(dpy,0));//TODO make fontgc
-		XDrawString(dpy, c->frame, gc, 4, font->ascent+font->descent-2-1, c->name, strlen(c->name));
+		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, config.title_height);
+		XSetForeground(dpy, gc, config.xcolor_nshadow);
+
+		XftColor color;
+		color.color.red = ((config.xcolor_nshadow  & 0xFF0000) >> 16 )* 0x101;
+		color.color.green = ((config.xcolor_nshadow  & 0x00FF00) >> 8 )* 0x101;
+		color.color.blue = ((config.xcolor_nshadow  & 0x0000FF) )* 0x101;
+		color.color.alpha = c->focused?0xEEEE:0xCCCC;
+		color.pixel = 0xFFFFFF00;
+		Colormap cmap = DefaultColormap(dpy, scr);
+
+		XftColorAllocValue(dpy, DefaultVisual(dpy, scr), cmap, &color.color, &color);
+		XftDraw *draw = XftDrawCreate(dpy, c->frame, DefaultVisual(dpy, scr), cmap);
+		XftDrawStringUtf8(draw, &color, xfont, 4*c->border, ih-1, (XftChar8 *)title, strlen(title));
+		XftDrawStringUtf8(draw, &color, ifont, c->w-iw-4*c->border+1, ih-1, (const FcChar8 *)iconr, strlen(iconr));
+		if(c->focused){
+			sprintf(title, "%s",c->name );
+			color.color.red = ((BlackPixel(dpy,0)  & 0xFF0000) >> 16 )* 0x101;
+			color.color.green = ((BlackPixel(dpy,0)  & 0x00FF00) >> 8 )* 0x101;
+			color.color.blue = ((BlackPixel(dpy,0)  & 0x0000FF) )* 0x101;
+			color.color.alpha = 0xFFFF;
+			XftDrawStringUtf8(draw, &color, xfont, 4*c->border-1, ih-2, (XftChar8 *)title, strlen(title));
+			XftDrawStringUtf8(draw, &color, ifont, c->w-iw-4*c->border, ih-2, (const FcChar8 *)iconr, strlen(iconr));
+		}
+		free(draw);
 	}
 }
 
-
-
-void zwm_client_manage(Window w, XWindowAttributes *wa)
+Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 {
-	XWindowChanges wc;
-
+	int scr = zwm_current_screen();
+	int vew = zwm_current_view();
 	Client* old = zwm_client_get(w);
+	
 	if(old && old->win == w ){
-		return;
+		return NULL;
 	}
 
 	if(wa->override_redirect){
-		return ;
+		return NULL;
 	}
 
 	Client *c = zwm_alloc_client(w, wa);
+	c->view = vew;
 	c->type = get_type(w);
 	switch (c->type) {
 		case ZenDesktopWindow:
-			return;
+			c->hastitle = 0;
+			c->isfloating = 0;
+			XMapWindow(dpy, w);
+			zwm_event_emit(ZenClientMap, c);
+			zwm_x11_configure_window(c);
 			break;
 		case ZenDockWindow:
 			c->border = 0;
+			c->hastitle = 0;
 			XSelectInput(dpy, w, PropertyChangeMask);
-			XConfigureWindow(dpy, w, CWBorderWidth, &wc);
 			XMapWindow(dpy, w);
+			zwm_event_emit(ZenClientMap, c);
+			zwm_x11_configure_window(c);
+			return c;
 			break;
 		case ZenDialogWindow:
 			c->hastitle = 1;
 			c->type = ZenNormalWindow;
 		case ZenSplashWindow:
 			c->isfloating = True;
-			c->x = wa->x?wa->x:((screen[0].w - wa->width)/2);
-			c->y = wa->y?wa->y:((screen[0].h - wa->height)/2);
-			c->w = wa->width?wa->width:(screen[0].w/2);
-			c->h = wa->height?wa->height:(screen[0].h/2);
-			wc.border_width = 0;
+			c->x = screen[scr].x + (wa->x?wa->x:((screen[scr].w - wa->width)/2));
+			c->y = wa->y?wa->y:((screen[scr].h - wa->height)/2);
 			num_floating++;
+			break;
+		case ZenFullscreenWindow:
+			c->type = ZenNormalWindow;
+			zwm_client_fullscreen(c);
 			break;
 		case ZenNormalWindow:
 			c->hastitle = 1;
@@ -248,59 +274,61 @@ void zwm_client_manage(Window w, XWindowAttributes *wa)
 	}
 
 	if(c->hastitle){
-		c->h += 20;
+		c->h += config.title_height;
 		create_frame_window(c);
 	}
-	wc.x = c->x;
-	wc.y = c->y;
-	wc.width = c->w;
-	wc.height = c->h;
-	wc.border_width = c->border;
-	XConfigureWindow(dpy, w, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
-	zwm_client_send_configure(c);
+
 	XMapWindow(dpy, c->win);
+	XRaiseWindow(dpy, c->win);
+
+	if(c->isfloating)
+		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
+
 	zwm_client_update_decoration(c);
 	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_push_head(c);
 	zwm_event_emit(ZenClientMap, c);
-	zwm_layout_arrange();
-	zwm_client_focus(c);
+	zwm_layout_dirty();
+	zwm_x11_configure_window(c);
 	zwm_client_warp(c);
-	return;
-}
-
-int xerrordummy (Display *dpy, XErrorEvent *ee) 
-{
-	return 0;
+	zwm_client_raise(c);
+	return c;
 }
 
 void
 zwm_client_unmanage(Client *c) {
-	zwm_event_emit(ZenClientUnmap, c);
+	if(c->ignore)
+	{
+		c->ignore--;
+		return;
+	}
 	XGrabServer(dpy);
-	XSetErrorHandler(xerrordummy);
+#ifdef REPARENT
+	XReparentWindow(dpy, c->win, root, c->x, c->y+config.title_height);
+#endif
 	zwm_client_remove(c);
 	if(c->isfloating){
 		num_floating--;
 	}	
-	if(sel == c) {
-		zwm_client_focus(NULL);
+	if(sel == c){
+		Client *n = zwm_client_get(c->lastfocused);
+		if (n && n->win == c->lastfocused) {
+			zwm_client_focus(n);
+			zwm_client_warp(n);
+		} else {
+			zwm_client_refocus();
+		}
 	}
 
 	XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
 	if(c->frame){
-		XUnmapWindow(dpy, c->frame);
 		XDestroyWindow(dpy, c->frame);
 	}
-	free(c);
-
-	XSync(dpy, False);
-	XSetErrorHandler(xerror);
 	XUngrabServer(dpy);
-	zwm_layout_arrange();
-	zwm_auto_view(0);
+	zwm_auto_view();
+	zwm_event_emit(ZenClientUnmap, c);
+	free(c);
 }
-
 
 Client *
 zwm_client_get(Window w) {
@@ -313,15 +341,16 @@ zwm_client_get(Window w) {
 }
 
 int
-zwm_client_count(void){
-	return (zwm_client->count);
+zwm_client_count(void)
+{
+	return zwm_client->count;
 }
 
 Bool
-zwm_client_visible(Client *c) 
+zwm_client_visible(Client *c, int view) 
 {
 	return c->state == NormalState &&
-		c->view == current_view && 
+		zwm_view_mapped(c->view) && c->view == view &&
 		(c->type == ZenNormalWindow || c->type == ZenDialogWindow) ;
 }
 
@@ -337,19 +366,31 @@ zwm_client_warp(Client *c)
 }
 
 void
+zwm_client_refocus(void)
+{
+	Client *c = zwm_client_head();
+	while(c && !zwm_client_visible(c, zwm_current_view()))
+	{
+		c = zwm_client_next(c);
+	}
+	if (c) {
+		zwm_client_focus(c);
+	} else {
+		sel = NULL;
+		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
+	}
+}
+
+void
 zwm_client_focus(Client *c) 
 {
-	if(!c || (c && !zwm_client_visible(c))){  
-		/* find a client*/
-		c = zwm_client_head();
-		while(c && !zwm_client_visible(c))
-		{
-			c = zwm_client_next(c);
-		}
+	if(!zwm_client_visible(c, zwm_current_view())){
+		zwm_client_refocus();
 	}
 
 	/* unfocus */
 	if (sel && sel != c) {
+		c->lastfocused = sel->win;
 		sel->focused = False;
 		grabbuttons(sel, False);
 		zwm_client_update_decoration(sel);
@@ -357,25 +398,19 @@ zwm_client_focus(Client *c)
 	}
 
 	/* focus */
-	if(c) {
-		grabbuttons(c, True);
-		sel = c;
-		c->focused = True;
-//		XSetWindowBorder(dpy, c->win, c->color);
-		XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
-		zwm_client_update_decoration(c);
-		zwm_event_emit(ZenClientFocus, c);
-	} else {
-		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
-	}
+	grabbuttons(c, True);
+	sel = c;
+	c->focused = True;
+	XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
+	zwm_client_update_decoration(c);
+	zwm_event_emit(ZenClientFocus, c);
 }
 
 void
 zwm_client_raise(Client *c)
 {
+	zwm_client_set_view(c, zwm_current_view());
 	zwm_client_setstate(c, NormalState);
-	zwm_client_set_view(c, current_view);
-	zwm_client_update_decoration(c);
 }
 
 static void
@@ -404,19 +439,6 @@ grabbuttons(Client *c, Bool focused) {
 	}
 }
 
-void zwm_client_move(Client *c, int x, int y)
-{
-	c->x =  x;
-	c->y =  y;
-	if(c->frame){
-		XMoveWindow(dpy, c->win, x, y + 20);
-		XMoveWindow(dpy, c->frame, x, y);
-	}else {
-		XMoveWindow(dpy, c->win, x, y );
-	}
-}
-
-
 void
 zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 {
@@ -425,11 +447,17 @@ zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 	c->y =  y;
 	c->w =  w;
 	c->h =  h;
-	if(c->frame){
-		XMoveResizeWindow(dpy, c->win, x, y+20, w, h-20);
-		XMoveResizeWindow(dpy, c->frame, x, y, w, 20);
+//	printf("%d %d %d %d %s\n",x,y,w,h,c->name);
+	if(c->hastitle && c->frame){
+#ifdef REPARENT
+		XMoveResizeWindow(dpy, c->win, c->border, config.title_height, w-2*c->border, h-config.title_height-c->border);
+#else
+		XMoveResizeWindow(dpy, c->win, x, y+config.title_height, w, h-config.title_height);
+#endif
+		XMoveResizeWindow(dpy, c->frame, x, y, w, h);
 	} else {
 		XMoveResizeWindow(dpy, c->win, x, y, w, h);
+		if(c->frame)XMoveResizeWindow(dpy, c->frame, x, y, w, h);
 	}
 	XSync(dpy, False);
 }
@@ -438,7 +466,10 @@ void
 zwm_client_fullscreen(Client *c)
 {
 	c->isfloating = True;
+	c->hastitle = 0;
 	num_floating++;
+	c->border = 0;
+	XSetWindowBorderWidth(dpy, c->win, c->border);
 	zwm_client_moveresize(c, screen[0].x - c->border,
 			   screen[0].y - c->border, 
 			   screen[0].w , 
@@ -446,13 +477,25 @@ zwm_client_fullscreen(Client *c)
 }
 
 void
+zwm_client_unfullscreen(Client *c)
+{
+	c->isfloating = False;
+	c->hastitle = 1;
+	num_floating--;
+	c->border = config.border_width;
+	XSetWindowBorderWidth(dpy, c->win, c->border);
+	zwm_client_update_decoration(c);
+	zwm_layout_arrange();
+}
+
+void
 zwm_client_float(Client *c)
 {
 	if(!c->isfloating){
 		zwm_client_toggle_floating(c);
+		zwm_layout_rearrange();
 	}
 }
-
 
 void
 zwm_client_mousemove(Client *c) {
@@ -469,6 +512,7 @@ zwm_client_mousemove(Client *c) {
 		return;
 	
 
+	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_float(c);
 
 	XQueryPointer(dpy, root, &dummy, &dummy, &x1, &y1, &di, &di, &dui);
@@ -505,6 +549,7 @@ zwm_client_mouseresize(Client *c) {
 			None, zwm_get_cursor(CurResize), CurrentTime) != GrabSuccess)
 		return;
 
+	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_float(c);
 
 	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->border - 1, c->h + c->border - 1);
@@ -576,51 +621,15 @@ zwm_client_kill(Client *c)
 }
 
 void
-zwm_current_view(int  v)
-{
-	if (v < num_views && v != current_view) {
-		current_view = v;
-		zwm_layout_arrange();
-		zwm_client_focus(NULL);
-		zwm_event_emit(ZenView, (void*)current_view);
-	}
-}
-
-void zwm_auto_view(int v)
-{
-	Client *c;
-	int max_view = 0;
-	int min_view = v;
-	int current_count = 0;
-
-	if (config.auto_view) {
-		for(c = zwm_client_head();
-		       	c ;
-		       	c = zwm_client_next(c))
-		{
-			max_view = c->view > max_view ? c->view: max_view;
-			min_view = c->view < min_view ? c->view: min_view;
-			if(c->view == current_view)
-			{
-				current_count++;
-			}
-		}
-
-		num_views = max_view + 1;
-		if(!current_count)
-			zwm_current_view(min_view);
-	}
-}
-
-void
 zwm_client_set_view(Client *c, int v)
 {
 	if (c->view != v) {
 		c->view = v;
-		if (c == sel) {
-			zwm_client_focus(NULL);
+		if(v > num_views)
+		{
+			num_views = v+1;
 		}
-		zwm_auto_view(v);
+		zwm_auto_view();
 		zwm_layout_arrange();
 		zwm_event_emit(ZenClientView, c);
 	}
@@ -631,6 +640,7 @@ zwm_client_update_name(Client *c)
 {
 	if(!zwm_x11_get_text_property(c->win, _NET_WM_NAME, c->name, sizeof c->name))
 	zwm_x11_get_text_property(c->win, WM_NAME, c->name, sizeof c->name);
+	zwm_x11_get_text_property(c->win, WM_CLASS, c->cname, sizeof c->cname);
 	zwm_event_emit(ZenClientProperty, c);
 	zwm_client_update_decoration(c);
 
@@ -638,12 +648,12 @@ zwm_client_update_name(Client *c)
 
 Client *zwm_client_next_visible(Client *c)
 {
-	for(; c; c = zwm_client_next(c)) {
-		if(zwm_client_visible(c) && !c->isfloating){
-			return c;
-		}
-	}
-	return c;
+       for(; c; c = zwm_client_next(c)) {
+               if(zwm_client_visible(c, zwm_current_view()) && !c->isfloating){
+                       return c;
+               }
+       }
+       return c;
 }
 
 void
@@ -658,52 +668,23 @@ zwm_client_toggle_floating(Client *c) {
 	zwm_event_emit(ZenClientFloating, c);
 
 	if(c->isfloating){
+		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
 		num_floating++;
-		c->color = xcolor_floating;
 		zwm_client_restore_geometry(c, &c->fpos);
 	} else {
 		num_floating--;
+		zwm_ewmh_set_window_opacity(c->frame, 1);
 		zwm_client_save_geometry(c, &c->fpos);
-		c->color = xcolor_normal;
 	}
-	zwm_layout_arrange();
+	zwm_layout_dirty();
 }
 
-int zwm_client_private_key(void)
-{
-	return privcount++;
-}
-
-void zwm_client_set_private(Client *c, int key, void *data)
-{
-	c->priv[key] = data;
-}
-
-void *zwm_client_get_private(Client *c, int key)
-{
-	return c->priv[key];
-}
-
-int zwm_client_num_floating(void)
-{
-	return num_floating;
-}
-
-void zwm_client_zoom(const char *arg) {
-	Client *c = sel;
-	if( c == zwm_client_head()) {
-		c = zwm_client_next_visible(zwm_client_next(c));
-	}
-
+void zwm_client_zoom(Client *c) {
 	if(c) {
-		zwm_event_emit(ZenClientUnmap, c);
 		zwm_client_remove(c);
 		zwm_client_push_head(c);
 		zwm_layout_arrange();
-		zwm_client_focus(c);
-		zwm_client_raise(c);
 		zwm_client_warp(c);
-		zwm_event_emit(ZenClientMap, c);
 	}
 }
 
@@ -712,16 +693,16 @@ zwm_focus_prev(const char *arg) {
 	Client *c;
 
 	if(!sel) {
-		zwm_client_focus(NULL);
+		zwm_client_refocus();
 		return;
 	}
 
 	for(c = zwm_client_prev(sel);
-		       	c && !zwm_client_visible(c);
+		       	c && !zwm_client_visible(c, zwm_current_view());
 		       	c = zwm_client_prev(c));
 	if(!c) {
 		for(c = zwm_client_tail();
-		  c && !zwm_client_visible(c);
+		  c && !zwm_client_visible(c, zwm_current_view());
 		  c = zwm_client_prev(c));
 	}
 
@@ -737,27 +718,29 @@ zwm_focus_next(const char *arg) {
 	Client *c;
 
 	if(!sel) {
-		zwm_client_focus(NULL);
+		zwm_client_refocus();
 		return;
 	}
 
 	for(c = zwm_client_next(sel);
-		       	c && !zwm_client_visible(c);
+		       	c && !zwm_client_visible(c, zwm_current_view());
 		       	c = zwm_client_next(c));
 	if(!c) {
 		for(c = zwm_client_head();
-		  c && !zwm_client_visible(c); c = zwm_client_next(c));
+		  c && !zwm_client_visible(c, zwm_current_view()); c = zwm_client_next(c));
 	}
 
 	if(c) {
-		zwm_client_raise(c);
 		zwm_client_focus(c);
+		zwm_client_raise(c);
 		zwm_client_warp(c);
 	}
 }
 
 void zwm_client_save_geometry(Client *c, ZenGeom *g)
 {
+	/* we don't save view because we don't want the client to jump to
+	 * unmapped view when floats are toggled */
 	g->x = c->x;
 	g->y = c->y;
 	g->w = c->w;

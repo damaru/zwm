@@ -1,4 +1,5 @@
 #include "zwm.h"
+#include <limits.h>
 
 struct {
 #define INIT_ATOM(name) Atom name
@@ -22,39 +23,6 @@ zwm_init_atoms(void) {
 		     _NET_SUPPORTED, XA_ATOM, 32,
 		     PropModeReplace, (unsigned char *) &_atoms,
 		     NATOMS);
-}
-
-Atom
-zwm_x11_get_window_type(Window win)
-{
-    Atom real, *atoms;
-    int format;
-    unsigned char *data = NULL;
-    unsigned long i,  n, extra;
-    Atom ret = 0;
-    if(XGetWindowProperty(dpy, win, _NET_WM_WINDOW_TYPE, 0L, LONG_MAX, False,
-                          XA_ATOM, &real, &format, &n, &extra,
-                          (unsigned char **) &data) == Success && data){
-        atoms = (Atom *) data;
-	for(i = 0; i < n; i++){
-		if (atoms[i] == _NET_WM_WINDOW_TYPE_DND ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_DESKTOP ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_DOCK ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_TOOLBAR ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_MENU ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_DIALOG ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_NORMAL ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_UTILITY ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_SPLASH ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_DROPDOWN_MENU ||
-	            atoms[i] == _NET_WM_WINDOW_TYPE_TOOLTIP) {
-			ret = atoms[i];
-			break;
-		}
-	}
-	free(data);
-    }
-    return ret;
 }
 
 Bool
@@ -87,7 +55,7 @@ zwm_x11_set_atoms(Window w, Atom a, Atom type, unsigned long *val,
 }
 
 unsigned long 
-zwm_x11_get_atoms(Window w, Atom a, Atom type, unsigned long off,
+zwm_x11_get_atoms(Window w, Atom a, Atom type, 
     unsigned long *ret, unsigned long nitems, unsigned long *left)
 {
     Atom real_type;
@@ -97,7 +65,7 @@ zwm_x11_get_atoms(Window w, Atom a, Atom type, unsigned long off,
     unsigned long *p;
     unsigned char *data;
 
-    XGetWindowProperty(dpy, w, a, off, nitems, False, type,
+    XGetWindowProperty(dpy, w, a,0L, nitems, False, type,
         &real_type, &real_format, &items_read, &bytes_left, &data);
 
     if (real_format == 32 && items_read) {
@@ -109,14 +77,6 @@ zwm_x11_get_atoms(Window w, Atom a, Atom type, unsigned long off,
     } else {
 	return 0;
     }
-}
-
-Bool
-zwm_x11_append_atoms(Window w, Atom a, Atom type, unsigned long *val,
-    unsigned long nitems)
-{
-    return (XChangeProperty(dpy, w, a, type, 32, PropModeAppend,
-        (unsigned char *)val, nitems) == Success);
 }
 
 Bool
@@ -133,6 +93,8 @@ zwm_x11_get_text_property(Window w, Atom atom, char *text, unsigned int size)
 	if(!name.nitems)
 		return False;
 	if(name.encoding == XA_STRING)
+		strncpy(text, (char *)name.value, size - 1);
+	else if(name.encoding == UTF8_STRING)
 		strncpy(text, (char *)name.value, size - 1);
 	else {
 		if(XmbTextPropertyToTextList(dpy, &name, &list, &n) >= Success

@@ -1,5 +1,6 @@
 
 #include "zwm.h"
+#include <X11/cursorfont.h>
 
 static Cursor cursor[CurLast];
 
