@@ -239,7 +239,6 @@ void zwm_layout_cycle(const char *arg) {
 		zwm_client_remove(c);
 		zwm_client_push_tail(c);
 		zwm_client_raise(next);
-		zwm_client_focus(next);
 		zwm_event_emit(ZenClientMap, next);
 		zwm_layout_dirty();
 	}

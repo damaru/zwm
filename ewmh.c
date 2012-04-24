@@ -53,7 +53,6 @@ static void process_state_atom(Client *c, Atom state, int set) {
         }
         zwm_layout_dirty();
         zwm_client_raise(c);
-        zwm_client_focus(c);
 	client_list(NULL,NULL);
     }
 }

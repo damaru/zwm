@@ -313,7 +313,7 @@ zwm_client_unmanage(Client *c) {
 	if(sel == c){
 		Client *n = zwm_client_get(c->lastfocused);
 		if (n && n->win == c->lastfocused) {
-			zwm_client_focus(n);
+			zwm_client_raise(n);
 			zwm_client_warp(n);
 		} else {
 			zwm_client_refocus();
@@ -630,7 +630,6 @@ zwm_client_set_view(Client *c, int v)
 			num_views = v+1;
 		}
 		zwm_auto_view();
-		zwm_layout_arrange();
 		zwm_event_emit(ZenClientView, c);
 	}
 }
@@ -684,6 +683,7 @@ void zwm_client_zoom(Client *c) {
 		zwm_client_remove(c);
 		zwm_client_push_head(c);
 		zwm_layout_arrange();
+		zwm_client_raise(c);
 		zwm_client_warp(c);
 	}
 }
@@ -708,7 +708,6 @@ zwm_focus_prev(const char *arg) {
 
 	if(c) {
 		zwm_client_raise(c);
-		zwm_client_focus(c);
 		zwm_client_warp(c);
 	}
 }
@@ -731,7 +730,6 @@ zwm_focus_next(const char *arg) {
 	}
 
 	if(c) {
-		zwm_client_focus(c);
 		zwm_client_raise(c);
 		zwm_client_warp(c);
 	}
