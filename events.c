@@ -8,14 +8,6 @@ static void expose(XEvent *e) {
 	 }
 }
 
-typedef void (*ButtonFunc)(Client *);
-
-static ButtonFunc bfuncs[] = {
-	zwm_client_iconify,
-	zwm_client_toggle_floating,
-	zwm_client_kill,
-};
-
 static void
 buttonpress(XEvent *e) {
 	Client *c;
@@ -26,12 +18,12 @@ buttonpress(XEvent *e) {
 		zwm_client_focus(c);
 
 		if(ev->button == Button1) {
-			int j = c->w - 3*config.title_height;
+			int j = c->w - config.button_count*config.button_width;
 			if(ev->x > j )
 			{
-				int i = (ev->x - j)/config.title_height;
-				if(i < 3) bfuncs[i](c);
-				return;
+				int i = (ev->x - j)/config.button_width;
+				if(i < config.button_count) config.buttons[i].func(c);
+				return ;
 			}
 			zwm_client_raise(c);
 			zwm_client_mousemove(c);
@@ -175,7 +167,6 @@ propertynotify(XEvent *e) {
 	}
 
 }
-
 
 static void
 unmapnotify(XEvent *e) {

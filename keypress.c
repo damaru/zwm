@@ -73,9 +73,6 @@ keypress(XEvent *e, void *p) {
 		if (h->keysym == keysym 
 			&& CLEANMASK(ev->state) == CLEANMASK(h->modifiers)) {
 			h->func(h->args);
-#ifdef DEBUG
-//			printf("exec %s %s %s\n",h->funcname,h->argv[0], h->argv[1]);
-#endif
 		}
 	}
 }
@@ -118,125 +115,11 @@ void zwm_bindkey(const char* keyname, void *f, const char *arg)
 	XSetErrorHandler(p);
 }
 
-static void
-set_view(const char *arg) {
-	int v =  atoi(arg);
-	if(sel) {
-		zwm_client_set_view(sel, v);
-	}
-}
-
-static void
-goto_view(const char *arg) {
-	int v = atoi(arg);
-	zwm_view_set(v);
-}
-
-
-static void banish(const char *arg)
-{
-	if(sel){
-		zwm_client_set_view(sel, ((zwm_current_view()+1)%2));
-	}
-}
-
-static void flip(const char *arg)
-{
-	if(sel){
-		int next = (zwm_current_view() + 1) % 2;
-		zwm_view_set(next);
-	}
-}
-
-static void zwm_runonce(const char *arg){
-	char data[1024];
-	char *cmd;
-	char *class;
-	Client *c = NULL;
-	strcpy(data,arg);
-	class = strtok(data, ";");
-	cmd = class + strlen(class) + 1;
-	for(c=zwm_client_head();
-			c;
-			c = zwm_client_next(c)) {
-		if(strcasecmp(class, c->cname) == 0) {
-			printf("found CLASS %s, %s, for %s\n",c->cname, c->name, cmd);
-			zwm_client_zoom(c);
-			zwm_client_raise(c);
-			return;
-		}
-	}
-	for(c=zwm_client_head();
-			c;
-			c = zwm_client_next(c)) {
-		if(strcasestr(c->name, class)) {
-			printf("found NAME %s for %s\n",c->name, cmd);
-			zwm_client_zoom(c);
-			zwm_client_raise(c);
-			return;
-		}
-	}
-	zwm_spawn(cmd);
-}
-
-static void client_zoom(const char *arg) {
-	Client *c = sel;
-	if( c && c == zwm_client_head()) {
-		c = zwm_client_next_visible(zwm_client_next(c));
-	}
-
-	if(c) {
-		zwm_client_zoom(c);
-	}
-}
-
-void zwm_quit(const char *arg) {
-	Client *c = zwm_client_head();
-	while(c){
-		zwm_client_unmanage(c);
-		c = zwm_client_head();
-	}
-	zwm_event_quit();
-}
-
 void zwm_keypress_init(void)
 {
+	int i;
 	zwm_event_register(KeyPress, (ZenEFunc)keypress, NULL);
-	zwm_bindkey("Alt-Delete", zwm_client_kill, NULL);
-	zwm_bindkey("Alt-j", zwm_focus_next, NULL);
-	zwm_bindkey("Alt-k", zwm_focus_prev, NULL);
-	zwm_bindkey("Alt-Return", client_zoom, NULL);
-	zwm_bindkey("Alt-Shift-space", zwm_client_toggle_floating, NULL);
-	zwm_bindkey("Alt-space", zwm_layout_set, NULL);
-	zwm_bindkey("Alt-Tab", zwm_layout_cycle, NULL);
-	zwm_bindkey("Ctrl-Alt-q", zwm_quit, NULL);
-	zwm_bindkey("Ctrl-Alt-Return", zwm_client_iconify, NULL);
-	zwm_bindkey("Ctrl-Alt-r", zwm_restart, NULL);
-	zwm_bindkey("Ctrl-Shift-Return", zwm_spawn, "simshell");
-	zwm_bindkey("Alt-F11", zwm_panel_toggle, NULL);
-
-	zwm_bindkey("Alt-1", goto_view, "0");
-	zwm_bindkey("Alt-Shift-1", set_view, "0");
-	zwm_bindkey("Alt-2", goto_view, "1");
-	zwm_bindkey("Alt-Shift-2", set_view, "1");
-	zwm_bindkey("Alt-3", goto_view, "2");
-	zwm_bindkey("Alt-Shift-3", set_view, "2");
-	zwm_bindkey("Alt-4", goto_view, "3");
-	zwm_bindkey("Alt-Shift-4", set_view, "3");
-	zwm_bindkey("Alt-5", goto_view, "4");
-	zwm_bindkey("Alt-Shift-5", set_view, "4");
-	zwm_bindkey("Alt-6", goto_view, "5");
-	zwm_bindkey("Alt-Shift-6", set_view, "5");
-
-	zwm_bindkey("Alt-l", banish, NULL);
-	zwm_bindkey("Alt-h", flip, "simshell");
-
-	zwm_bindkey("Ctrl-Alt-l", zwm_spawn, "standby");
-	zwm_bindkey("Alt-Shift-Return", zwm_runonce, "Screen;st -t Screen -c Screen -e screen -Rd");
-	zwm_bindkey("Alt-Shift-m", zwm_runonce, "Mixer;st -c Mixer -t Mixer -e alsamixer");
-	zwm_bindkey("Alt-g", zwm_runonce, "zweb;zweb");
-	zwm_bindkey("Alt-m", zwm_runonce, "Mutt;st -t Mail -c Mutt -e mutt");
-	zwm_bindkey("Alt-r", zwm_runonce, "Rox;rox");
-	zwm_bindkey("Alt-n", zwm_runonce, "News;st -c News -t News -e newsbeuter");
-	zwm_bindkey("Alt-p", zwm_runonce, "zmenu;dwmenu");
+	for(i = 0; config.keys[i].f; i++){
+		zwm_bindkey(config.keys[i].key, config.keys[i].f, config.keys[i].arg);
+	}
 }

@@ -9,7 +9,6 @@ Display *dpy;
 Window root;
 
 int screen_count = 1;
-unsigned long num_views = 1;
 unsigned long current_view = 0;
 
 unsigned int num_floating;
@@ -20,8 +19,6 @@ ZenGeom screen[MAX_SCREENS];
 /* X color definitions */
 unsigned int numlockmask = 0;
 GC gc;
-XftFont *xfont;
-XftFont *ifont;
 
 #include "config.h"
 
@@ -30,12 +27,6 @@ other_wm_handler(Display *dsply, XErrorEvent *ee) {
 	fprintf(stderr,"zwm eror: another window manager is running\n");
 	exit(-1);
 	return -1;
-}
-
-static void load_font ()
-{
-	xfont = XftFontOpenXlfd(dpy, scr, config.font);
-	ifont = XftFontOpenXlfd(dpy, scr, config.icons);
 }
 
 static void
@@ -182,8 +173,8 @@ zwm_init(void) {
 	config.xcolor_nshadow = zwm_get_color(config.normal_shadow_color);
 	config.xcolor_fshadow = zwm_get_color(config.focus_shadow_color);
 	gc = XCreateGC(dpy, root, 0, NULL);
-	load_font();
 	zwm_spawn("~/.zwm/init");
+	zwm_decor_init();
 	zwm_client_scan();
 }
 
@@ -287,5 +278,15 @@ void zwm_spawn(const char *cmd)
 	}
 	wait(0);
 }
+
+void zwm_quit(const char *arg) {
+	Client *c = zwm_client_head();
+	while(c){
+		zwm_client_unmanage(c);
+		c = zwm_client_head();
+	}
+	zwm_event_quit();
+}
+
 
 

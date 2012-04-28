@@ -19,6 +19,6 @@ endif(NOT X11_FOUND)
 set(LIBS ${LIBS} ${X11_LIBRARIES} "-lzen -lXinerama")
 set(CMAKE_C_FLAGS "-g -Wall")
 include_directories(${INCLUDES})
-add_executable(zwm zwm.h atoms.c client.c cursor.c events.c layouts.c
+add_executable(zwm zwm.h atoms.c client.c cursor.c events.c layouts.c decor.c
 	view.c zwm.c keypress.c ewmh.c panel.c)
 target_link_libraries(zwm ${LIBS})

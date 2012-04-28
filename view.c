@@ -1,7 +1,7 @@
 
 #include "zwm.h"
 
-unsigned long views = 0;
+static unsigned long views = 0;
 
 int zwm_view_get_screen(int view)
 {
@@ -82,13 +82,13 @@ void zwm_auto_view(void)
 		min_view = c->view < min_view ? c->view: min_view;
 		viewc[c->view]++;
 	}
-	num_views = max_view + 1;
+	config.num_views = max_view + 1;
 
 
 	for(i=0; i<screen_count; i++){
 		if(viewc[screen[i].view] <= 0){
 			int j;
-			for(j=0; j<num_views; j++){
+			for(j=0; j<config.num_views; j++){
 				if(viewc[j]>0 && zwm_view_get_screen(j )== -1 ){
 					screen[i].view = j;
 					viewc[j] = -1;
@@ -105,7 +105,7 @@ void zwm_auto_view(void)
 
 void zwm_view_set(int  v)
 {
-	if (v < num_views && v != zwm_current_view()) {
+	if (v < config.num_views && v != zwm_current_view()) {
 		zwm_screen_set_view( zwm_current_screen(), v );
 		zwm_layout_arrange();
 		zwm_client_refocus();

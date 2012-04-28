@@ -1,6 +1,7 @@
 #ifndef _ZWM_H
 #define _ZWM_H
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -9,11 +10,6 @@
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <libzen/events.h>
-#ifndef NO_XFT
-#include <X11/Xft/Xft.h>
-extern XftFont *xfont;
-extern XftFont *ifont;
-#endif
 #include <libzen/list.h>
 
 typedef enum {
@@ -91,6 +87,7 @@ typedef struct
 	unsigned int screen_y;
 	unsigned int screen_w;
 	unsigned int screen_h;
+	unsigned int num_views;
 
 	const char *normal_border_color;
 	const char *focus_border_color;
@@ -106,6 +103,10 @@ typedef struct
 	int anim_steps;
 	int show_title;
 	int title_height;
+	int title_y;
+	int button_width;
+	int button_count;
+	int reparent;
 
 	unsigned int xcolor_nborder;
 	unsigned int xcolor_fborder;
@@ -113,14 +114,22 @@ typedef struct
 	unsigned int xcolor_nbg;
 	unsigned int xcolor_fshadow;
 	unsigned int xcolor_nshadow;
+	
+	char *viewnames[32];
 
+	struct {
+		char *c;
+		void (*func)(Client *);
+	} buttons[32];
 
-} ZenConfig;
+	struct {
+		const char *key;
+		void *f;
+		const char *arg;
+	} keys[64];
+} ZwmConfig;
 
-extern ZenConfig config;
-
-extern unsigned long num_views;
-extern unsigned long views;
+extern ZwmConfig config;
 
 enum
 {
@@ -215,6 +224,7 @@ void zwm_update_screen_geometry(Bool);
 void zwm_update_view();
 void zwm_screen_set_view(int scr, int view);
 void zwm_init_atoms(void);
+void zwm_decor_init(void);
 
 void zwm_x11_configure_window(Client *c);
 Atom zwm_x11_get_window_type(Window win);
@@ -285,6 +295,7 @@ void zwm_client_restore_geometry(Client *c, ZenGeom *g);
 void zwm_client_unfullscreen(Client *c);
 Bool zwm_view_mapped(int v);
 int zwm_current_screen();
+void zwm_quit(const char *arg);
 void zwm_ewmh_set_window_opacity(Window win, float opacity);
 
 unsigned long zwm_x11_get_atoms(Window w, Atom a, Atom type, unsigned long *ret, unsigned long nitems, unsigned long *left);

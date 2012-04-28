@@ -11,9 +11,6 @@ DEFINE_GLOBAL_LIST_PUSH_HEAD(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_PUSH_TAIL(zwm_client,Client,node);
 DEFINE_GLOBAL_LIST_REMOVE(zwm_client,Client,node);
 
-#define REPARENT 1
-
-const char *iconr = "0.r";
 unsigned int num_floating = 0;
 static int privcount = 0;
 static void grabbuttons(Client *c, Bool focused);
@@ -21,29 +18,54 @@ Client *sel = NULL;
 
 void
 zwm_x11_configure_window(Client *c) {
-	XWindowChanges wc;
 	int th = 0;
 
 	if(c->hastitle){
 		th = config.title_height;
 	}
 
+#if 0
+	XWindowChanges wc;
 	wc.x = c->x;
 	wc.y = c->y+th;
 	wc.width = c->w;
 	wc.height = c->h-th;
 	wc.border_width = c->border;
 
-#ifdef REPARENT
-	if(c->hastitle){
+	if(config.reparent && c->hastitle){
 		wc.x = 0;
 		wc.y = th;
 		wc.width = c->w - c->border;
 		wc.height = c->h - th - c->border;
 		wc.border_width = 0;
 	}
+
+	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight, &wc);
 #endif
-	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
+	XConfigureEvent ce;
+	if(c->type != ZenNormalWindow)
+		return;
+	ce.type = ConfigureNotify;
+	ce.display = dpy;
+	ce.event = c->win;
+	ce.window = c->win;
+	ce.x = c->x;
+	ce.y = c->y;
+	ce.width = c->w;
+	ce.height = c->h;
+	ce.border_width = c->border;
+	ce.above = None;
+	ce.override_redirect = False;
+
+	if(config.reparent && c->hastitle){
+		ce.x = 0;
+		ce.y = th;
+		ce.width = c->w - c->border;
+		ce.height = c->h - th - c->border;
+		ce.border_width = 0;
+	}
+
+	XSendEvent(dpy, c->win, False, StructureNotifyMask, (XEvent *)&ce);
 }
 
 static int
@@ -113,6 +135,7 @@ void zwm_client_scan(void)
 	XWindowAttributes wa;
 	unsigned int num;
 	int i;
+
 	XQueryTree(dpy, root, &d1, &d2, &wins, &num);
 	for (i = 0; i < num; i++) {
         	XGetWindowAttributes(dpy, wins[i], &wa);
@@ -160,64 +183,9 @@ static void create_frame_window(Client *c)
 	if(config.show_title)XMapWindow(dpy,c->frame);
 	XSetClassHint(dpy, c->frame, &hint);
 	XRaiseWindow(dpy, c->frame);
-#ifdef REPARENT
+	if (config.reparent) {
 		XReparentWindow(dpy, c->win, c->frame, 0, config.title_height);
 		XMoveResizeWindow(dpy, c->win, 0, config.title_height, c->w, c->h-config.title_height);
-#endif
-}
-
-void
-zwm_client_update_decoration(Client *c)
-{
-	int color = config.xcolor_fborder;
-	int fill = config.xcolor_fbg;
-	char title[1024];
-
-	if(!c->hastitle){
-		return;
-	}
-
-	if(c->focused == False){
-		color = config.xcolor_nborder;
-		fill = config.xcolor_nbg;
-	}
-
-	XSetWindowBorder(dpy, c->win, color);
-	if(c->frame) {
-		XGlyphInfo info;
-		XftTextExtentsUtf8(dpy, ifont, (FcChar8*)iconr, strlen(iconr), &info);
-		int iw= info.width;
-		int ih= info.height;
-
-		sprintf(title, "%s", c->name );
-		XSetWindowBackground(dpy, c->frame, fill);
-		XSetWindowBorder(dpy, c->frame, color);
-		XSetForeground(dpy, gc, fill);
-		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, config.title_height);
-		XSetForeground(dpy, gc, config.xcolor_nshadow);
-
-		XftColor color;
-		color.color.red = ((config.xcolor_nshadow  & 0xFF0000) >> 16 )* 0x101;
-		color.color.green = ((config.xcolor_nshadow  & 0x00FF00) >> 8 )* 0x101;
-		color.color.blue = ((config.xcolor_nshadow  & 0x0000FF) )* 0x101;
-		color.color.alpha = c->focused?0xEEEE:0xCCCC;
-		color.pixel = 0xFFFFFF00;
-		Colormap cmap = DefaultColormap(dpy, scr);
-
-		XftColorAllocValue(dpy, DefaultVisual(dpy, scr), cmap, &color.color, &color);
-		XftDraw *draw = XftDrawCreate(dpy, c->frame, DefaultVisual(dpy, scr), cmap);
-		XftDrawStringUtf8(draw, &color, xfont, 4*c->border, ih-1, (XftChar8 *)title, strlen(title));
-		XftDrawStringUtf8(draw, &color, ifont, c->w-iw-4*c->border+1, ih-1, (const FcChar8 *)iconr, strlen(iconr));
-		if(c->focused){
-			sprintf(title, "%s",c->name );
-			color.color.red = ((BlackPixel(dpy,0)  & 0xFF0000) >> 16 )* 0x101;
-			color.color.green = ((BlackPixel(dpy,0)  & 0x00FF00) >> 8 )* 0x101;
-			color.color.blue = ((BlackPixel(dpy,0)  & 0x0000FF) )* 0x101;
-			color.color.alpha = 0xFFFF;
-			XftDrawStringUtf8(draw, &color, xfont, 4*c->border-1, ih-2, (XftChar8 *)title, strlen(title));
-			XftDrawStringUtf8(draw, &color, ifont, c->w-iw-4*c->border, ih-2, (const FcChar8 *)iconr, strlen(iconr));
-		}
-		free(draw);
 	}
 }
 
@@ -243,7 +211,6 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 			c->hastitle = 0;
 			c->isfloating = 0;
 			XMapWindow(dpy, w);
-			zwm_event_emit(ZenClientMap, c);
 			zwm_x11_configure_window(c);
 			break;
 		case ZenDockWindow:
@@ -303,9 +270,11 @@ zwm_client_unmanage(Client *c) {
 		return;
 	}
 	XGrabServer(dpy);
-#ifdef REPARENT
-	XReparentWindow(dpy, c->win, root, c->x, c->y+config.title_height);
-#endif
+
+	if(config.reparent){
+		XReparentWindow(dpy, c->win, root, c->x, c->y+config.title_height);
+	}
+
 	zwm_client_remove(c);
 	if(c->isfloating){
 		num_floating--;
@@ -447,14 +416,16 @@ zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 	c->y =  y;
 	c->w =  w;
 	c->h =  h;
-//	printf("%d %d %d %d %s\n",x,y,w,h,c->name);
+
 	if(c->hastitle && c->frame){
-#ifdef REPARENT
-		XMoveResizeWindow(dpy, c->win, c->border, config.title_height, w-2*c->border, h-config.title_height-c->border);
-#else
-		XMoveResizeWindow(dpy, c->win, x, y+config.title_height, w, h-config.title_height);
-#endif
-		XMoveResizeWindow(dpy, c->frame, x, y, w, h);
+		if(config.reparent) {
+			XMoveResizeWindow(dpy, c->frame, x, y, w, h);
+			XMoveResizeWindow(dpy, c->win, c->border, config.title_height, 
+					w-2*c->border, h-config.title_height-2*c->border);
+		} else {
+			XMoveResizeWindow(dpy, c->frame, x, y, w, config.title_height);
+			XMoveResizeWindow(dpy, c->win, x, y+config.title_height, w, h-config.title_height);
+		}
 	} else {
 		XMoveResizeWindow(dpy, c->win, x, y, w, h);
 		if(c->frame)XMoveResizeWindow(dpy, c->frame, x, y, w, h);
@@ -625,9 +596,9 @@ zwm_client_set_view(Client *c, int v)
 {
 	if (c->view != v) {
 		c->view = v;
-		if(v > num_views)
+		if(v > config.num_views)
 		{
-			num_views = v+1;
+			config.num_views = v+1;
 		}
 		zwm_auto_view();
 		zwm_event_emit(ZenClientView, c);

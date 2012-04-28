@@ -1,10 +1,8 @@
 void tile(int scr, int v) {
 	Client *c = zwm_client_head();
 	unsigned int i, n;
-	int b;
 	int B;
 	if(c) {
-	       	b = config.border_width;
        		B = 2*config.border_width;
 
 	} else
@@ -35,16 +33,16 @@ void tile(int scr, int v) {
 			if( i == 0)
 			{
 				zwm_layout_moveresize(c,
-						b+screen[scr].x,
-						b+screen[scr].y,
+						screen[scr].x,
+						screen[scr].y,
 						(screen[scr].w / 2) - B,
 						screen[scr].h - B );
 			} else {
 				int h = (screen[scr].h/ (n-1));
 				zwm_layout_moveresize(c, 
-						screen[scr].x + (screen[scr].w/2)+B ,
+						screen[scr].x + (screen[scr].w/2),
 						screen[scr].y+(i-1)*h ,
-						(screen[scr].w/2)-2*B ,
+						(screen[scr].w/2)-B ,
 						h );
 			}
 			i++;
