@@ -1,15 +1,89 @@
 #include "zwm.h"
 
+static void expose(XEvent *e);
+static void buttonpress(XEvent *e);
+static void maprequest(XEvent *e);
+static void configurenotify(XEvent *e);
+static void configurerequest(XEvent *e);
+static void destroynotify(XEvent *e);
+static void enternotify(XEvent *e);
+static void propertynotify(XEvent *e);
+static void unmapnotify(XEvent *e);
+static void zwm_event(int fd, int mode, void *data);
+
+typedef struct Handler
+{
+	ZenEFunc handler;
+	void *priv;
+	struct Handler *next;
+}Handler;
+
+static Handler *handlers[ZenMaxEvents];
+
+void zwm_x11_flush_events(long mask)
+{
+	XEvent ev;
+	while(XCheckMaskEvent(dpy, mask, &ev));
+}
+
+void zwm_event_quit(void)
+{
+	zen_events_quit();
+}
+
+void zwm_event_loop(void) {
+	XSync(dpy, False);
+	zen_events_add(ConnectionNumber(dpy),ZEN_EVT_READ,zwm_event, NULL);
+	zen_events_wait();
+}
+
+void zwm_event_init()
+{
+	int i;
+	for(i = 0; i < ZenMaxEvents; i++)
+	{
+		handlers[i] = NULL;
+	}
+	zen_events_init();
+	zwm_event_register(ButtonPress, (ZenEFunc)buttonpress, NULL);
+	zwm_event_register(Expose, (ZenEFunc)expose, NULL);
+	zwm_event_register(EnterNotify, (ZenEFunc)enternotify, NULL);
+	zwm_event_register(ConfigureRequest, (ZenEFunc)configurerequest, NULL);
+	zwm_event_register(ConfigureNotify, (ZenEFunc)configurenotify, NULL);
+	zwm_event_register(DestroyNotify, (ZenEFunc)destroynotify, NULL);
+	zwm_event_register(MapRequest, (ZenEFunc)maprequest, NULL);
+	zwm_event_register(UnmapNotify, (ZenEFunc)unmapnotify, NULL);
+	zwm_event_register(PropertyNotify, (ZenEFunc)propertynotify, NULL);
+}
+
+void zwm_event_emit(ZenEvent e, void *p)
+{
+	Handler *h = handlers[e];
+	while(h){
+		ZWM_DEBUG("ZenEvent %d handler %p\n",e, h->handler);
+		h->handler(p, h->priv);
+		h = h->next;
+	}
+}
+
+void zwm_event_register(ZenEvent e, ZenEFunc f, void *priv)
+{
+	Handler *h = zwm_util_malloc(sizeof (Handler));
+	h->handler =f ;
+	h->priv = priv;
+	h->next = handlers[e];
+	handlers[e] = h;
+}
+
 static void expose(XEvent *e) {
 	Client *c;
 	XExposeEvent *ev = &e->xexpose;
 	 if((c = zwm_client_get(ev->window))) {
-		 zwm_client_update_decoration(c);
+		 zwm_decor_update(c);
 	 }
 }
 
-static void
-buttonpress(XEvent *e) {
+static void buttonpress(XEvent *e) {
 	Client *c;
 	XButtonPressedEvent *ev = &e->xbutton;
 	DBG_ENTER();
@@ -37,9 +111,8 @@ buttonpress(XEvent *e) {
 	}
 }
 
-static void
-maprequest(XEvent *e) {
-	static XWindowAttributes wa;
+static void maprequest(XEvent *e) {
+	XWindowAttributes wa;
 	XMapRequestEvent *ev = &e->xmaprequest;
 	DBG_ENTER();
 
@@ -56,8 +129,7 @@ maprequest(XEvent *e) {
 	}
 }
 
-static void
-configurenotify(XEvent *e) {
+static void configurenotify(XEvent *e) {
 	XConfigureEvent *ev = &e->xconfigure;
 
 	if(ev->window == root &&
@@ -65,12 +137,11 @@ configurenotify(XEvent *e) {
 		DBG_ENTER();
 		screen[0].w = ev->width;
 		screen[0].h = ev->height;
-		zwm_update_screen_geometry(False);
+		zwm_screen_rescan(False);
 	}
 }
 
-static void
-configurerequest(XEvent *e) {
+static void configurerequest(XEvent *e) {
 	Client *c;
 	XConfigureRequestEvent *ev = &e->xconfigurerequest;
 	XWindowChanges wc;
@@ -90,13 +161,13 @@ configurerequest(XEvent *e) {
 
 			if((ev->value_mask & (CWX | CWY))
 			&& !(ev->value_mask & (CWWidth | CWHeight)))
-				zwm_x11_configure_window(c);
+				zwm_client_configure_window(c);
 
 			if(zwm_client_visible(c, c->view))
 			zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 
 		} else {
-			zwm_x11_configure_window(c);
+			zwm_client_configure_window(c);
 			if(!zwm_client_visible(c, c->view))
 				zwm_client_raise(c);
 		}
@@ -118,8 +189,7 @@ configurerequest(XEvent *e) {
 	}
 }
 
-static void
-destroynotify(XEvent *e) {
+static void destroynotify(XEvent *e) {
 	Client *c;
 	XDestroyWindowEvent *ev = &e->xdestroywindow;
 	DBG_ENTER();
@@ -128,8 +198,7 @@ destroynotify(XEvent *e) {
 		zwm_client_unmanage(c);
 }
 
-static void
-enternotify(XEvent *e) {
+static void enternotify(XEvent *e) {
 	Client *c;
 	XCrossingEvent *ev = &e->xcrossing;
 	DBG_ENTER();
@@ -141,8 +210,7 @@ enternotify(XEvent *e) {
 		zwm_client_focus(c);
 }
 
-static void
-propertynotify(XEvent *e) {
+static void propertynotify(XEvent *e) {
 	Client *c;
 	Window trans;
 	XPropertyEvent *ev = &e->xproperty;
@@ -168,8 +236,7 @@ propertynotify(XEvent *e) {
 
 }
 
-static void
-unmapnotify(XEvent *e) {
+static void unmapnotify(XEvent *e) {
 	Client *c;
 	XUnmapEvent *ev = &e->xunmap;
 	DBG_ENTER();
@@ -179,14 +246,7 @@ unmapnotify(XEvent *e) {
 
 }
 
-void
-zwm_event_flush_x11(long mask)
-{
-	XEvent ev;
-	while(XCheckMaskEvent(dpy, mask, &ev));
-}
-
-void zwm_event(int fd, int mode, void *data)
+static void zwm_event(int fd, int mode, void *data)
 {
 	XEvent ev;
 	while(XPending(dpy)) {
@@ -200,55 +260,4 @@ void zwm_event(int fd, int mode, void *data)
 	}
 }
 
-void zwm_event_quit(void)
-{
-	zen_events_quit();
-}
-
-void
-zwm_event_loop(void) {
-	XSync(dpy, False);
-	zen_events_add(ConnectionNumber(dpy),ZEN_EVT_READ,zwm_event, NULL);
-	zen_events_wait();
-}
-
-static ZenEventHandler *handlers[ZenMaxEvents];
-
-void zwm_event_init()
-{
-	int i;
-	for(i = 0; i < ZenMaxEvents; i++)
-	{
-		handlers[i] = NULL;
-	}
-	zen_events_init();
-	zwm_event_register(ButtonPress, (ZenEFunc)buttonpress, NULL);
-	zwm_event_register(Expose, (ZenEFunc)expose, NULL);
-	zwm_event_register(EnterNotify, (ZenEFunc)enternotify, NULL);
-	zwm_event_register(ConfigureRequest, (ZenEFunc)configurerequest, NULL);
-	zwm_event_register(ConfigureNotify, (ZenEFunc)configurenotify, NULL);
-	zwm_event_register(DestroyNotify, (ZenEFunc)destroynotify, NULL);
-	zwm_event_register(MapRequest, (ZenEFunc)maprequest, NULL);
-	zwm_event_register(UnmapNotify, (ZenEFunc)unmapnotify, NULL);
-	zwm_event_register(PropertyNotify, (ZenEFunc)propertynotify, NULL);
-}
-
-void zwm_event_emit(ZenEvent e, void *p)
-{
-	ZenEventHandler *h = handlers[e];
-	while(h){
-		ZWM_DEBUG("ZenEvent %d handler %p\n",e, h->handler);
-		h->handler(p, h->priv);
-		h = h->next;
-	}
-}
-
-void zwm_event_register(ZenEvent e, ZenEFunc f, void *priv)
-{
-	ZenEventHandler *h = zwm_malloc(sizeof (ZenEventHandler));
-	h->handler =f ;
-	h->priv = priv;
-	h->next = handlers[e];
-	handlers[e] = h;
-}
 

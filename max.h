@@ -1,7 +1,8 @@
+
 static float mb = 0;
 #define ZWMBORDER (mb * screen[0].h)
-static void
-max_arrange(int scr, int v) {
+
+static void max_arrange(int scr, int v) {
 	Client *c;
 
 	for( c = zwm_layout_head(v); c; c = zwm_layout_next_client(c, v)) {

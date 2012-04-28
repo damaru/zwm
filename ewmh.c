@@ -1,8 +1,30 @@
 #include "zwm.h"
 
+static void active_window(Client *c);
+static void client_list(void *p, void *p2);
+static void client_state(Client *c , void *p);
+static void process_state_atom(Client *c, Atom state, int set);
+static void clientmessage(XEvent *e, void *p);
+
+void zwm_ewmh_init(void) {
+    unsigned long n = 1, c = 0;
+    zwm_event_register(ZenClientFocus, (ZenEFunc)active_window, NULL);
+    zwm_event_register(ZenClientMap, (ZenEFunc)client_list, NULL);
+    zwm_event_register(ZenClientUnmap, (ZenEFunc)client_list, NULL);
+    zwm_event_register(ZenView, (ZenEFunc)client_list, NULL);
+    zwm_event_register(ZenClientFocus, (ZenEFunc)client_list, NULL);
+    zwm_event_register(ZenClientView, (ZenEFunc)client_list, NULL);
+    zwm_event_register(ZenClientState, (ZenEFunc)client_state, NULL);
+    zwm_event_register(ClientMessage, (ZenEFunc)clientmessage, NULL);
+
+    zwm_x11_atom_set(root, _NET_NUMBER_OF_DESKTOPS, XA_CARDINAL, &n, 1);
+    zwm_x11_atom_set(root, _NET_CURRENT_DESKTOP, XA_CARDINAL, &c, 1);
+
+}
+
 static void active_window(Client *c) {
     Window win = c->win;
-    zwm_x11_set_atoms(root, _NET_ACTIVE_WINDOW, XA_WINDOW, &win, 1);
+    zwm_x11_atom_set(root, _NET_ACTIVE_WINDOW, XA_WINDOW, &win, 1);
 }
 
 static void client_list(void *p, void *p2) {
@@ -17,8 +39,8 @@ static void client_list(void *p, void *p2) {
 		if (zwm_view_mapped(c->view) && c->view == view)
 			wins[n++] = c->win;
 	}
-	zwm_x11_set_atoms(root, _NET_CLIENT_LIST, XA_WINDOW, wins, n);
-	zwm_x11_set_atoms(root, _NET_CLIENT_LIST_STACKING, XA_WINDOW, wins, n);
+	zwm_x11_atom_set(root, _NET_CLIENT_LIST, XA_WINDOW, wins, n);
+	zwm_x11_atom_set(root, _NET_CLIENT_LIST_STACKING, XA_WINDOW, wins, n);
 
 	XFlush(dpy);
 }
@@ -26,9 +48,9 @@ static void client_list(void *p, void *p2) {
 static void client_state(Client *c , void *p) {
 	Window win = c->win;
 	long data[] = {c->state, None};
-	zwm_x11_set_atoms(win, WM_STATE, WM_STATE, (unsigned long *)data, 1);
+	zwm_x11_atom_set(win, WM_STATE, WM_STATE, (unsigned long *)data, 1);
 	data[0] = c->state == IconicState? _NET_WM_STATE_SHADED :None;
-	zwm_x11_set_atoms(win, _NET_WM_STATE, _NET_WM_STATE, (unsigned long *)data, 1);
+	zwm_x11_atom_set(win, _NET_WM_STATE, _NET_WM_STATE, (unsigned long *)data, 1);
 }
 
 void zwm_ewmh_set_window_opacity(Window win, float opacity) {
@@ -36,7 +58,7 @@ void zwm_ewmh_set_window_opacity(Window win, float opacity) {
     if (opacity == 1.0) {
         XDeleteProperty (dpy, win, _NET_WM_WINDOW_OPACITY);
     } else {
-        zwm_x11_set_atoms(win, _NET_WM_WINDOW_OPACITY, 
+        zwm_x11_atom_set(win, _NET_WM_WINDOW_OPACITY, 
                 XA_CARDINAL, (unsigned long *) &o, 1L);
     }
 }
@@ -81,22 +103,5 @@ static void clientmessage(XEvent *e, void *p) {
 					ev->data.l[0]);
 		}
 	}
-}
-
-void
-zwm_ewmh_init(void) {
-    unsigned long n = 1, c = 0;
-    zwm_event_register(ZenClientFocus, (ZenEFunc)active_window, NULL);
-    zwm_event_register(ZenClientMap, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenClientUnmap, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenView, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenClientFocus, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenClientView, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenClientState, (ZenEFunc)client_state, NULL);
-    zwm_event_register(ClientMessage, (ZenEFunc)clientmessage, NULL);
-
-    zwm_x11_set_atoms(root, _NET_NUMBER_OF_DESKTOPS, XA_CARDINAL, &n, 1);
-    zwm_x11_set_atoms(root, _NET_CURRENT_DESKTOP, XA_CARDINAL, &c, 1);
-
 }
 

@@ -35,8 +35,7 @@ void zwm_decor_init(void)
 	config.title_y = config.title_height - xfont->descent - 2;
 }
 
-void
-zwm_client_update_decoration(Client *c)
+void zwm_decor_update(Client *c)
 {
 	int bcolor = config.xcolor_fborder;
 	int fill = config.xcolor_fbg;

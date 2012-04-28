@@ -8,7 +8,7 @@ static void map(Client *c, void *priv)
 	if(c->type == ZenDockWindow && !panel)
 	{
 		panel = c;
-		zwm_update_screen_geometry(False);
+		zwm_screen_rescan(False);
 	}
 }
 
@@ -16,7 +16,7 @@ static void configure(Client *c, void *priv)
 {
 	if(c == panel)
 	{
-		zwm_update_screen_geometry(False);
+		zwm_screen_rescan(False);
 	}
 }
 
@@ -25,7 +25,7 @@ static void unmap(Client *c, void *priv)
 	if(c == panel)
 	{
 		panel = NULL;
-		zwm_update_screen_geometry(False);
+		zwm_screen_rescan(False);
 	}
 }
 
@@ -39,7 +39,7 @@ static void rescreen(const char *layout, void *priv)
 		panel->y = wa.y;
 		panel->w = wa.width;
 		panel->h = wa.height;
-		for(i = 0; i< screen_count; i++){
+		for(i = 0; i< config.screen_count; i++){
 			if( panel->h == screen[i].h)
 			{
 				if(panel->x+panel->w < screen[i].w/2) {
@@ -70,7 +70,7 @@ void zwm_panel_toggle(const char *args)
 		} else {
 			zwm_client_moveresize(panel, panel->x, oldy, panel->w, panel->h);
 		}
-		zwm_update_screen_geometry(False);
+		zwm_screen_rescan(False);
 		zwm_layout_dirty();
 	}
 }

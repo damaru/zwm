@@ -1,15 +1,13 @@
 
 #include "zwm.h"
 #include <time.h>
-struct ZenLayout;
-typedef struct ZenLayout ZenLayout;
 
-struct ZenLayout
+typedef struct ZenLayout
 {
 	ZenLFunc handler;
 	char name[64];
-	ZenLayout *next;
-};
+	struct ZenLayout *next;
+}ZenLayout;
 
 static ZenLayout *layouts = NULL;
 static ZenLayout *sel_layout = NULL;
@@ -23,19 +21,13 @@ void zwm_layout_dirty(void)
 void zwm_layout_rearrange(void)
 {
 	if(dirty){
-		zwm_auto_view();
+		zwm_view_rescan();
 		zwm_layout_arrange();
 		dirty = 0;
 	}
 }
 
-const char *zwm_current_layout(void)
-{
-	return sel_layout->name;
-}
-
-Bool
-zwm_layout_visible(Client *c, int view) 
+Bool zwm_layout_visible(Client *c, int view) 
 {
 	return c->state == NormalState &&
 		c->view == view && 
@@ -43,8 +35,7 @@ zwm_layout_visible(Client *c, int view)
 }
 
 
-static Client *zwm_layout_next_client(Client *c, int v)
-{
+static Client *zwm_layout_next_client(Client *c, int v) {
 	c = zwm_client_next(c);
 	while (c) {
 		if(zwm_layout_visible(c,v) && !c->isfloating){
@@ -55,8 +46,7 @@ static Client *zwm_layout_next_client(Client *c, int v)
 	return c;
 }
 
-static Client *zwm_layout_head(int v)
-{
+static Client *zwm_layout_head(int v) {
 	Client *c = zwm_client_head();
 	if(!c){
 		return NULL;
@@ -142,15 +132,15 @@ void zwm_layout_arrange(void)
 				zwm_client_save_geometry(c, &c->bpos);
 			}
 			//TODO fix this
-			if(screen_count > 1){
+			if(config.screen_count > 1){
 				zwm_layout_moveresize(c, c->x, c->y-2*screen[0].h, c->w, c->h);
 			} else {
-				zwm_layout_moveresize(c, screen[screen_count-1].x + screen[screen_count-1].w + 2+c->x, c->y, c->w, c->h);
+				zwm_layout_moveresize(c, screen[config.screen_count-1].x + screen[config.screen_count-1].w + 2+c->x, c->y, c->w, c->h);
 			}
 		}
 	}
 	
-	for(i = 0; i < screen_count; i++) {
+	for(i = 0; i < config.screen_count; i++) {
 		sel_layout->handler(i, screen[i].view);
 	}
 
@@ -160,14 +150,14 @@ void zwm_layout_arrange(void)
 		    c;
 		    c = zwm_client_next(c)) {
 		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
-		zwm_client_update_decoration(c);
+		zwm_decor_update(c);
 		c->noanim = 1;
 	}
 }
 
 void zwm_layout_register(ZenLFunc f, char *name)
 {
-	ZenLayout *l = zwm_malloc(sizeof (ZenLayout));
+	ZenLayout *l = zwm_util_malloc(sizeof (ZenLayout));
 	l->handler = f ;
 	strcpy(l->name , name);
 	l->next = layouts;
@@ -208,8 +198,7 @@ void zwm_layout_set(const char *name)
 	zwm_layout_dirty();
 }
 
-static void
-layout_floating(int scr, int v) {
+static void layout_floating(int scr, int v) {
 	Client *c;
 	for(c = zwm_client_head();
 	       	c;
@@ -245,9 +234,7 @@ void zwm_layout_cycle(const char *arg) {
 	}
 }
 
-/* initialize default layout */
-void
-zwm_layout_init(void)
+void zwm_layout_init(void)
 {
 	zwm_layout_register((ZenLFunc)layout_floating, "floating");
 //	zwm_layout_register((ZenLFunc)grid, "grid");

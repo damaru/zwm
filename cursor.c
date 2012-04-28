@@ -5,7 +5,7 @@
 static Cursor cursor[CurLast];
 
 void
-zwm_init_cursor(Display *dpy)
+zwm_x11_cursor_init(Display *dpy)
 {
 	cursor[CurNormal] = XCreateFontCursor(dpy, XC_left_ptr);
 	cursor[CurResize] = XCreateFontCursor(dpy, XC_sizing);
@@ -13,7 +13,7 @@ zwm_init_cursor(Display *dpy)
 }
 
 void
-zwm_free_cursors(Display *dpy)
+zwm_x11_cursor_free(Display *dpy)
 {
 	XFreeCursor(dpy, cursor[CurNormal]);
 	XFreeCursor(dpy, cursor[CurResize]);
@@ -21,7 +21,7 @@ zwm_free_cursors(Display *dpy)
 }
 
 Cursor
-zwm_get_cursor(ZenCursor c)
+zwm_x11_cursor_get(ZenCursor c)
 {
 	return cursor[c];
 }

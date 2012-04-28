@@ -61,7 +61,7 @@ zwm_runonce(const char *arg){
 			return;
 		}
 	}
-	zwm_spawn(cmd);
+	zwm_util_spawn(cmd);
 }
 
 static void 
@@ -81,7 +81,7 @@ ZwmConfig config =
 {
 	.num_views = 1,
 	.border_width = 1,
-	.fake_screens = 1,
+	.screen_count = 1,
 	.screen_x = 0,
 	.screen_y = 0,
 	.screen_w = 0,
@@ -146,11 +146,11 @@ ZwmConfig config =
 		{"Alt-Shift-space", zwm_client_toggle_floating, NULL},
 		{"Alt-space", zwm_layout_set, NULL},
 		{"Alt-Tab", zwm_layout_cycle, NULL},
-		{"Ctrl-Alt-l", zwm_spawn, "standby"},
-		{"Ctrl-Alt-q", zwm_quit, NULL},
+		{"Ctrl-Alt-l", zwm_util_spawn, "standby"},
+		{"Ctrl-Alt-q", zwm_wm_quit, NULL},
 		{"Ctrl-Alt-Return", zwm_client_iconify, NULL},
-		{"Ctrl-Alt-r", zwm_restart, NULL},
-		{"Ctrl-Shift-Return", zwm_spawn, "simshell"},
+		{"Ctrl-Alt-r", zwm_wm_restart, NULL},
+		{"Ctrl-Shift-Return", zwm_util_spawn, "simshell"},
 		{NULL, NULL, NULL},
 	},
 };

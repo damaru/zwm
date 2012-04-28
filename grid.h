@@ -17,7 +17,7 @@ grid() {
 
 	c = zwm_client_next_visible(zwm_client_head());
 
-	if(screen_count > 1 && c)
+	if(config.screen_count > 1 && c)
 	{
 		zwm_layout_moveresize(c, screen[0].x, screen[0].y,
 					screen[0].w - 2*config.border_width,
