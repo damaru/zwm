@@ -5,24 +5,21 @@ grid() {
 	Client *c;
 	unsigned int n = 0;
 
-	for(c = zwm_client_next_visible(zwm_client_head());
-			c;
-			c = zwm_client_next(c)) {
-
-			if(zwm_client_visible(c) && !c->isfloating) {
-				c->noanim = 0;
-				n++;
-			}
+	for(c = zwm_client_next_visible(head); c; c = c->next) {
+		if(zwm_client_visible(c) && !c->isfloating) {
+			c->noanim = 0;
+			n++;
+		}
 	}
 
-	c = zwm_client_next_visible(zwm_client_head());
+	c = zwm_client_next_visible(head);
 
 	if(config.screen_count > 1 && c)
 	{
 		zwm_layout_moveresize(c, screen[0].x, screen[0].y,
 					screen[0].w - 2*config.border_width,
 				       	screen[0].h - 2*config.border_width);
-		c = zwm_client_next_visible(zwm_client_next(c));
+		c = zwm_client_next_visible(c->next);
 		ax = screen[1].x;
 		n--;
 	}
@@ -37,7 +34,7 @@ grid() {
 	ch = screen[0].h / (rows ? rows : 1);
 	cw = screen[0].w / (cols ? cols : 1);
 
-	for(i = 0; c; c = zwm_client_next(c)) {
+	for(i = 0; c; c = c->next) {
 		if(zwm_client_visible(c) && !c->isfloating){
 			cx = ax + (i / rows) * cw;
 			cy = (i % rows) * ch + screen[0].y;

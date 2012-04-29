@@ -28,13 +28,11 @@ static void active_window(Client *c) {
 }
 
 static void client_list(void *p, void *p2) {
-	Window wins[zwm_client_count()];
+	Window wins[MAX_CLIENTS];
 	Client *c;
 	int n ;
 	int view = zwm_current_view();
-	for(n = 0, c = zwm_client_head();
-			c;
-			c = zwm_client_next(c))
+	for(n = 0, c = head; c; c = c->next)
 	{
 		if (zwm_view_mapped(c->view) && c->view == view)
 			wins[n++] = c->win;

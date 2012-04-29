@@ -76,9 +76,7 @@ void zwm_view_rescan(void)
 	int max_view = 0;
 	int min_view = 32;
 	int viewc[32] = { [0 ... 31] = 0,  };
-	for(c = zwm_client_head();
-			c ;
-			c = zwm_client_next(c))
+	for(c = head; c ; c = c->next)
 	{
 		max_view = c->view > max_view ? c->view: max_view;
 		min_view = c->view < min_view ? c->view: min_view;

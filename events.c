@@ -9,7 +9,7 @@ static void destroynotify(XEvent *e);
 static void enternotify(XEvent *e);
 static void propertynotify(XEvent *e);
 static void unmapnotify(XEvent *e);
-static void zwm_event(int fd, int mode, void *data);
+static int quit = 0;
 
 typedef struct Handler
 {
@@ -28,13 +28,31 @@ void zwm_x11_flush_events(long mask)
 
 void zwm_event_quit(void)
 {
-	zen_events_quit();
+	quit = 1;
 }
 
 void zwm_event_loop(void) {
+	XEvent ev;
 	XSync(dpy, False);
-	zen_events_add(ConnectionNumber(dpy),ZEN_EVT_READ,zwm_event, NULL);
-	zen_events_wait();
+	int fd = ConnectionNumber(dpy);
+	fd_set fds;
+	while(!quit) {
+		while(XPending(dpy)) {
+			XNextEvent(dpy, &ev);
+			if(ev.type < LASTEvent) {
+				zwm_event_emit(ev.type, &ev);
+			} else {
+				zwm_event_emit(ZenX11Event, &ev);
+			}
+			zwm_layout_rearrange();
+		}
+		FD_ZERO(&fds);
+		FD_SET(fd, &fds);
+		select(fd + 1, &fds, 0, &fds, NULL);
+		if(quit){
+			break;
+		}
+	}
 }
 
 void zwm_event_init()
@@ -44,7 +62,6 @@ void zwm_event_init()
 	{
 		handlers[i] = NULL;
 	}
-	zen_events_init();
 	zwm_event_register(ButtonPress, (ZenEFunc)buttonpress, NULL);
 	zwm_event_register(Expose, (ZenEFunc)expose, NULL);
 	zwm_event_register(EnterNotify, (ZenEFunc)enternotify, NULL);
@@ -245,19 +262,4 @@ static void unmapnotify(XEvent *e) {
 		zwm_client_unmanage(c);
 
 }
-
-static void zwm_event(int fd, int mode, void *data)
-{
-	XEvent ev;
-	while(XPending(dpy)) {
-		XNextEvent(dpy, &ev);
-		if(ev.type < LASTEvent) {
-			zwm_event_emit(ev.type, &ev);
-		} else {
-			zwm_event_emit(ZenX11Event, &ev);
-		}
-		zwm_layout_rearrange();
-	}
-}
-
 

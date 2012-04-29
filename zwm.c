@@ -70,10 +70,10 @@ void zwm_util_free(void *p)
 }
 
 void zwm_wm_restart(const char *p) {
-	Client *c = zwm_client_head();
+	Client *c = head;
 	while(c){
 		zwm_client_unmanage(c);
-		c = zwm_client_head();
+		c = head;
 	}
 	XCloseDisplay(dpy);
 	setsid();
@@ -102,10 +102,10 @@ void zwm_util_spawn(const char *cmd)
 }
 
 void zwm_wm_quit(const char *arg) {
-	Client *c = zwm_client_head();
+	Client *c = head;
 	while(c){
 		zwm_client_unmanage(c);
-		c = zwm_client_head();
+		c = head;
 	}
 	zwm_event_quit();
 }

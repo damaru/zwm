@@ -4,11 +4,6 @@ ZwmConfig config =
 {
 	.num_views = 1,
 	.border_width = 1,
-	.screen_count = 1,
-	.screen_x = 0,
-	.screen_y = 0,
-	.screen_w = 0,
-	.screen_h = 0,
 	.focus_border_color = "#AAA",
 	.focus_bg_color = "#7B7B7B",
 	.focus_shadow_color = "#BBB",

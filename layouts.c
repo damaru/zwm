@@ -57,7 +57,7 @@ void zwm_layout_animate(void)
 	{
 		return;
 	}
-	for(c = zwm_client_head(); c; c = zwm_client_next(c)) {
+	for(c = head; c; c = c->next) {
 		if(!c->noanim){
 			c->dx = (c->x - c->ox)/config.anim_steps;
 			c->dy = (c->y - c->oy)/config.anim_steps;
@@ -68,9 +68,7 @@ void zwm_layout_animate(void)
 	}
 	for(i = 0; i<config.anim_steps; i++){
 		struct timespec req = {0, 100000000/config.anim_steps };
-		for(c = zwm_client_head();
-				c;
-				c = zwm_client_next(c)) {
+		for(c = head; c; c = c->next) {
 			if(!c->noanim){
 				c->ox += c->dx;
 				c->oy += c->dy;
@@ -86,12 +84,12 @@ void zwm_layout_animate(void)
 
 void zwm_layout_arrange(void)
 {
-	Client *c = zwm_client_head();
+	Client *c = head;
 	int i;
 	if (!c) {
 		return;
 	}
-	for(; c; c = zwm_client_next(c)) {
+	for(; c; c = c->next) {
 		if (zwm_client_visible(c, c->view) && c->bpos.w) {
 			zwm_client_restore_geometry(c, &c->bpos);
 			c->bpos.w = 0;
@@ -122,7 +120,7 @@ void zwm_layout_arrange(void)
 
 	zwm_layout_animate();
 
-	for(c = zwm_client_head(); c; c = zwm_client_next(c)) {
+	for(c = head; c; c = c->next) {
 		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 		zwm_decor_update(c);
 		c->noanim = 1;
@@ -174,9 +172,7 @@ void zwm_layout_set(const char *name)
 
 static void layout_floating(int scr, int v) {
 	Client *c;
-	for(c = zwm_client_head();
-	       	c;
-	       	c = zwm_client_next(c)) {
+	for(c = head; c; c = c->next) {
 		if(zwm_layout_visible(c, v)) {
 			zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 		}
@@ -195,7 +191,7 @@ void zwm_layout_cycle(const char *arg) {
 		return;
 	}
 
-	c = zwm_client_next_visible(zwm_client_head());
+	c = zwm_client_next_visible(head);
 	next = zwm_client_next_visible(c);
 	if(next){
 		zwm_event_emit(ZenClientUnmap, c);

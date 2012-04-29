@@ -5,12 +5,12 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <X11/Xutil.h>
 #include <X11/Xlib.h>
 #include <X11/X.h>
 #include <X11/Xatom.h>
-#include <libzen/events.h>
-#include <libzen/list.h>
 
 typedef unsigned long ulong;
 
@@ -45,7 +45,6 @@ enum
 typedef struct Client Client;
 struct Client
 {
-	ZenListNode node;
 	double x;
 	double y;
 	double w;
@@ -83,10 +82,6 @@ typedef struct
 {
 	unsigned int border_width;
 	unsigned int screen_count;
-	unsigned int screen_x;
-	unsigned int screen_y;
-	unsigned int screen_w;
-	unsigned int screen_h;
 	unsigned int num_views;
 	unsigned int num_clients;
 
@@ -183,21 +178,22 @@ typedef int (*ZenEFunc)(void *, void *);
 #endif
 
 #define MAX_SCREENS 32
+#define MAX_CLIENTS 100
 extern ZenGeom screen[MAX_SCREENS];
 extern int scr;
 extern Display *dpy;
 extern Window root;
 extern unsigned int numlockmask;
 extern GC gc;
-DECLARE_GLOBAL_LIST_FUNCTIONS(zwm_client,Client,node);
 extern Client *sel;
+extern Client *head;
+extern Client *tail;
 
 void zwm_client_configure_window(Client *c);
-int zwm_client_count(void);
 void zwm_client_focus(Client *c);
 void zwm_client_fullscreen(Client *c);
 Client *zwm_client_get(Window w);
-Client *zwm_client_head(void);
+void zwm_client_push_tail(Client *);
 void zwm_client_kill(Client *c);
 Client* zwm_client_manage(Window w, XWindowAttributes *wa);
 void zwm_client_mousemove(Client *c);
@@ -266,6 +262,6 @@ void zwm_x11_cursor_free(Display *dpy);
 Cursor zwm_x11_cursor_get(ZenCursor c);
 void zwm_x11_cursor_init(Display *dpy);
 
-#define zwm_client_foreach(c) for((c)=zwm_client_head();(c);(c)=zwm_client_next((c)))
+#define zwm_client_foreach(c) for((c)=head;(c);(c)=(c)->next)
 
 #endif

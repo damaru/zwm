@@ -32,9 +32,7 @@ static void run_once(const char *arg){
 	strcpy(data,arg);
 	class = strtok(data, ";");
 	cmd = class + strlen(class) + 1;
-	for(c=zwm_client_head();
-			c;
-			c = zwm_client_next(c)) {
+	for(c=head; c; c = c->next) {
 		if(strcasecmp(class, c->cname) == 0) {
 			ZWM_DEBUG("found CLASS %s, %s, for %s\n",c->cname, c->name, cmd);
 			zwm_client_zoom(c);
@@ -42,9 +40,7 @@ static void run_once(const char *arg){
 			return;
 		}
 	}
-	for(c=zwm_client_head();
-			c;
-			c = zwm_client_next(c)) {
+	for(c=head; c; c = c->next) {
 		if(strcasestr(c->name, class)) {
 			ZWM_DEBUG("found NAME %s for %s\n",c->name, cmd);
 			zwm_client_zoom(c);
@@ -57,8 +53,8 @@ static void run_once(const char *arg){
 
 static void client_zoom(const char *arg) {
 	Client *c = sel;
-	if( c && c == zwm_client_head()) {
-		c = zwm_client_next_visible(zwm_client_next(c));
+	if( c && c == head) {
+		c = zwm_client_next_visible(c->next);
 	}
 
 	if(c) {
@@ -90,7 +86,16 @@ static void do_focus(Client *c)
 }
 
 static inline Client * client_next(Client *c, int dir){
-	return ((Client **)(&c->node))[dir];
+	Client *n = ((Client **)(&c->next))[dir];
+	if (!n) {
+		if (dir) {
+			return tail;
+		} else {
+			return head;
+		}
+	} else {
+		return n;
+	}
 }
 
 static void focus(const char *arg) {
@@ -101,10 +106,6 @@ static void focus(const char *arg) {
 	} else if (i < 2) {
 		int view = zwm_current_view();
 		Client *c = client_next(sel, i);
-		if (!c) {
-			zwm_client_refocus();
-			return;
-		}
 		for(; c; c = client_next(c, i)){
 			if(zwm_client_visible(c, view)){
 				do_focus(c);

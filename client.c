@@ -2,15 +2,6 @@
 #include <string.h>
 #include <stdio.h>
 
-DEFINE_GLOBAL_LIST_DEFINE(zwm_client,Client,node);
-DEFINE_GLOBAL_LIST_HEAD(zwm_client,Client,node);
-DEFINE_GLOBAL_LIST_TAIL(zwm_client,Client,node);
-DEFINE_GLOBAL_LIST_NEXT(zwm_client,Client,node);
-DEFINE_GLOBAL_LIST_PREV(zwm_client,Client,node);
-DEFINE_GLOBAL_LIST_PUSH_HEAD(zwm_client,Client,node);
-DEFINE_GLOBAL_LIST_PUSH_TAIL(zwm_client,Client,node);
-DEFINE_GLOBAL_LIST_REMOVE(zwm_client,Client,node);
-
 unsigned int num_floating = 0;
 static int privcount = 0;
 static void grabbuttons(Client *c, Bool focused);
@@ -132,7 +123,6 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	c->view = vew;
 	c->border = config.border_width;
 	c->type = zwm_x11_window_type(w);
-	zen_list_node_init(&c->node);
 	zwm_client_update_name(c);
 
 	switch (c->type) {
@@ -230,15 +220,9 @@ void zwm_client_unmanage(Client *c) {
 Client *zwm_client_get(Window w) {
 	Client *c;
 
-	for(c = zwm_client_head();
-		c && (c->win != w && c->frame != w);
-	       	c = zwm_client_next(c));
+	for(c = head; c && (c->win != w && c->frame != w);
+	       	c = c->next);
 	return c;
-}
-
-int zwm_client_count(void)
-{
-	return zwm_client->count;
 }
 
 Bool zwm_client_visible(Client *c, int view) 
@@ -260,13 +244,13 @@ void zwm_client_warp(Client *c)
 
 void zwm_client_refocus(void)
 {
-	Client *c = zwm_client_head();
+	Client *c = head;
 	while(c && !zwm_client_visible(c, zwm_current_view()))
 	{
-		c = zwm_client_next(c);
+		c = c->next;
 	}
 	if (c) {
-		zwm_client_focus(c);
+		zwm_client_raise(c, True);
 	} else {
 		sel = NULL;
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
@@ -519,7 +503,7 @@ void zwm_client_update_name(Client *c)
 
 Client *zwm_client_next_visible(Client *c)
 {
-       for(; c; c = zwm_client_next(c)) {
+       for(; c; c = c->next) {
                if(zwm_client_visible(c, zwm_current_view()) && !c->isfloating){
                        return c;
                }
