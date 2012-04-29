@@ -81,7 +81,7 @@ static void toggle_panel(const char *arg) {
 static void do_focus(Client *c)
 {
 	if (c) {
-		zwm_client_raise(c, True);
+		zwm_client_warp(c);
 	}
 }
 

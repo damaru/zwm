@@ -35,6 +35,10 @@ void zwm_decor_init(void)
 	config.title_y = config.title_height - xfont->descent - 2;
 }
 
+void zwm_decor_dirty(Client *c){
+	c->dirty++;
+}
+
 void zwm_decor_update(Client *c)
 {
 	int bcolor = config.xcolor_fborder;
@@ -60,7 +64,7 @@ void zwm_decor_update(Client *c)
 		int iw= c->w - (config.button_width*config.button_count) - 4*c->border;
 		int y = config.title_y;
 
-		sprintf(title, "%s %s", config.viewnames[c->view], c->name );
+		sprintf(title, "%s %s", config.viewnames[c->view], c->name);
 
 		XSetWindowBackground(dpy, c->frame, fill);
 		XSetWindowBorder(dpy, c->frame, bcolor);

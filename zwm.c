@@ -19,7 +19,7 @@ static void wm_init(void);
 static void wm_cleanup(void);
 static void wm_signal(int s);
 
-#include "actions.c"
+#include "actions.h"
 #include "config.h"
 
 int main(int argc, char *argv[]) {

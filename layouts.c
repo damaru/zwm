@@ -18,11 +18,10 @@ void zwm_layout_dirty(void)
 	dirty = 1;
 }
 
-void zwm_layout_rearrange(void)
+void zwm_layout_rearrange(Bool force)
 {
-	if(dirty){
+	if(dirty || force){
 		zwm_view_rescan();
-		zwm_layout_arrange();
 		dirty = 0;
 	}
 }
@@ -122,7 +121,6 @@ void zwm_layout_arrange(void)
 
 	for(c = head; c; c = c->next) {
 		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
-		zwm_decor_update(c);
 		c->noanim = 1;
 	}
 }

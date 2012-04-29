@@ -63,7 +63,10 @@ void zwm_client_configure_window(Client *c) {
 
 void zwm_client_setstate(Client *c, int state)
 {
-	c->state = state;
+	if(c->state != state){
+		c->state = state;
+		zwm_layout_dirty();
+	}
 	if (state == NormalState){
 		XRaiseWindow(dpy, c->frame);
 		XRaiseWindow(dpy, c->win);
@@ -74,7 +77,6 @@ void zwm_client_setstate(Client *c, int state)
 		zwm_client_refocus();
 	}
 	zwm_event_emit(ZenClientState, c);
-	zwm_layout_dirty();
 }
 
 void zwm_client_scan(void)
@@ -176,6 +178,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_event_emit(ZenClientMap, c);
 	zwm_layout_dirty();
 	zwm_client_configure_window(c);
+	zwm_layout_rearrange(True);
 	zwm_client_raise(c, True);
 	config.num_clients++;
 	return c;
@@ -268,7 +271,7 @@ void zwm_client_focus(Client *c)
 		c->lastfocused = sel->win;
 		sel->focused = False;
 		grabbuttons(sel, False);
-		zwm_decor_update(sel);
+		zwm_decor_dirty(sel);
 		zwm_event_emit(ZenClientUnFocus, sel);
 	}
 
@@ -277,7 +280,7 @@ void zwm_client_focus(Client *c)
 	sel = c;
 	c->focused = True;
 	XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
-	zwm_decor_update(c);
+	zwm_decor_dirty(c);
 	zwm_event_emit(ZenClientFocus, c);
 }
 
@@ -286,6 +289,7 @@ void zwm_client_raise(Client *c, Bool warp)
 	zwm_client_set_view(c, zwm_current_view());
 	zwm_client_setstate(c, NormalState);
 	if (warp) {
+		zwm_layout_rearrange(True);
 		zwm_client_warp(c);
 	}
 }
@@ -358,15 +362,15 @@ void zwm_client_unfullscreen(Client *c)
 	num_floating--;
 	c->border = config.border_width;
 	XSetWindowBorderWidth(dpy, c->win, c->border);
-	zwm_decor_update(c);
-	zwm_layout_arrange();
+	zwm_decor_dirty(c);
+	zwm_layout_rearrange(True);
 }
 
 void zwm_client_float(Client *c)
 {
 	if(!c->isfloating){
 		zwm_client_toggle_floating(c);
-		zwm_layout_rearrange();
+		zwm_layout_rearrange(True);
 	}
 }
 
@@ -486,7 +490,7 @@ void zwm_client_set_view(Client *c, int v)
 		{
 			config.num_views = v+1;
 		}
-		zwm_view_rescan();
+		zwm_layout_dirty();
 		zwm_event_emit(ZenClientView, c);
 	}
 }
@@ -497,7 +501,7 @@ void zwm_client_update_name(Client *c)
 	zwm_x11_atom_text(c->win, WM_NAME, c->name, sizeof c->name);
 	zwm_x11_atom_text(c->win, WM_CLASS, c->cname, sizeof c->cname);
 	zwm_event_emit(ZenClientProperty, c);
-	zwm_decor_update(c);
+	zwm_decor_dirty(c);
 
 }
 
@@ -531,7 +535,7 @@ void zwm_client_zoom(Client *c) {
 	if(c) {
 		zwm_client_remove(c);
 		zwm_client_push_head(c);
-		zwm_layout_arrange();
+		zwm_layout_rearrange(True);
 		zwm_client_raise(c, True);
 	}
 }

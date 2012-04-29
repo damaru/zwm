@@ -44,8 +44,15 @@ void zwm_event_loop(void) {
 			} else {
 				zwm_event_emit(ZenX11Event, &ev);
 			}
-			zwm_layout_rearrange();
+
+			zwm_layout_rearrange(False);
+			Client *c;
+			for(c = head; c; c = c->next) {
+				if(c->dirty)zwm_decor_update(c);
+				c->dirty = 0;
+			}
 		}
+		XSync(dpy, False);
 		FD_ZERO(&fds);
 		FD_SET(fd, &fds);
 		select(fd + 1, &fds, 0, &fds, NULL);
@@ -95,8 +102,8 @@ void zwm_event_register(ZenEvent e, ZenEFunc f, void *priv)
 static void expose(XEvent *e) {
 	Client *c;
 	XExposeEvent *ev = &e->xexpose;
-	 if((c = zwm_client_get(ev->window))) {
-		 zwm_decor_update(c);
+	 if((c = zwm_client_get(ev->window)) && ev->window == c->frame) {
+		 zwm_decor_dirty(c);
 	 }
 }
 
@@ -223,7 +230,7 @@ static void enternotify(XEvent *e) {
 	if(ev->mode != NotifyNormal || ev->detail == NotifyInferior)
 		return;
 
-	if((c = zwm_client_get(ev->window)))
+	if((c = zwm_client_get(ev->window)) && c->frame == ev->window)
 		zwm_client_focus(c);
 }
 

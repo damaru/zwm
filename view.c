@@ -106,7 +106,7 @@ void zwm_view_set(int  v)
 {
 	if (v < config.num_views && v != zwm_current_view()) {
 		zwm_screen_set_view( zwm_current_screen(), v );
-		zwm_layout_arrange();
+		zwm_layout_rearrange(True);
 		zwm_client_refocus();
 		zwm_event_emit(ZenView, (void*)v);
 	}
