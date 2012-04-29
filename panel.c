@@ -14,7 +14,7 @@ void zwm_panel_init(void)
 	zwm_event_register(ZenScreenSize, (ZenEFunc)panel_rescan, NULL);
 }
 
-void zwm_panel_toggle(const char *args)
+void zwm_panel_toggle(void)
 {
 	static int oldy;
 	if(panel){

@@ -1,30 +1,30 @@
-void set_view(const char *arg) {
+static void set_view(const char *arg) {
 	int v =  atoi(arg);
 	if(sel) {
 		zwm_client_set_view(sel, v);
 	}
 }
 
-void goto_view(const char *arg) {
+static void goto_view(const char *arg) {
 	int v = atoi(arg);
 	zwm_view_set(v);
 }
 
 
-void banish(const char *arg) {
+static void banish(const char *arg) {
 	if(sel){
 		zwm_client_set_view(sel, ((zwm_current_view()+1)%2));
 	}
 }
 
-void flip(const char *arg) {
+static void flip(const char *arg) {
 	if(sel){
 		int next = (zwm_current_view() + 1) % 2;
 		zwm_view_set(next);
 	}
 }
 
-void zwm_runonce(const char *arg){
+static void run_once(const char *arg){
 	char data[1024];
 	char *cmd;
 	char *class;
@@ -55,7 +55,7 @@ void zwm_runonce(const char *arg){
 	zwm_util_spawn(cmd);
 }
 
-void client_zoom(const char *arg) {
+static void client_zoom(const char *arg) {
 	Client *c = sel;
 	if( c && c == zwm_client_head()) {
 		c = zwm_client_next_visible(zwm_client_next(c));
@@ -66,4 +66,70 @@ void client_zoom(const char *arg) {
 	}
 }
 
+static void close_window(const char *arg) {
+	if (sel) {
+		zwm_client_kill(sel);
+	}
+}
+
+static void  toggle_floating(const char *arg) {
+	if (sel) {
+		zwm_client_toggle_floating(sel);
+	}
+}
+
+static void toggle_panel(const char *arg) {
+	zwm_panel_toggle();
+}
+
+static void do_focus(Client *c)
+{
+	if (c) {
+		zwm_client_raise(c);
+		zwm_client_warp(c);
+	}
+}
+
+static inline Client * client_next(Client *c, int dir){
+	return ((Client **)(&c->node))[dir];
+}
+
+static void focus(const char *arg) {
+	int i = atoi(arg);
+	if (!sel) {
+		zwm_client_refocus();
+		return;
+	}
+
+	if (i < 2) {
+		int view = zwm_current_view();
+		Client *c = client_next(sel, i);
+		if (!c) {
+			zwm_client_refocus();
+			return;
+		}
+		for(; c; c = client_next(c, i)){
+			if(zwm_client_visible(c, view)){
+				do_focus(c);
+				return;
+			}
+		}
+	} else {
+		zwm_client_refocus();
+		if(sel){
+			do_focus(sel);
+		}
+	}
+}
+
+static void iconify(const char *args) {
+	if (sel) {
+		zwm_client_setstate(sel, IconicState);
+	}
+}
+
+
+static void client_iconify(Client *c) {
+	zwm_client_setstate(c, IconicState);
+}
 

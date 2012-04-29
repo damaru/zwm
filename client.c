@@ -70,18 +70,6 @@ void zwm_client_configure_window(Client *c) {
 	XSendEvent(dpy, c->win, False, StructureNotifyMask, (XEvent *)&ce);
 }
 
-void zwm_client_iconify(Client *c) {
-	if(c == NULL) {
-		c = sel;
-	}
-
-	if(!c){
-		return;
-	}
-
-	zwm_client_setstate(c, IconicState);
-}
-
 void zwm_client_setstate(Client *c, int state)
 {
 	c->state = state;
@@ -490,19 +478,9 @@ isprotodel(Client *c) {
 	return ret;
 }
 
-void zwm_client_kill(Client *c)
-{
-	XEvent ev;
-
-	if(!c) {
-		c = sel;
-
-		if(!c) {
-			return;
-		}
-	}
-
-	if(isprotodel(c)) {
+void zwm_client_kill(Client *c) {
+	if (isprotodel(c)) {
+		XEvent ev;
 		ev.type = ClientMessage;
 		ev.xclient.window = c->win;
 		ev.xclient.message_type = WM_PROTOCOLS;
@@ -510,9 +488,7 @@ void zwm_client_kill(Client *c)
 		ev.xclient.data.l[0] = WM_DELETE_WINDOW;
 		ev.xclient.data.l[1] = CurrentTime;
 		XSendEvent(dpy, c->win, False, NoEventMask, &ev);
-	}
-	else 
-	{
+	} else {
 		XKillClient(dpy, c->win);
 	}
 }
@@ -551,12 +527,6 @@ Client *zwm_client_next_visible(Client *c)
 }
 
 void zwm_client_toggle_floating(Client *c) {
-	if(!c){
-		c = sel;
-		if (!c) {
-			return;
-		}
-	}
 	c->isfloating = !c->isfloating;
 	zwm_event_emit(ZenClientFloating, c);
 
@@ -577,51 +547,6 @@ void zwm_client_zoom(Client *c) {
 		zwm_client_remove(c);
 		zwm_client_push_head(c);
 		zwm_layout_arrange();
-		zwm_client_raise(c);
-		zwm_client_warp(c);
-	}
-}
-
-void zwm_focus_prev(const char *arg) {
-	Client *c;
-
-	if(!sel) {
-		zwm_client_refocus();
-		return;
-	}
-
-	for(c = zwm_client_prev(sel);
-		       	c && !zwm_client_visible(c, zwm_current_view());
-		       	c = zwm_client_prev(c));
-	if(!c) {
-		for(c = zwm_client_tail();
-		  c && !zwm_client_visible(c, zwm_current_view());
-		  c = zwm_client_prev(c));
-	}
-
-	if(c) {
-		zwm_client_raise(c);
-		zwm_client_warp(c);
-	}
-}
-
-void zwm_focus_next(const char *arg) {
-	Client *c;
-
-	if(!sel) {
-		zwm_client_refocus();
-		return;
-	}
-
-	for(c = zwm_client_next(sel);
-		       	c && !zwm_client_visible(c, zwm_current_view());
-		       	c = zwm_client_next(c));
-	if(!c) {
-		for(c = zwm_client_head();
-		  c && !zwm_client_visible(c, zwm_current_view()); c = zwm_client_next(c));
-	}
-
-	if(c) {
 		zwm_client_raise(c);
 		zwm_client_warp(c);
 	}
