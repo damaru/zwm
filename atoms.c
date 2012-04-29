@@ -69,14 +69,12 @@ zwm_x11_atom_list(Window w, Atom a, Atom type,
         &real_type, &real_format, &items_read, &bytes_left, &data);
 
     if (real_format == 32 && items_read) {
-        p = (ulong *)data;
-        for (i = 0; i < items_read; i++) *ret++ = *p++;
-        XFree(data);
-        if (left) *left = bytes_left;
-        return items_read;
-    } else {
-	return 0;
+	    p = (ulong *)data;
+	    for (i = 0; i < items_read; i++) *ret++ = *p++;
+	    XFree(data);
+	    if (left) *left = bytes_left;
     }
+    return items_read;
 }
 
 Bool

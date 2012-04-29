@@ -15,8 +15,8 @@ void tile(int scr, int v) {
 		zwm_layout_moveresize(lh, screen[scr].x, 
 				screen[scr].y, w, screen[scr].h - B );
 		for(i=1, c = zwm_client_next(lh); c ; c = zwm_client_next(c)){
-			int h = (screen[scr].h / (n-1));
 			if(zwm_layout_visible(c, v) && !c->isfloating){
+				int h = (screen[scr].h / (n-1));
 				zwm_layout_moveresize(c, 
 						screen[scr].x + (screen[scr].w/2),
 						screen[scr].y+(i-1)*h , 
