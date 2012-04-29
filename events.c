@@ -99,7 +99,7 @@ static void buttonpress(XEvent *e) {
 				if(i < config.button_count) config.buttons[i].func(c);
 				return ;
 			}
-			zwm_client_raise(c);
+			zwm_client_raise(c, False);
 			zwm_client_mousemove(c);
 		}
 		else if(ev->button == Button2) {
@@ -169,7 +169,7 @@ static void configurerequest(XEvent *e) {
 		} else {
 			zwm_client_configure_window(c);
 			if(!zwm_client_visible(c, c->view))
-				zwm_client_raise(c);
+				zwm_client_raise(c, False);
 		}
 	} else {
 		/* unmanaged window? pass on the event to the client */

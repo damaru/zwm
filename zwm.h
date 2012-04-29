@@ -205,7 +205,7 @@ void zwm_client_mouseresize(Client *c);
 void zwm_client_moveresize(Client *c, int,int,int,int);
 Client *zwm_client_next_visible(Client *c);
 void zwm_client_push_head(Client *);
-void zwm_client_raise(Client *c);
+void zwm_client_raise(Client *c, Bool warp);
 void zwm_client_refocus(void);
 void zwm_client_remove(Client *c);
 void zwm_client_restore_geometry(Client *c, ZenGeom *g);

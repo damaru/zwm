@@ -38,7 +38,7 @@ static void run_once(const char *arg){
 		if(strcasecmp(class, c->cname) == 0) {
 			ZWM_DEBUG("found CLASS %s, %s, for %s\n",c->cname, c->name, cmd);
 			zwm_client_zoom(c);
-			zwm_client_raise(c);
+			zwm_client_raise(c, True);
 			return;
 		}
 	}
@@ -48,7 +48,7 @@ static void run_once(const char *arg){
 		if(strcasestr(c->name, class)) {
 			ZWM_DEBUG("found NAME %s for %s\n",c->name, cmd);
 			zwm_client_zoom(c);
-			zwm_client_raise(c);
+			zwm_client_raise(c, True);
 			return;
 		}
 	}
@@ -85,8 +85,7 @@ static void toggle_panel(const char *arg) {
 static void do_focus(Client *c)
 {
 	if (c) {
-		zwm_client_raise(c);
-		zwm_client_warp(c);
+		zwm_client_raise(c, True);
 	}
 }
 
@@ -99,9 +98,7 @@ static void focus(const char *arg) {
 	if (!sel) {
 		zwm_client_refocus();
 		return;
-	}
-
-	if (i < 2) {
+	} else if (i < 2) {
 		int view = zwm_current_view();
 		Client *c = client_next(sel, i);
 		if (!c) {
@@ -127,7 +124,6 @@ static void iconify(const char *args) {
 		zwm_client_setstate(sel, IconicState);
 	}
 }
-
 
 static void client_iconify(Client *c) {
 	zwm_client_setstate(c, IconicState);

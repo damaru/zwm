@@ -186,8 +186,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_event_emit(ZenClientMap, c);
 	zwm_layout_dirty();
 	zwm_client_configure_window(c);
-	zwm_client_warp(c);
-	zwm_client_raise(c);
+	zwm_client_raise(c, True);
 	config.num_clients++;
 	return c;
 }
@@ -211,8 +210,7 @@ void zwm_client_unmanage(Client *c) {
 	if(sel == c){
 		Client *n = zwm_client_get(c->lastfocused);
 		if (n && n->win == c->lastfocused) {
-			zwm_client_raise(n);
-			zwm_client_warp(n);
+			zwm_client_raise(n, True);
 		} else {
 			zwm_client_refocus();
 		}
@@ -299,10 +297,13 @@ void zwm_client_focus(Client *c)
 	zwm_event_emit(ZenClientFocus, c);
 }
 
-void zwm_client_raise(Client *c)
+void zwm_client_raise(Client *c, Bool warp)
 {
 	zwm_client_set_view(c, zwm_current_view());
 	zwm_client_setstate(c, NormalState);
+	if (warp) {
+		zwm_client_warp(c);
+	}
 }
 
 static void grab_one_button(Window win, unsigned int button)
@@ -547,8 +548,7 @@ void zwm_client_zoom(Client *c) {
 		zwm_client_remove(c);
 		zwm_client_push_head(c);
 		zwm_layout_arrange();
-		zwm_client_raise(c);
-		zwm_client_warp(c);
+		zwm_client_raise(c, True);
 	}
 }
 

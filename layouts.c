@@ -106,7 +106,9 @@ void zwm_layout_arrange(void)
 				zwm_client_save_geometry(c, &c->bpos);
 			}
 			//TODO fix this
-			if(config.screen_count > 1){
+			if(c->state == IconicState) {
+				zwm_layout_moveresize(c, c->x, c->y+screen[0].h, c->w, c->h);
+			} else if(config.screen_count > 1){
 				zwm_layout_moveresize(c, c->x, c->y-2*screen[0].h, c->w, c->h);
 			} else {
 				zwm_layout_moveresize(c, screen[config.screen_count-1].x + screen[config.screen_count-1].w + 2+c->x, c->y, c->w, c->h);

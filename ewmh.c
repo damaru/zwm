@@ -65,7 +65,7 @@ void zwm_ewmh_set_window_opacity(Window win, float opacity) {
 
 static void process_state_atom(Client *c, Atom state, int set) {
     if(state != _NET_WM_STATE_HIDDEN) {
-	    zwm_client_raise(c);
+	    zwm_client_raise(c, False);
     }
     if(state == _NET_WM_STATE_FULLSCREEN) {
         if(set) {
@@ -74,7 +74,7 @@ static void process_state_atom(Client *c, Atom state, int set) {
 		zwm_client_unfullscreen(c);
         }
         zwm_layout_dirty();
-        zwm_client_raise(c);
+        zwm_client_raise(c, False);
 	client_list(NULL,NULL);
     }
 }
@@ -89,7 +89,7 @@ static void clientmessage(XEvent *e, void *p) {
 	}
 
 	if(ev->message_type == _NET_ACTIVE_WINDOW) {
-		zwm_client_raise(c);
+		zwm_client_raise(c, False);
 	} else if(ev->message_type == WM_CHANGE_STATE) {
 		zwm_client_setstate(c, ev->data.l[0]);	
 	} else if(ev->message_type == _NET_WM_DESKTOP) {
