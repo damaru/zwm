@@ -200,6 +200,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_client_configure_window(c);
 	zwm_client_warp(c);
 	zwm_client_raise(c);
+	config.num_clients++;
 	return c;
 }
 
@@ -237,6 +238,7 @@ void zwm_client_unmanage(Client *c) {
 	zwm_view_rescan();
 	zwm_event_emit(ZenClientUnmap, c);
 	free(c);
+	config.num_clients--;
 }
 
 Client *zwm_client_get(Window w) {

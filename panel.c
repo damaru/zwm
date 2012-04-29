@@ -1,10 +1,36 @@
 #include "zwm.h"
 
 static Client *panel = NULL;
-static int oldy;
+static void panel_map(Client *c, void *priv);
+static void panel_configure(Client *c, void *priv);
+static void panel_unmap(Client *c, void *priv);
+static void panel_rescan(const char *layout, void *priv);
 
-static void map(Client *c, void *priv)
+void zwm_panel_init(void)
 {
+	zwm_event_register(ZenClientUnmap, (ZenEFunc)panel_unmap, NULL);
+	zwm_event_register(ZenClientConfigure, (ZenEFunc)panel_configure, NULL);
+	zwm_event_register(ZenClientMap, (ZenEFunc)panel_map, NULL);
+	zwm_event_register(ZenScreenSize, (ZenEFunc)panel_rescan, NULL);
+}
+
+void zwm_panel_toggle(const char *args)
+{
+	static int oldy;
+	if(panel){
+		if(panel->y >= 0 && panel->y <= (screen[0].y + screen[0].h))
+		{
+			oldy = panel->y;
+			zwm_client_moveresize(panel, panel->x, 10000, panel->w, panel->h);
+		} else {
+			zwm_client_moveresize(panel, panel->x, oldy, panel->w, panel->h);
+		}
+		zwm_screen_rescan(False);
+		zwm_layout_dirty();
+	}
+}
+
+static void panel_map(Client *c, void *priv) {
 	if(c->type == ZenDockWindow && !panel)
 	{
 		panel = c;
@@ -12,16 +38,14 @@ static void map(Client *c, void *priv)
 	}
 }
 
-static void configure(Client *c, void *priv)
-{
+static void panel_configure(Client *c, void *priv) {
 	if(c == panel)
 	{
 		zwm_screen_rescan(False);
 	}
 }
 
-static void unmap(Client *c, void *priv)
-{
+static void panel_unmap(Client *c, void *priv) {
 	if(c == panel)
 	{
 		panel = NULL;
@@ -29,8 +53,7 @@ static void unmap(Client *c, void *priv)
 	}
 }
 
-static void rescreen(const char *layout, void *priv)
-{
+static void panel_rescan(const char *layout, void *priv) {
 	int i;
 	XWindowAttributes wa;
 	if(panel) {
@@ -59,27 +82,3 @@ static void rescreen(const char *layout, void *priv)
 	} 
 	zwm_layout_arrange();
 }
-
-void zwm_panel_toggle(const char *args)
-{
-	if(panel){
-		if(panel->y >= 0 && panel->y <= (screen[0].y + screen[0].h))
-		{
-			oldy = panel->y;
-			zwm_client_moveresize(panel, panel->x, 10000, panel->w, panel->h);
-		} else {
-			zwm_client_moveresize(panel, panel->x, oldy, panel->w, panel->h);
-		}
-		zwm_screen_rescan(False);
-		zwm_layout_dirty();
-	}
-}
-
-void zwm_panel_init(void)
-{
-	zwm_event_register(ZenClientUnmap, (ZenEFunc)unmap, NULL);
-	zwm_event_register(ZenClientConfigure, (ZenEFunc)configure, NULL);
-	zwm_event_register(ZenClientMap, (ZenEFunc)map, NULL);
-	zwm_event_register(ZenScreenSize, (ZenEFunc)rescreen, NULL);
-}
-

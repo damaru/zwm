@@ -34,30 +34,6 @@ Bool zwm_layout_visible(Client *c, int view)
 		(c->type == ZenNormalWindow || c->type == ZenDialogWindow) ;
 }
 
-
-static Client *zwm_layout_next_client(Client *c, int v) {
-	c = zwm_client_next(c);
-	while (c) {
-		if(zwm_layout_visible(c,v) && !c->isfloating){
-			return c;
-		}
-		c = zwm_client_next(c);
-	}
-	return c;
-}
-
-static Client *zwm_layout_head(int v) {
-	Client *c = zwm_client_head();
-	if(!c){
-		return NULL;
-	}
-	if(zwm_layout_visible(c,v) && !c->isfloating){
-		return c;
-	} else {
-		return zwm_layout_next_client(c, v);
-	}
-}
-
 void zwm_layout_moveresize(Client *c, int x, int y, int w, int h)
 {
 	if(c->noanim) {
@@ -81,9 +57,7 @@ void zwm_layout_animate(void)
 	{
 		return;
 	}
-	for(c = zwm_client_head();
-			c;
-			c = zwm_client_next(c)) {
+	for(c = zwm_client_head(); c; c = zwm_client_next(c)) {
 		if(!c->noanim){
 			c->dx = (c->x - c->ox)/config.anim_steps;
 			c->dy = (c->y - c->oy)/config.anim_steps;
@@ -112,12 +86,12 @@ void zwm_layout_animate(void)
 
 void zwm_layout_arrange(void)
 {
-	Client *c;
+	Client *c = zwm_client_head();
 	int i;
-	for(c = zwm_client_head();
-	       	c;
-	       	c = zwm_client_next(c)) {
-		
+	if (!c) {
+		return;
+	}
+	for(; c; c = zwm_client_next(c)) {
 		if (zwm_client_visible(c, c->view) && c->bpos.w) {
 			zwm_client_restore_geometry(c, &c->bpos);
 			c->bpos.w = 0;
@@ -146,9 +120,7 @@ void zwm_layout_arrange(void)
 
 	zwm_layout_animate();
 
-	for(c = zwm_client_head();
-		    c;
-		    c = zwm_client_next(c)) {
+	for(c = zwm_client_head(); c; c = zwm_client_next(c)) {
 		zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 		zwm_decor_update(c);
 		c->noanim = 1;

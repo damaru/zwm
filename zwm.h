@@ -58,16 +58,15 @@ struct Client
 	double oy;
 	double ow;
 	double oh;
-	int ignore;
+	int anim_steps;
 	int border;
-	int state;
 	int focused;
+	int hastitle;
+	int ignore;
+	int noanim;
+	int state;
 	int type;
 	int view;
-	int screen;
-	int noanim;
-	int hastitle;
-	int anim_steps;
 	Bool isfloating;
 	ZenGeom fpos;
 	ZenGeom bpos;
@@ -89,6 +88,7 @@ typedef struct
 	unsigned int screen_w;
 	unsigned int screen_h;
 	unsigned int num_views;
+	unsigned int num_clients;
 
 	const char *normal_border_color;
 	const char *focus_border_color;
@@ -268,4 +268,7 @@ Bool zwm_x11_atom_text(Window w, Atom atom, char *text, unsigned int size);
 void zwm_x11_cursor_free(Display *dpy);
 Cursor zwm_x11_cursor_get(ZenCursor c);
 void zwm_x11_cursor_init(Display *dpy);
+
+#define zwm_client_foreach(c) for((c)=zwm_client_head();(c);(c)=zwm_client_next((c)))
+
 #endif

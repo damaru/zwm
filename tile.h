@@ -1,53 +1,28 @@
 void tile(int scr, int v) {
-	Client *c = zwm_client_head();
-	unsigned int i, n;
-	int B;
-	if(c) {
-       		B = 2*config.border_width;
-
-	} else
-	       	return;
-
-	for(n = 0; c; c = zwm_client_next(c))
-	{
+	Client *c, *lh = NULL;
+	unsigned int i, n = 0;
+	int B = 2*config.border_width;
+	zwm_client_foreach (c) {
 		if(zwm_layout_visible(c, v) && !c->isfloating){
 			c->noanim = 0;
+			if(!lh) lh = c;
 			n++;
 		}
 	}
-
-	for(i = 0, c = zwm_layout_head(v);
-			c;
-			c = zwm_layout_next_client(c, v)) {
-
-		c->view = v;
-		c->screen = scr;
-		if(n == 1 ){
-			zwm_layout_moveresize(c, 
-					screen[scr].x, 
-					screen[scr].y ,  
-					screen[scr].w - B,
-					screen[scr].h - B);
-			return;
-		} else {
-			if( i == 0)
-			{
-				zwm_layout_moveresize(c,
-						screen[scr].x,
-						screen[scr].y,
-						(screen[scr].w / 2) - B,
-						screen[scr].h - B );
-			} else {
-				int h = (screen[scr].h/ (n-1));
+	//int w = (screen[scr].w/(n>1?2:1)) - B;
+	int w = (screen[scr].w / (1<<(n>1))) - B;
+	if (n) {
+		zwm_layout_moveresize(lh, screen[scr].x, 
+				screen[scr].y, w, screen[scr].h - B );
+		for(i=1, c = zwm_client_next(lh); c ; c = zwm_client_next(c)){
+			int h = (screen[scr].h / (n-1));
+			if(zwm_layout_visible(c, v) && !c->isfloating){
 				zwm_layout_moveresize(c, 
 						screen[scr].x + (screen[scr].w/2),
-						screen[scr].y+(i-1)*h ,
-						(screen[scr].w/2)-B ,
-						h );
+						screen[scr].y+(i-1)*h , 
+						w , h );
+				i++;
 			}
-			i++;
 		}
 	}
 }
-
-
