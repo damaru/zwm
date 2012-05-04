@@ -36,8 +36,9 @@ void zwm_event_loop(void) {
 	XSync(dpy, False);
 	int fd = ConnectionNumber(dpy);
 	fd_set fds;
+	struct timeval t;
 	while(!quit) {
-		while(XPending(dpy)) {
+		while(XPending(dpy) > 0) {
 			XNextEvent(dpy, &ev);
 			if(ev.type < LASTEvent) {
 				zwm_event_emit(ev.type, &ev);
@@ -52,10 +53,16 @@ void zwm_event_loop(void) {
 				c->dirty = 0;
 			}
 		}
-		XSync(dpy, False);
 		FD_ZERO(&fds);
 		FD_SET(fd, &fds);
-		select(fd + 1, &fds, 0, &fds, NULL);
+		t.tv_sec = 1;
+		t.tv_usec = 0;
+		if(select(fd + 1, &fds, 0, &fds, &t) < 0) {
+			break;
+		}
+
+		if(sel)zwm_decor_update(sel);
+
 		if(quit){
 			break;
 		}

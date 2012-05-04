@@ -2,18 +2,28 @@
 #include "zwm.h"
 #include <X11/extensions/Xinerama.h>
 
-static unsigned long views = 0;
-ZenGeom screen[MAX_SCREENS];
+ZenScreen screen[MAX_SCREENS];
+ZwmView views[MAX_VIEWS];
 
 int zwm_view_get_screen(int view)
 {
-	int i;
-	for(i = 0; i<config.screen_count; i++){
-		if(screen[i].view == view){
-			return i;
+	return views[view].screen;
+}
+
+Bool zwm_view_mapped(int v)
+{
+	return (views[v].screen >= 0);
+}
+
+Bool zwm_view_has_clients(int v)
+{
+	Client *c;
+	zwm_client_foreach(c){
+		if(c->view == v){
+			return True;
 		}
 	}
-	return -1;
+	return False;
 }
 
 void zwm_screen_set_view(int scr, int view)
@@ -24,17 +34,30 @@ void zwm_screen_set_view(int scr, int view)
 	}
 
 	if (i >= 0) {
+		screen[i].prev = screen[i].view;
 		screen[i].view = screen[scr].view;
 	}
+	screen[scr].prev = screen[scr].view;
 	screen[scr].view = view;
-	views = 0;
-	for(i=0;i<config.screen_count;i++)
-		views |= 1<<(screen[i].view);
+	for(i=0;i<MAX_VIEWS;i++){
+		views[i].screen = -1;
+	}
+	for(i=0;i<config.screen_count;i++){
+		views[screen[i].view].screen = i;
+	}
 }
 
-Bool zwm_view_mapped(int v)
+int zwm_client_screen(Client *c)
 {
-	return views&(1<<v)?True:False;
+	int i;
+	for(i=0;i<config.screen_count;i++){
+		if(c->x >= screen[i].x && c->x <=screen[i].x+screen[i].w){
+			if(c->y >= screen[i].y && c->y <=screen[i].y+screen[i].h){
+				return i;
+			}
+		}
+	}
+	return 0;
 }
 
 int zwm_current_screen()
@@ -96,9 +119,13 @@ void zwm_view_rescan(void)
 			}
 		}
 	}
-	views = 0;
-	for(i=0;i<config.screen_count;i++)
-		views |= 1<<(screen[i].view);
+	for(i=0;i<MAX_VIEWS;i++){
+		views[i].screen = -1;
+	}
+	for(i=0;i<config.screen_count;i++){
+		views[screen[i].view].screen = i;
+	}
+
 	zwm_layout_arrange();
 }
 
@@ -147,8 +174,10 @@ void zwm_screen_rescan(Bool init) {
 	} 
 
 	if(init){
-		for(i=0;i<config.screen_count;i++)
+		for(i=0;i<config.screen_count;i++) {
+			screen[i].view = i;
 			zwm_screen_set_view(i, i);
+		}
 	}
 	zwm_event_emit(ZenScreenSize, NULL);
 	zwm_layout_dirty();

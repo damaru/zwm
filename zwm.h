@@ -13,6 +13,9 @@
 #include <X11/Xatom.h>
 
 typedef unsigned long ulong;
+typedef int (*ZenLFunc)(int scrn, int view);
+typedef int (*ZenEFunc)(void *, void *);
+typedef void (*KeyFunc)(const char *);
 
 typedef enum {
        	CurNormal,
@@ -21,7 +24,6 @@ typedef enum {
        	CurLast
 } ZenCursor;
 
-typedef void (*KeyFunc)(const char *);
 typedef struct ZenGeom
 {
 	int view;
@@ -30,6 +32,30 @@ typedef struct ZenGeom
 	int w;
 	int h;
 } ZenGeom;
+
+typedef struct ZenLayout
+{
+	ZenLFunc handler;
+	int skip;
+	char name[64];
+	struct ZenLayout *next;
+}ZenLayout;
+
+typedef struct ZenScreen
+{
+	int prev;
+	int view;
+	int x;
+	int y;
+	int w;
+	int h;
+} ZenScreen;
+
+typedef struct ZwmView
+{
+	ZenLayout *layout;
+	int screen;
+} ZwmView;
 
 enum
 {
@@ -45,6 +71,7 @@ enum
 typedef struct Client Client;
 struct Client
 {
+	int view;
 	double x;
 	double y;
 	double w;
@@ -65,7 +92,6 @@ struct Client
 	int noanim;
 	int state;
 	int type;
-	int view;
 	int dirty;
 	Bool isfloating;
 	ZenGeom fpos;
@@ -92,6 +118,8 @@ typedef struct
 	const char *focus_bg_color;
 	const char *normal_shadow_color;
 	const char *focus_shadow_color;
+	const char *normal_title_color;
+	const char *focus_title_color;
 
 	const char *font;
 	const char *icons;
@@ -101,6 +129,7 @@ typedef struct
 	int show_title;
 	int title_height;
 	int title_y;
+	int icon_y;
 	int button_width;
 	int button_count;
 	int reparent;
@@ -111,6 +140,8 @@ typedef struct
 	unsigned int xcolor_nbg;
 	unsigned int xcolor_fshadow;
 	unsigned int xcolor_nshadow;
+	unsigned int xcolor_ftitle;
+	unsigned int xcolor_ntitle;
 	
 	char *viewnames[32];
 
@@ -157,9 +188,6 @@ typedef enum
 	ZenMaxEvents
 }ZenEvent;
 
-typedef int (*ZenLFunc)(int scrn, int view);
-typedef int (*ZenEFunc)(void *, void *);
-
 #define _X(name) extern Atom name
 #include "atoms.h"
 #undef _X
@@ -179,8 +207,11 @@ typedef int (*ZenEFunc)(void *, void *);
 #endif
 
 #define MAX_SCREENS 32
+#define MAX_VIEWS 32
 #define MAX_CLIENTS 100
-extern ZenGeom screen[MAX_SCREENS];
+
+extern ZenScreen screen[MAX_SCREENS];
+extern ZwmView views[MAX_SCREENS];
 extern int scr;
 extern Display *dpy;
 extern Window root;
@@ -233,13 +264,12 @@ void zwm_ewmh_set_window_opacity(Window win, float opacity);
 void zwm_key_bind(const char* keyname, void *f, const char *arg);
 void zwm_key_init(void);
 void zwm_layout_arrange(void);
-void zwm_layout_cycle(const char *arg); 
 void zwm_layout_dirty(void);
 void zwm_layout_init(void);
 void zwm_layout_moveresize(Client *c, int x, int y, int w, int h);
 void zwm_layout_next(void);
 void zwm_layout_rearrange(Bool force);
-void zwm_layout_register(ZenLFunc f, char *name);
+void zwm_layout_register(ZenLFunc f, char *name, int);
 void zwm_layout_set(const char *name);
 void zwm_panel_init(void);
 void zwm_panel_toggle(void);
@@ -263,6 +293,10 @@ Bool zwm_x11_atom_text(Window w, Atom atom, char *text, unsigned int size);
 void zwm_x11_cursor_free(Display *dpy);
 Cursor zwm_x11_cursor_get(ZenCursor c);
 void zwm_x11_cursor_init(Display *dpy);
+int zwm_client_screen(Client *);
+void zwm_panel_show();
+void zwm_panel_hide();
+Bool zwm_view_has_clients(int v);
 
 #define zwm_client_foreach(c) for((c)=head;(c);(c)=(c)->next)
 

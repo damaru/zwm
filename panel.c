@@ -5,6 +5,7 @@ static void panel_map(Client *c, void *priv);
 static void panel_configure(Client *c, void *priv);
 static void panel_unmap(Client *c, void *priv);
 static void panel_rescan(const char *layout, void *priv);
+static int oldy;
 
 void zwm_panel_init(void)
 {
@@ -14,9 +15,30 @@ void zwm_panel_init(void)
 	zwm_event_register(ZenScreenSize, (ZenEFunc)panel_rescan, NULL);
 }
 
+void zwm_panel_hide(void)
+{
+	if(panel){
+		if(panel->y >= 0 && panel->y <= (screen[0].y + screen[0].h))
+		{
+			oldy = panel->y;
+			zwm_client_moveresize(panel, panel->x, 10000, panel->w, panel->h);
+		}
+		zwm_screen_rescan(False);
+		zwm_layout_dirty();
+	}
+}
+
+void zwm_panel_show(void)
+{
+	if(panel){
+		zwm_client_moveresize(panel, panel->x, oldy, panel->w, panel->h);
+		zwm_screen_rescan(False);
+		zwm_layout_dirty();
+	}
+}
+
 void zwm_panel_toggle(void)
 {
-	static int oldy;
 	if(panel){
 		if(panel->y >= 0 && panel->y <= (screen[0].y + screen[0].h))
 		{

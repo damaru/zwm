@@ -173,7 +173,6 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
 
 	zwm_decor_update(c);
-	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_push_head(c);
 	zwm_event_emit(ZenClientMap, c);
 	zwm_layout_dirty();
@@ -196,13 +195,17 @@ void zwm_client_unmanage(Client *c) {
 		XReparentWindow(dpy, c->win, root, c->x, c->y+config.title_height);
 	}
 
+	if(c->frame){
+		XDestroyWindow(dpy, c->frame);
+	}
+
 	zwm_client_remove(c);
 	if(c->isfloating){
 		num_floating--;
 	}	
 	if(sel == c){
 		Client *n = zwm_client_get(c->lastfocused);
-		if (n && n->win == c->lastfocused) {
+		if (n && n->win == c->lastfocused && zwm_client_visible(n, zwm_current_view())) {
 			zwm_client_raise(n, True);
 		} else {
 			zwm_client_refocus();
@@ -210,9 +213,6 @@ void zwm_client_unmanage(Client *c) {
 	}
 
 	XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
-	if(c->frame){
-		XDestroyWindow(dpy, c->frame);
-	}
 	XUngrabServer(dpy);
 	zwm_view_rescan();
 	zwm_event_emit(ZenClientUnmap, c);
@@ -339,6 +339,9 @@ void zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 		XMoveResizeWindow(dpy, c->win, x, y, w, h);
 		if(c->frame)XMoveResizeWindow(dpy, c->frame, x, y, w, h);
 	}
+	if (c->isfloating && zwm_client_screen(c) != -1) {
+		c->view = screen[zwm_client_screen(c)].view;
+	}
 	XSync(dpy, False);
 }
 
@@ -347,12 +350,10 @@ void zwm_client_fullscreen(Client *c)
 	c->isfloating = True;
 	c->hastitle = 0;
 	num_floating++;
-	c->border = 0;
-	XSetWindowBorderWidth(dpy, c->win, c->border);
 	zwm_client_moveresize(c, screen[0].x - c->border,
 			   screen[0].y - c->border, 
-			   screen[0].w , 
-			   screen[0].h );
+			   screen[0].w + 2*c->border , 
+			   screen[0].h + 2*c->border );
 }
 
 void zwm_client_unfullscreen(Client *c)
@@ -370,7 +371,6 @@ void zwm_client_float(Client *c)
 {
 	if(!c->isfloating){
 		zwm_client_toggle_floating(c);
-		zwm_layout_rearrange(True);
 	}
 }
 
@@ -390,6 +390,7 @@ void zwm_client_mousemove(Client *c) {
 
 	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_float(c);
+	zwm_layout_rearrange(True);
 
 	XQueryPointer(dpy, root, &dummy, &dummy, &x1, &y1, &di, &di, &dui);
 
@@ -410,6 +411,8 @@ void zwm_client_mousemove(Client *c) {
 		}
 	} while(ev.type != ButtonRelease);
 	XUngrabPointer(dpy, CurrentTime);
+	zwm_client_save_geometry(c, &c->fpos);
+	zwm_client_save_geometry(c, &c->bpos);
 }
 
 void zwm_client_mouseresize(Client *c) {
@@ -426,6 +429,7 @@ void zwm_client_mouseresize(Client *c) {
 
 	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_float(c);
+	zwm_layout_rearrange(True);
 
 	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->border - 1, c->h + c->border - 1);
 	do {
@@ -445,10 +449,12 @@ void zwm_client_mouseresize(Client *c) {
 			zwm_client_moveresize(c, c->x, c->y, nw, nh);
 			break;
 		}
+		zwm_decor_update(c);
 	} while(ev.type != ButtonRelease);
 	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->border - 1,
 		       	c->h + c->border - 1);
 	XUngrabPointer(dpy, CurrentTime);
+	zwm_client_save_geometry(c, &c->fpos);
 	while(XCheckMaskEvent(dpy, EnterWindowMask, &ev));
 }
 
@@ -523,6 +529,7 @@ void zwm_client_toggle_floating(Client *c) {
 		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
 		num_floating++;
 		zwm_client_restore_geometry(c, &c->fpos);
+		zwm_decor_update(c);
 	} else {
 		num_floating--;
 		zwm_ewmh_set_window_opacity(c->frame, 1);
@@ -542,8 +549,7 @@ void zwm_client_zoom(Client *c) {
 
 void zwm_client_save_geometry(Client *c, ZenGeom *g)
 {
-	/* we don't save view because we don't want the client to jump to
-	 * unmapped view when floats are toggled */
+	g->view = c->view;
 	g->x = c->x;
 	g->y = c->y;
 	g->w = c->w;
@@ -552,7 +558,10 @@ void zwm_client_save_geometry(Client *c, ZenGeom *g)
 
 void zwm_client_restore_geometry(Client *c, ZenGeom *g)
 {
-	zwm_layout_moveresize(c, g->x, g->y, g->w, g->h);
+	int s = zwm_client_screen(c);
+	if(g->x >= screen[s].x && g->x <= (screen[s].w+screen[s].x) && 
+		g->y >= screen[s].y && g->y <= (screen[s].h+screen[s].y))
+		zwm_layout_moveresize(c, g->x, g->y, g->w, g->h);
 }
 
 static int zwm_x11_window_type(Window w)

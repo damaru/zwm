@@ -192,6 +192,8 @@ static void wm_init(void) {
 	config.xcolor_fbg = wm_color(config.focus_bg_color);
 	config.xcolor_nshadow = wm_color(config.normal_shadow_color);
 	config.xcolor_fshadow = wm_color(config.focus_shadow_color);
+	config.xcolor_ntitle = wm_color(config.normal_title_color);
+	config.xcolor_ftitle = wm_color(config.focus_title_color);
 	gc = XCreateGC(dpy, root, 0, NULL);
 	zwm_util_spawn("~/.zwm/init");
 	zwm_decor_init();

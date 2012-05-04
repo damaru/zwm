@@ -63,7 +63,7 @@ void zwm_ewmh_set_window_opacity(Window win, float opacity) {
 
 static void process_state_atom(Client *c, Atom state, int set) {
     if(state != _NET_WM_STATE_HIDDEN) {
-	    zwm_client_raise(c, False);
+	    zwm_client_raise(c, True);
     }
     if(state == _NET_WM_STATE_FULLSCREEN) {
         if(set) {
