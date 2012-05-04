@@ -17,7 +17,7 @@ static void key_press(XEvent *e, void *p);
 
 void zwm_key_init(void) {
 	int i;
-	zwm_event_register(KeyPress, (ZenEFunc)key_press, NULL);
+	zwm_event_register(KeyPress, (ZwmEFunc)key_press, NULL);
 	for(i = 0; config.keys[i].f; i++){
 		zwm_key_bind(config.keys[i].key, config.keys[i].f, config.keys[i].arg);
 	}

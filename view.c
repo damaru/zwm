@@ -2,7 +2,7 @@
 #include "zwm.h"
 #include <X11/extensions/Xinerama.h>
 
-ZenScreen screen[MAX_SCREENS];
+ZwmScreen screen[MAX_SCREENS];
 ZwmView views[MAX_VIEWS];
 
 int zwm_view_get_screen(int view)
@@ -135,7 +135,7 @@ void zwm_view_set(int  v)
 		zwm_screen_set_view( zwm_current_screen(), v );
 		zwm_layout_rearrange(True);
 		zwm_client_refocus();
-		zwm_event_emit(ZenView, (void*)v);
+		zwm_event_emit(ZwmViewChange, (void*)v);
 	}
 }
 
@@ -179,7 +179,7 @@ void zwm_screen_rescan(Bool init) {
 			zwm_screen_set_view(i, i);
 		}
 	}
-	zwm_event_emit(ZenScreenSize, NULL);
+	zwm_event_emit(ZwmScreenSize, NULL);
 	zwm_layout_dirty();
 }
 

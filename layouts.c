@@ -2,7 +2,7 @@
 #include "zwm.h"
 #include <time.h>
 
-static ZenLayout *layouts = NULL;
+static ZwmLayout *layouts = NULL;
 static int dirty = 0;
 
 void zwm_layout_dirty(void)
@@ -22,7 +22,7 @@ Bool zwm_layout_visible(Client *c, int view)
 {
 	return c->state == NormalState &&
 		c->view == view && 
-		(c->type == ZenNormalWindow || c->type == ZenDialogWindow) ;
+		(c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) ;
 }
 
 void zwm_layout_moveresize(Client *c, int x, int y, int w, int h)
@@ -108,8 +108,8 @@ void zwm_layout_arrange(void)
 
 		c->anim_steps = config.anim_steps;
 
-		if( !c->isfloating && (c->type == ZenNormalWindow ||
-			c->type == ZenDialogWindow) && 
+		if( !c->isfloating && (c->type == ZwmNormalWindow ||
+			c->type == ZwmDialogWindow) && 
 			!zwm_client_visible(c, screen[zwm_client_screen(c)].view)  ) {
 			if (c->bpos.w == 0) {
 				zwm_client_save_geometry(c, &c->bpos);
@@ -137,9 +137,9 @@ void zwm_layout_arrange(void)
 	}
 }
 
-void zwm_layout_register(ZenLFunc f, char *name, int skip)
+void zwm_layout_register(ZwmLFunc f, char *name, int skip)
 {
-	ZenLayout *l = zwm_util_malloc(sizeof (ZenLayout));
+	ZwmLayout *l = zwm_util_malloc(sizeof (ZwmLayout));
 	l->handler = f ;
 	l->skip = skip;
 	strcpy(l->name , name);
@@ -150,7 +150,7 @@ void zwm_layout_register(ZenLFunc f, char *name, int skip)
 
 void zwm_layout_next(void)
 {
-	ZenLayout  *sel_layout = views[screen[zwm_current_screen()].view].layout;
+	ZwmLayout  *sel_layout = views[screen[zwm_current_screen()].view].layout;
 	while(sel_layout) {
 		sel_layout = sel_layout->next;
 		if(sel_layout && !sel_layout->skip){
@@ -166,7 +166,7 @@ void zwm_layout_next(void)
 
 void zwm_layout_set(const char *name)
 {
-	ZenLayout *l = NULL;
+	ZwmLayout *l = NULL;
 	if (name) {
 		l = layouts;
 		while(l)
@@ -183,7 +183,7 @@ void zwm_layout_set(const char *name)
 	} else {
 		zwm_layout_next();
 	}
-	zwm_event_emit(ZenLayoutChange, views[screen[zwm_current_screen()].view].layout->name);	
+	zwm_event_emit(ZwmLayoutChange, views[screen[zwm_current_screen()].view].layout->name);	
 	zwm_layout_dirty();
 }
 
@@ -203,11 +203,11 @@ static void layout_floating(int scr, int v) {
 
 void zwm_layout_init(void)
 {
-	zwm_layout_register((ZenLFunc)layout_floating, "floating", 1);
-//	zwm_layout_register((ZenLFunc)grid, "grid", 0);
-	zwm_layout_register((ZenLFunc)max_arrange, "max", 0);
-	zwm_layout_register((ZenLFunc)zen_arrange, "zen", 1);
-	zwm_layout_register((ZenLFunc)tile, "tile", 0);
+	zwm_layout_register((ZwmLFunc)layout_floating, "floating", 1);
+//	zwm_layout_register((ZwmLFunc)grid, "grid", 0);
+	zwm_layout_register((ZwmLFunc)max_arrange, "max", 0);
+	zwm_layout_register((ZwmLFunc)zen_arrange, "zen", 1);
+	zwm_layout_register((ZwmLFunc)tile, "tile", 0);
 	int i;
 	for(i=0; i<MAX_VIEWS; i++){
 		views[i].layout = layouts;

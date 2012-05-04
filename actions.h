@@ -5,38 +5,14 @@ static int view_next(Bool occupied)
 {
 	int next = screen[zwm_current_screen()].prev;
 
-	if(occupied && zwm_view_has_clients(next) == False){
-		next = 0;
-		while(next < MAX_VIEWS && 
-			(zwm_view_has_clients(next) == False || 
-			 zwm_view_mapped(next))) {
-			next++;
-		}
-	} else if(next == screen[zwm_current_screen()].view || next >= ZVIEW ){
-		next = (zwm_current_view() + 1) % config.screen_count;
+	if(occupied)
+		return next;
+
+	if(next <0 || next == zwm_current_view() || next >= ZVIEW ){
+		next = (zwm_current_view() + 1) % (config.screen_count+1);
 	}
 
 	return next;
-}
-
-static void cycle(const char *arg) {
-	Client *c, *next;
-
-	if(!sel) {
-		zwm_client_refocus();
-		return;
-	}
-
-	c = zwm_client_next_visible(head);
-	next = zwm_client_next_visible(c);
-	if(next){
-		zwm_event_emit(ZenClientUnmap, c);
-		zwm_client_remove(c);
-		zwm_client_push_tail(c);
-		zwm_client_warp(next);
-		zwm_event_emit(ZenClientMap, next);
-		zwm_layout_dirty();
-	}
 }
 
 static void set_view(const char *arg) {
@@ -62,8 +38,7 @@ static void banish(const char *arg) {
 }
 
 static void flip(const char *arg) {
-	int next = view_next(True);
-	zwm_view_set(screen[zwm_current_screen()].prev);
+	zwm_view_set(view_next(True));
 }
 
 static void banish_non_class(const char *arg) {
@@ -259,4 +234,25 @@ static void iconify(const char *args) {
 static void client_iconify(Client *c) {
 	zwm_client_setstate(c, IconicState);
 }
+
+static void cycle(const char *arg) {
+	Client *c, *next;
+
+	if(!sel) {
+		zwm_client_refocus();
+		return;
+	}
+
+	c = zwm_client_next_visible(head);
+	next = zwm_client_next_visible(c);
+	if(next){
+		zwm_event_emit(ZwmClientUnmap, c);
+		zwm_client_remove(c);
+		zwm_client_push_tail(c);
+		zwm_client_warp(next);
+		zwm_event_emit(ZwmClientMap, next);
+		zwm_layout_dirty();
+	}
+}
+
 

@@ -8,14 +8,14 @@ static void clientmessage(XEvent *e, void *p);
 
 void zwm_ewmh_init(void) {
     unsigned long n = 1, c = 0;
-    zwm_event_register(ZenClientFocus, (ZenEFunc)active_window, NULL);
-    zwm_event_register(ZenClientMap, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenClientUnmap, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenView, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenClientFocus, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenClientView, (ZenEFunc)client_list, NULL);
-    zwm_event_register(ZenClientState, (ZenEFunc)client_state, NULL);
-    zwm_event_register(ClientMessage, (ZenEFunc)clientmessage, NULL);
+    zwm_event_register(ZwmClientFocus, (ZwmEFunc)active_window, NULL);
+    zwm_event_register(ZwmClientMap, (ZwmEFunc)client_list, NULL);
+    zwm_event_register(ZwmClientUnmap, (ZwmEFunc)client_list, NULL);
+    zwm_event_register(ZwmViewChange, (ZwmEFunc)client_list, NULL);
+    zwm_event_register(ZwmClientFocus, (ZwmEFunc)client_list, NULL);
+    zwm_event_register(ZwmClientView, (ZwmEFunc)client_list, NULL);
+    zwm_event_register(ZwmClientState, (ZwmEFunc)client_state, NULL);
+    zwm_event_register(ClientMessage, (ZwmEFunc)clientmessage, NULL);
 
     zwm_x11_atom_set(root, _NET_NUMBER_OF_DESKTOPS, XA_CARDINAL, &n, 1);
     zwm_x11_atom_set(root, _NET_CURRENT_DESKTOP, XA_CARDINAL, &c, 1);

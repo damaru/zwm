@@ -9,10 +9,10 @@ static int oldy;
 
 void zwm_panel_init(void)
 {
-	zwm_event_register(ZenClientUnmap, (ZenEFunc)panel_unmap, NULL);
-	zwm_event_register(ZenClientConfigure, (ZenEFunc)panel_configure, NULL);
-	zwm_event_register(ZenClientMap, (ZenEFunc)panel_map, NULL);
-	zwm_event_register(ZenScreenSize, (ZenEFunc)panel_rescan, NULL);
+	zwm_event_register(ZwmClientUnmap, (ZwmEFunc)panel_unmap, NULL);
+	zwm_event_register(ZwmClientConfigure, (ZwmEFunc)panel_configure, NULL);
+	zwm_event_register(ZwmClientMap, (ZwmEFunc)panel_map, NULL);
+	zwm_event_register(ZwmScreenSize, (ZwmEFunc)panel_rescan, NULL);
 }
 
 void zwm_panel_hide(void)
@@ -53,7 +53,7 @@ void zwm_panel_toggle(void)
 }
 
 static void panel_map(Client *c, void *priv) {
-	if(c->type == ZenDockWindow && !panel)
+	if(c->type == ZwmDockWindow && !panel)
 	{
 		panel = c;
 		zwm_screen_rescan(False);

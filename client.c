@@ -36,7 +36,7 @@ void zwm_client_configure_window(Client *c) {
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight, &wc);
 #endif
 	XConfigureEvent ce;
-	if(c->type != ZenNormalWindow)
+	if(c->type != ZwmNormalWindow)
 		return;
 	ce.type = ConfigureNotify;
 	ce.display = dpy;
@@ -76,7 +76,7 @@ void zwm_client_setstate(Client *c, int state)
 		XLowerWindow(dpy, c->frame);
 		zwm_client_refocus();
 	}
-	zwm_event_emit(ZenClientState, c);
+	zwm_event_emit(ZwmClientState, c);
 }
 
 void zwm_client_scan(void)
@@ -128,35 +128,35 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_client_update_name(c);
 
 	switch (c->type) {
-		case ZenDesktopWindow:
+		case ZwmDesktopWindow:
 			c->hastitle = 0;
 			c->isfloating = 0;
 			XMapWindow(dpy, w);
 			zwm_client_configure_window(c);
 			break;
-		case ZenDockWindow:
+		case ZwmDockWindow:
 			c->border = 0;
 			c->hastitle = 0;
 			XSelectInput(dpy, w, PropertyChangeMask);
 			XMapWindow(dpy, w);
-			zwm_event_emit(ZenClientMap, c);
+			zwm_event_emit(ZwmClientMap, c);
 			zwm_client_configure_window(c);
 			return c;
 			break;
-		case ZenDialogWindow:
+		case ZwmDialogWindow:
 			c->hastitle = 1;
-			c->type = ZenNormalWindow;
-		case ZenSplashWindow:
+			c->type = ZwmNormalWindow;
+		case ZwmSplashWindow:
 			c->isfloating = True;
 			c->x = screen[scr].x + (wa->x?wa->x:((screen[scr].w - wa->width)/2));
 			c->y = wa->y?wa->y:((screen[scr].h - wa->height)/2);
 			num_floating++;
 			break;
-		case ZenFullscreenWindow:
-			c->type = ZenNormalWindow;
+		case ZwmFullscreenWindow:
+			c->type = ZwmNormalWindow;
 			zwm_client_fullscreen(c);
 			break;
-		case ZenNormalWindow:
+		case ZwmNormalWindow:
 			c->hastitle = 1;
 			break;
 	}
@@ -174,7 +174,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 
 	zwm_decor_update(c);
 	zwm_client_push_head(c);
-	zwm_event_emit(ZenClientMap, c);
+	zwm_event_emit(ZwmClientMap, c);
 	zwm_layout_dirty();
 	zwm_client_configure_window(c);
 	zwm_layout_rearrange(True);
@@ -215,7 +215,7 @@ void zwm_client_unmanage(Client *c) {
 	XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
 	XUngrabServer(dpy);
 	zwm_view_rescan();
-	zwm_event_emit(ZenClientUnmap, c);
+	zwm_event_emit(ZwmClientUnmap, c);
 	free(c);
 	config.num_clients--;
 }
@@ -232,7 +232,7 @@ Bool zwm_client_visible(Client *c, int view)
 {
 	return c->state == NormalState &&
 		zwm_view_mapped(c->view) && c->view == view &&
-		(c->type == ZenNormalWindow || c->type == ZenDialogWindow) ;
+		(c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) ;
 }
 
 void zwm_client_warp(Client *c)
@@ -272,7 +272,7 @@ void zwm_client_focus(Client *c)
 		sel->focused = False;
 		grabbuttons(sel, False);
 		zwm_decor_dirty(sel);
-		zwm_event_emit(ZenClientUnFocus, sel);
+		zwm_event_emit(ZwmClientUnFocus, sel);
 	}
 
 	/* focus */
@@ -281,7 +281,7 @@ void zwm_client_focus(Client *c)
 	c->focused = True;
 	XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
 	zwm_decor_dirty(c);
-	zwm_event_emit(ZenClientFocus, c);
+	zwm_event_emit(ZwmClientFocus, c);
 }
 
 void zwm_client_raise(Client *c, Bool warp)
@@ -497,7 +497,7 @@ void zwm_client_set_view(Client *c, int v)
 			config.num_views = v+1;
 		}
 		zwm_layout_dirty();
-		zwm_event_emit(ZenClientView, c);
+		zwm_event_emit(ZwmClientView, c);
 	}
 }
 
@@ -506,7 +506,7 @@ void zwm_client_update_name(Client *c)
 	if(!zwm_x11_atom_text(c->win, _NET_WM_NAME, c->name, sizeof c->name))
 	zwm_x11_atom_text(c->win, WM_NAME, c->name, sizeof c->name);
 	zwm_x11_atom_text(c->win, WM_CLASS, c->cname, sizeof c->cname);
-	zwm_event_emit(ZenClientProperty, c);
+	zwm_event_emit(ZwmClientProperty, c);
 	zwm_decor_dirty(c);
 
 }
@@ -523,7 +523,7 @@ Client *zwm_client_next_visible(Client *c)
 
 void zwm_client_toggle_floating(Client *c) {
 	c->isfloating = !c->isfloating;
-	zwm_event_emit(ZenClientFloating, c);
+	zwm_event_emit(ZwmClientFloating, c);
 
 	if(c->isfloating){
 		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
@@ -547,7 +547,7 @@ void zwm_client_zoom(Client *c) {
 	}
 }
 
-void zwm_client_save_geometry(Client *c, ZenGeom *g)
+void zwm_client_save_geometry(Client *c, ZwmGeom *g)
 {
 	g->view = c->view;
 	g->x = c->x;
@@ -556,7 +556,7 @@ void zwm_client_save_geometry(Client *c, ZenGeom *g)
 	g->h = c->h;
 }
 
-void zwm_client_restore_geometry(Client *c, ZenGeom *g)
+void zwm_client_restore_geometry(Client *c, ZwmGeom *g)
 {
 	int s = zwm_client_screen(c);
 	if(g->x >= screen[s].x && g->x <= (screen[s].w+screen[s].x) && 
@@ -567,9 +567,9 @@ void zwm_client_restore_geometry(Client *c, ZenGeom *g)
 static int zwm_x11_window_type(Window w)
 {
 	if(zwm_x11_atom_check(w, _NET_WM_STATE, _NET_WM_STATE_FULLSCREEN)){
-		return ZenFullscreenWindow;
+		return ZwmFullscreenWindow;
 	} else if(zwm_x11_atom_check(w, _NET_WM_WINDOW_TYPE, _NET_WM_STATE_MODAL)){
-		return ZenDialogWindow;
+		return ZwmDialogWindow;
 	} else {
 		Atom a[32];
 		unsigned long left;
@@ -578,20 +578,20 @@ static int zwm_x11_window_type(Window w)
 				a, 32, &left);
 		for(i = 0; i<n; i++) {
 #define CHECK_RET(t, r) do{if(a[i] == t){return r;}}while(0)
-			CHECK_RET(_NET_WM_WINDOW_TYPE_DOCK, ZenDockWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_NORMAL, ZenNormalWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_DIALOG, ZenDialogWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_UTILITY, ZenDialogWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_DESKTOP, ZenDesktopWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZenSplashWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLBAR, ZenSplashWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_DND, ZenSplashWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_MENU, ZenSplashWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_DROPDOWN_MENU, ZenSplashWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLTIP, ZenSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DOCK, ZwmDockWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_NORMAL, ZwmNormalWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DIALOG, ZwmDialogWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_UTILITY, ZwmDialogWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DESKTOP, ZwmDesktopWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZwmSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLBAR, ZwmSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DND, ZwmSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_MENU, ZwmSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_DROPDOWN_MENU, ZwmSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLTIP, ZwmSplashWindow);
 		}
 	}
-	return ZenNormalWindow;
+	return ZwmNormalWindow;
 }
 
 static void create_frame_window(Client *c)

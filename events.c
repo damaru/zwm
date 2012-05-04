@@ -13,12 +13,12 @@ static int quit = 0;
 
 typedef struct Handler
 {
-	ZenEFunc handler;
+	ZwmEFunc handler;
 	void *priv;
 	struct Handler *next;
 }Handler;
 
-static Handler *handlers[ZenMaxEvents];
+static Handler *handlers[ZwmMaxEvents];
 
 void zwm_x11_flush_events(long mask)
 {
@@ -43,7 +43,7 @@ void zwm_event_loop(void) {
 			if(ev.type < LASTEvent) {
 				zwm_event_emit(ev.type, &ev);
 			} else {
-				zwm_event_emit(ZenX11Event, &ev);
+				zwm_event_emit(ZwmX11Event, &ev);
 			}
 
 			zwm_layout_rearrange(False);
@@ -72,32 +72,32 @@ void zwm_event_loop(void) {
 void zwm_event_init()
 {
 	int i;
-	for(i = 0; i < ZenMaxEvents; i++)
+	for(i = 0; i < ZwmMaxEvents; i++)
 	{
 		handlers[i] = NULL;
 	}
-	zwm_event_register(ButtonPress, (ZenEFunc)buttonpress, NULL);
-	zwm_event_register(Expose, (ZenEFunc)expose, NULL);
-	zwm_event_register(EnterNotify, (ZenEFunc)enternotify, NULL);
-	zwm_event_register(ConfigureRequest, (ZenEFunc)configurerequest, NULL);
-	zwm_event_register(ConfigureNotify, (ZenEFunc)configurenotify, NULL);
-	zwm_event_register(DestroyNotify, (ZenEFunc)destroynotify, NULL);
-	zwm_event_register(MapRequest, (ZenEFunc)maprequest, NULL);
-	zwm_event_register(UnmapNotify, (ZenEFunc)unmapnotify, NULL);
-	zwm_event_register(PropertyNotify, (ZenEFunc)propertynotify, NULL);
+	zwm_event_register(ButtonPress, (ZwmEFunc)buttonpress, NULL);
+	zwm_event_register(Expose, (ZwmEFunc)expose, NULL);
+	zwm_event_register(EnterNotify, (ZwmEFunc)enternotify, NULL);
+	zwm_event_register(ConfigureRequest, (ZwmEFunc)configurerequest, NULL);
+	zwm_event_register(ConfigureNotify, (ZwmEFunc)configurenotify, NULL);
+	zwm_event_register(DestroyNotify, (ZwmEFunc)destroynotify, NULL);
+	zwm_event_register(MapRequest, (ZwmEFunc)maprequest, NULL);
+	zwm_event_register(UnmapNotify, (ZwmEFunc)unmapnotify, NULL);
+	zwm_event_register(PropertyNotify, (ZwmEFunc)propertynotify, NULL);
 }
 
-void zwm_event_emit(ZenEvent e, void *p)
+void zwm_event_emit(ZwmEvent e, void *p)
 {
 	Handler *h = handlers[e];
 	while(h){
-		ZWM_DEBUG("ZenEvent %d handler %p\n",e, h->handler);
+		ZWM_DEBUG("ZwmEvent %d handler %p\n",e, h->handler);
 		h->handler(p, h->priv);
 		h = h->next;
 	}
 }
 
-void zwm_event_register(ZenEvent e, ZenEFunc f, void *priv)
+void zwm_event_register(ZwmEvent e, ZwmEFunc f, void *priv)
 {
 	Handler *h = zwm_util_malloc(sizeof (Handler));
 	h->handler =f ;
@@ -179,7 +179,7 @@ static void configurerequest(XEvent *e) {
 	DBG_ENTER();
 
 	c = zwm_client_get(ev->window);
-	if(c && c->type == ZenNormalWindow) {
+	if(c && c->type == ZwmNormalWindow) {
 		if( c->isfloating ) {
 			if(ev->value_mask & CWX)
 				c->x = ev->x;
@@ -216,7 +216,7 @@ static void configurerequest(XEvent *e) {
 
 	if(c)
 	{
-		zwm_event_emit(ZenClientConfigure,c);
+		zwm_event_emit(ZwmClientConfigure,c);
 	}
 }
 

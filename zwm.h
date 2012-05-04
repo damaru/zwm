@@ -13,8 +13,8 @@
 #include <X11/Xatom.h>
 
 typedef unsigned long ulong;
-typedef int (*ZenLFunc)(int scrn, int view);
-typedef int (*ZenEFunc)(void *, void *);
+typedef int (*ZwmLFunc)(int scrn, int view);
+typedef int (*ZwmEFunc)(void *, void *);
 typedef void (*KeyFunc)(const char *);
 
 typedef enum {
@@ -22,26 +22,26 @@ typedef enum {
        	CurResize,
        	CurMove,
        	CurLast
-} ZenCursor;
+} ZwmCursor;
 
-typedef struct ZenGeom
+typedef struct ZwmGeom
 {
 	int view;
 	int x;
 	int y;
 	int w;
 	int h;
-} ZenGeom;
+} ZwmGeom;
 
-typedef struct ZenLayout
+typedef struct ZwmLayout
 {
-	ZenLFunc handler;
+	ZwmLFunc handler;
 	int skip;
 	char name[64];
-	struct ZenLayout *next;
-}ZenLayout;
+	struct ZwmLayout *next;
+}ZwmLayout;
 
-typedef struct ZenScreen
+typedef struct ZwmScreen
 {
 	int prev;
 	int view;
@@ -49,22 +49,22 @@ typedef struct ZenScreen
 	int y;
 	int w;
 	int h;
-} ZenScreen;
+} ZwmScreen;
 
 typedef struct ZwmView
 {
-	ZenLayout *layout;
+	ZwmLayout *layout;
 	int screen;
 } ZwmView;
 
 enum
 {
-	ZenNormalWindow,
-	ZenDockWindow,
-	ZenDialogWindow,
-	ZenSplashWindow,
-	ZenDesktopWindow,
-	ZenFullscreenWindow
+	ZwmNormalWindow,
+	ZwmDockWindow,
+	ZwmDialogWindow,
+	ZwmSplashWindow,
+	ZwmDesktopWindow,
+	ZwmFullscreenWindow
 };
 
 /* client */
@@ -94,12 +94,12 @@ struct Client
 	int type;
 	int dirty;
 	Bool isfloating;
-	ZenGeom fpos;
-	ZenGeom bpos;
+	ZwmGeom fpos;
+	ZwmGeom bpos;
 	Window win;
 	Window frame;
-	Client *next;
-	Client *prev;
+	Client* next;
+	Client* prev;
 	Window lastfocused;
 	char name[256];
 	char cname[256];
@@ -147,7 +147,7 @@ typedef struct
 
 	struct {
 		char *c;
-		void (*func)(Client *);
+		void (*func)(Client* );
 	} buttons[32];
 
 	struct {
@@ -161,32 +161,32 @@ extern ZwmConfig config;
 
 enum
 {
-	ZenEventPropagate,
-	ZenEventConsume
+	ZwmEventPropagate,
+	ZwmEventConsume
 };
 
 typedef enum
 {
 	/* our event numbers start after X11 events */
-	ZenClientFocus = LASTEvent,
-	ZenClientUnFocus,
-	ZenClientProperty,
-	ZenClientMap,
-	ZenClientUnmap,
-	ZenClientView,
-	ZenClientState,
-	ZenClientDamage,
-	ZenClientResize,
-	ZenClientFloating,
-	ZenClientConfigure,
-	ZenView,
-	ZenLayoutChange,
-	ZenX11Event,
-	ZenScreenSize,
-	ZenManageScreen,
-	ZenAllEvents,
-	ZenMaxEvents
-}ZenEvent;
+	ZwmClientFocus = LASTEvent,
+	ZwmClientUnFocus,
+	ZwmClientProperty,
+	ZwmClientMap,
+	ZwmClientUnmap,
+	ZwmClientView,
+	ZwmClientState,
+	ZwmClientDamage,
+	ZwmClientResize,
+	ZwmClientFloating,
+	ZwmClientConfigure,
+	ZwmViewChange,
+	ZwmLayoutChange,
+	ZwmX11Event,
+	ZwmScreenSize,
+	ZwmManageScreen,
+	ZwmAllEvents,
+	ZwmMaxEvents
+}ZwmEvent;
 
 #define _X(name) extern Atom name
 #include "atoms.h"
@@ -210,55 +210,55 @@ typedef enum
 #define MAX_VIEWS 32
 #define MAX_CLIENTS 100
 
-extern ZenScreen screen[MAX_SCREENS];
+extern ZwmScreen screen[MAX_SCREENS];
 extern ZwmView views[MAX_SCREENS];
 extern int scr;
 extern Display *dpy;
 extern Window root;
 extern unsigned int numlockmask;
 extern GC gc;
-extern Client *sel;
-extern Client *head;
-extern Client *tail;
+extern Client* sel;
+extern Client* head;
+extern Client* tail;
 
-void zwm_client_configure_window(Client *c);
-void zwm_client_focus(Client *c);
-void zwm_client_fullscreen(Client *c);
-Client *zwm_client_get(Window w);
-void zwm_client_push_tail(Client *);
-void zwm_client_kill(Client *c);
+void zwm_client_configure_window(Client* c);
+void zwm_client_focus(Client* c);
+void zwm_client_fullscreen(Client* c);
+Client* zwm_client_get(Window w);
+void zwm_client_kill(Client* c);
 Client* zwm_client_manage(Window w, XWindowAttributes *wa);
-void zwm_client_mousemove(Client *c);
-void zwm_client_mouseresize(Client *c);
-void zwm_client_moveresize(Client *c, int,int,int,int);
-Client *zwm_client_next_visible(Client *c);
-void zwm_client_push_head(Client *);
-void zwm_client_raise(Client *c, Bool warp);
+void zwm_client_mousemove(Client* c);
+void zwm_client_mouseresize(Client* c);
+void zwm_client_moveresize(Client* c, int,int,int,int);
+Client* zwm_client_next_visible(Client* c);
+void zwm_client_push_head(Client* );
+void zwm_client_push_tail(Client* );
+void zwm_client_raise(Client* c, Bool warp);
 void zwm_client_refocus(void);
-void zwm_client_remove(Client *c);
-void zwm_client_restore_geometry(Client *c, ZenGeom *g);
-void zwm_client_save_geometry(Client *c, ZenGeom *g);
+void zwm_client_remove(Client* c);
+void zwm_client_restore_geometry(Client* c, ZwmGeom *g);
+void zwm_client_save_geometry(Client* c, ZwmGeom *g);
 void zwm_client_scan(void);
-void zwm_client_setstate(Client *c, int state);
-void zwm_client_set_view(Client *c, int v);
-void zwm_client_toggle_floating(Client *c);
-void zwm_client_unfullscreen(Client *c);
-void zwm_client_unmanage(Client *);
-void zwm_client_update_name(Client *);
-Bool zwm_client_visible(Client *c, int view);
-void zwm_client_warp(Client *c);
-void zwm_client_zoom(Client *);
+int zwm_client_screen(Client* );
+void zwm_client_setstate(Client* c, int state);
+void zwm_client_set_view(Client* c, int v);
+void zwm_client_toggle_floating(Client* c);
+void zwm_client_unfullscreen(Client* c);
+void zwm_client_unmanage(Client* );
+void zwm_client_update_name(Client* );
+Bool zwm_client_visible(Client* c, int view);
+void zwm_client_warp(Client* c);
+void zwm_client_zoom(Client* );
 int zwm_current_screen();
 int zwm_current_view();
+void zwm_decor_dirty(Client* c);
 void zwm_decor_init(void);
-void zwm_decor_dirty(Client *c);
-void zwm_decor_update(Client *c);
-void zwm_event_emit(ZenEvent e, void *p);
-void zwm_x11_flush_events(long mask);
+void zwm_decor_update(Client* c);
+void zwm_event_emit(ZwmEvent e, void *p);
 void zwm_event_init(void);
 void zwm_event_loop(void);
 void zwm_event_quit();
-void zwm_event_register(ZenEvent e, ZenEFunc f, void *priv);
+void zwm_event_register(ZwmEvent e, ZwmEFunc f, void *priv);
 void zwm_ewmh_init(void);
 void zwm_ewmh_set_window_opacity(Window win, float opacity);
 void zwm_key_bind(const char* keyname, void *f, const char *arg);
@@ -266,12 +266,14 @@ void zwm_key_init(void);
 void zwm_layout_arrange(void);
 void zwm_layout_dirty(void);
 void zwm_layout_init(void);
-void zwm_layout_moveresize(Client *c, int x, int y, int w, int h);
+void zwm_layout_moveresize(Client* c, int x, int y, int w, int h);
 void zwm_layout_next(void);
 void zwm_layout_rearrange(Bool force);
-void zwm_layout_register(ZenLFunc f, char *name, int);
+void zwm_layout_register(ZwmLFunc f, char *name, int);
 void zwm_layout_set(const char *name);
+void zwm_panel_hide();
 void zwm_panel_init(void);
+void zwm_panel_show();
 void zwm_panel_toggle(void);
 void zwm_screen_rescan(Bool);
 void zwm_screen_set_view(int scr, int view);
@@ -279,6 +281,7 @@ void zwm_util_free(void *);
 void *zwm_util_malloc(size_t size);
 void zwm_util_perror(const char *str);
 void zwm_util_spawn(const char *cmd);
+Bool zwm_view_has_clients(int v);
 Bool zwm_view_mapped(int v);
 void zwm_view_rescan();
 void zwm_view_set(int  v);
@@ -291,12 +294,9 @@ ulong zwm_x11_atom_list(Window w, Atom a, Atom type, ulong *ret, ulong nitems, u
 Bool zwm_x11_atom_set(Window w, Atom a, Atom type, ulong *val, ulong);
 Bool zwm_x11_atom_text(Window w, Atom atom, char *text, unsigned int size);
 void zwm_x11_cursor_free(Display *dpy);
-Cursor zwm_x11_cursor_get(ZenCursor c);
+Cursor zwm_x11_cursor_get(ZwmCursor c);
 void zwm_x11_cursor_init(Display *dpy);
-int zwm_client_screen(Client *);
-void zwm_panel_show();
-void zwm_panel_hide();
-Bool zwm_view_has_clients(int v);
+void zwm_x11_flush_events(long mask);
 
 #define zwm_client_foreach(c) for((c)=head;(c);(c)=(c)->next)
 

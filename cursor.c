@@ -21,7 +21,7 @@ zwm_x11_cursor_free(Display *dpy)
 }
 
 Cursor
-zwm_x11_cursor_get(ZenCursor c)
+zwm_x11_cursor_get(ZwmCursor c)
 {
 	return cursor[c];
 }
