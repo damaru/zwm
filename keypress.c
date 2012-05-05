@@ -23,6 +23,8 @@ void zwm_key_init(void) {
 	}
 }
 
+#define CLEANMASK(mask)		(mask & ~(numlockmask | LockMask))
+
 void zwm_key_bind(const char* keyname, void *f, const char *arg) {
 	char* copy = strdup(keyname);
 	HotKey* new_key;

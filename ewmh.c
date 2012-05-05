@@ -81,7 +81,7 @@ static void clientmessage(XEvent *e, void *p) {
 	XClientMessageEvent *ev = &e->xclient;
 	Client *c;
 	
-	c = zwm_client_get(ev->window);
+	c = zwm_client_lookup(ev->window);
 	if(!c){
 		return;
 	}

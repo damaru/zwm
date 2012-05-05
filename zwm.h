@@ -76,14 +76,17 @@ struct Client
 	double y;
 	double w;
 	double h;
+
 	double dx;
 	double dy;
 	double dw;
 	double dh;
+
 	double ox;
 	double oy;
 	double ow;
 	double oh;
+
 	int anim_steps;
 	int border;
 	int focused;
@@ -98,9 +101,9 @@ struct Client
 	ZwmGeom bpos;
 	Window win;
 	Window frame;
+	Window lastfocused;
 	Client* next;
 	Client* prev;
-	Window lastfocused;
 	char name[256];
 	char cname[256];
 } __attribute__((aligned));
@@ -192,12 +195,6 @@ typedef enum
 #include "atoms.h"
 #undef _X
 
-#define BUTTONMASK		(ButtonPressMask | ButtonReleaseMask)
-#define CLEANMASK(mask)		(mask & ~(numlockmask | LockMask))
-#define MOUSEMASK		(BUTTONMASK | PointerMotionMask)
-
-#define MODKEY			Mod1Mask
-
 #ifdef DEBUG
 #define DBG_ENTER() printf("Enter %s\n",__FUNCTION__)
 #define ZWM_DEBUG(fmt,args...) printf("%s:%d: "fmt,__FUNCTION__,__LINE__,##args)
@@ -224,7 +221,7 @@ extern Client* tail;
 void zwm_client_configure_window(Client* c);
 void zwm_client_focus(Client* c);
 void zwm_client_fullscreen(Client* c);
-Client* zwm_client_get(Window w);
+Client* zwm_client_lookup(Window w);
 void zwm_client_kill(Client* c);
 Client* zwm_client_manage(Window w, XWindowAttributes *wa);
 void zwm_client_mousemove(Client* c);
@@ -249,20 +246,26 @@ void zwm_client_update_name(Client* );
 Bool zwm_client_visible(Client* c, int view);
 void zwm_client_warp(Client* c);
 void zwm_client_zoom(Client* );
+
 int zwm_current_screen();
 int zwm_current_view();
+
 void zwm_decor_dirty(Client* c);
 void zwm_decor_init(void);
 void zwm_decor_update(Client* c);
+
 void zwm_event_emit(ZwmEvent e, void *p);
 void zwm_event_init(void);
 void zwm_event_loop(void);
 void zwm_event_quit();
 void zwm_event_register(ZwmEvent e, ZwmEFunc f, void *priv);
+
 void zwm_ewmh_init(void);
 void zwm_ewmh_set_window_opacity(Window win, float opacity);
+
 void zwm_key_bind(const char* keyname, void *f, const char *arg);
 void zwm_key_init(void);
+
 void zwm_layout_arrange(void);
 void zwm_layout_dirty(void);
 void zwm_layout_init(void);
@@ -271,23 +274,29 @@ void zwm_layout_next(void);
 void zwm_layout_rearrange(Bool force);
 void zwm_layout_register(ZwmLFunc f, char *name, int);
 void zwm_layout_set(const char *name);
+
 void zwm_panel_hide();
 void zwm_panel_init(void);
 void zwm_panel_show();
 void zwm_panel_toggle(void);
+
 void zwm_screen_rescan(Bool);
 void zwm_screen_set_view(int scr, int view);
+
 void zwm_util_free(void *);
 void *zwm_util_malloc(size_t size);
 void zwm_util_perror(const char *str);
 void zwm_util_spawn(const char *cmd);
+
 Bool zwm_view_has_clients(int v);
 Bool zwm_view_mapped(int v);
 void zwm_view_rescan();
 void zwm_view_set(int  v);
 void zwm_view_update();
+
 void zwm_wm_quit(const char *arg);
 void zwm_wm_restart(const char *);
+
 Bool zwm_x11_atom_check(Window win, Atom bigatom, Atom smallatom);
 void zwm_x11_atom_init(void);
 ulong zwm_x11_atom_list(Window w, Atom a, Atom type, ulong *ret, ulong nitems, ulong *left);

@@ -2,6 +2,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#define BUTTONMASK		(ButtonPressMask | ButtonReleaseMask)
+#define MOUSEMASK		(BUTTONMASK | PointerMotionMask)
+#define MODKEY			Mod1Mask
+
 unsigned int num_floating = 0;
 static int privcount = 0;
 static void grabbuttons(Client *c, Bool focused);
@@ -10,34 +14,18 @@ Client *sel = NULL;
 static int zwm_x11_window_type(Window w);
 static void create_frame_window(Client *c);
 
-void zwm_client_configure_window(Client *c) {
+void zwm_client_configure_window(Client *c)
+{
 	int th = 0;
 
 	if(c->hastitle){
 		th = config.title_height;
 	}
 
-#if 0
-	XWindowChanges wc;
-	wc.x = c->x;
-	wc.y = c->y+th;
-	wc.width = c->w;
-	wc.height = c->h-th;
-	wc.border_width = c->border;
-
-	if(config.reparent && c->hastitle){
-		wc.x = 0;
-		wc.y = th;
-		wc.width = c->w - c->border;
-		wc.height = c->h - th - c->border;
-		wc.border_width = 0;
-	}
-
-	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight, &wc);
-#endif
 	XConfigureEvent ce;
 	if(c->type != ZwmNormalWindow)
 		return;
+
 	ce.type = ConfigureNotify;
 	ce.display = dpy;
 	ce.event = c->win;
@@ -104,7 +92,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 {
 	int scr = zwm_current_screen();
 	int vew = zwm_current_view();
-	Client* old = zwm_client_get(w);
+	Client* old = zwm_client_lookup(w);
 	
 	if(old && old->win == w ){
 		return NULL;
@@ -183,12 +171,14 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	return c;
 }
 
-void zwm_client_unmanage(Client *c) {
+void zwm_client_unmanage(Client *c) 
+{
 	if(c->ignore)
 	{
 		c->ignore--;
 		return;
 	}
+
 	XGrabServer(dpy);
 
 	if(config.reparent){
@@ -204,7 +194,7 @@ void zwm_client_unmanage(Client *c) {
 		num_floating--;
 	}	
 	if(sel == c){
-		Client *n = zwm_client_get(c->lastfocused);
+		Client *n = zwm_client_lookup(c->lastfocused);
 		if (n && n->win == c->lastfocused && zwm_client_visible(n, zwm_current_view())) {
 			zwm_client_raise(n, True);
 		} else {
@@ -220,7 +210,8 @@ void zwm_client_unmanage(Client *c) {
 	config.num_clients--;
 }
 
-Client *zwm_client_get(Window w) {
+Client *zwm_client_lookup(Window w) 
+{
 	Client *c;
 
 	for(c = head; c && (c->win != w && c->frame != w);

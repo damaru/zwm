@@ -1,5 +1,5 @@
 
-#define ZVIEW 10 
+#define ZVIEW 9
 
 static int view_next(Bool occupied)
 {
@@ -44,7 +44,7 @@ static void flip(const char *arg) {
 static void banish_non_class(const char *arg) {
 	Client *c;
 	int v = zwm_current_view();
-	for(c = head; c; c = c->next) {
+	zwm_client_foreach(c) {
 		if ( strcmp(c->cname, sel->cname) != 0 && zwm_client_visible(c, v)) {
 			zwm_client_set_view(c, view_next(False));
 		}
@@ -55,7 +55,7 @@ static void banish_non_class(const char *arg) {
 static void banish_class(const char *arg) {
 	Client *c;
 	int v = zwm_current_view();
-	for(c = head; c; c = c->next) {
+	zwm_client_foreach(c) {
 		if ( strcmp(c->cname, sel->cname) == 0 && zwm_client_visible(c, v)) {
 			zwm_client_set_view(c, view_next(False));
 		}
@@ -66,7 +66,7 @@ static void banish_class(const char *arg) {
 static void banish_all(const char *arg) {
 	Client *c;
 	int v = zwm_current_view();
-	for(c = head; c; c = c->next) {
+	zwm_client_foreach(c) {
 		if ( c != sel && zwm_client_visible(c, v)) {
 			zwm_client_set_view(c, view_next(False));
 		}
@@ -78,7 +78,7 @@ static void show_all(const char *arg) {
 	Client *c;
 	Client *s = sel;
 	int v = zwm_current_view();
-	for(c = head; c; c = c->next) {
+	zwm_client_foreach(c) {
 		zwm_client_set_view(c, v);
 		zwm_client_setstate(c, NormalState);
 	}
@@ -96,17 +96,17 @@ static void zen(const char *arg) {
 
 	if(c->view >= ZVIEW){
 		c->view = c->fpos.view;
-		zwm_panel_show();
 		zwm_view_set(c->view);
 		zwm_client_raise(c, True);
+		zwm_panel_show();
 		return;
 	}
 
 	c->fpos.view = c->view;
 	zwm_client_set_view(c, v);
-	zwm_panel_hide();
 	zwm_view_set(v);
 	zwm_layout_set("zen");
+	zwm_panel_hide();
 }
 
 static void screen_next(const char *arg) {
@@ -114,7 +114,7 @@ static void screen_next(const char *arg) {
 	if(s < config.screen_count) {
 		XWarpPointer(dpy, None, root, 0,0,0,0, screen[s].x+100, screen[s].y+100);
 	}
-		zwm_client_refocus();
+	zwm_client_refocus();
 	zwm_layout_dirty();
 }
 
@@ -131,24 +131,20 @@ static void warp_to_screen(const char *arg) {
 static void run_once(const char *arg){
 	char data[1024];
 	char *cmd;
-	char *class;
+	char *cls;
 	Client *c = NULL;
 	strcpy(data,arg);
-	class = strtok(data, ";");
-	cmd = class + strlen(class) + 1;
-	for(c=head; c; c = c->next) {
-		if(strcasecmp(class, c->cname) == 0) {
-			ZWM_DEBUG("found CLASS %s, %s, for %s\n",c->cname, c->name, cmd);
+	cls = strtok(data, ";");
+	cmd = cls + strlen(cls) + 1;
+	zwm_client_foreach(c) {
+		if(strcasecmp(c->cname, cls) == 0) {
 			zwm_client_zoom(c);
-			zwm_client_raise(c, True);
 			return;
 		}
 	}
-	for(c=head; c; c = c->next) {
-		if(strcasestr(c->name, class)) {
-			ZWM_DEBUG("found NAME %s for %s\n",c->name, cmd);
+	zwm_client_foreach(c) {
+		if(strcasestr(c->name, cls)) {
 			zwm_client_zoom(c);
-			zwm_client_raise(c, True);
 			return;
 		}
 	}
@@ -254,5 +250,3 @@ static void cycle(const char *arg) {
 		zwm_layout_dirty();
 	}
 }
-
-

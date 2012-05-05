@@ -109,7 +109,8 @@ void zwm_event_register(ZwmEvent e, ZwmEFunc f, void *priv)
 static void expose(XEvent *e) {
 	Client *c;
 	XExposeEvent *ev = &e->xexpose;
-	 if((c = zwm_client_get(ev->window)) && ev->window == c->frame) {
+	 if((c = zwm_client_lookup(ev->window))){
+		 zwm_client_configure_window(c);
 		 zwm_decor_dirty(c);
 	 }
 }
@@ -119,7 +120,7 @@ static void buttonpress(XEvent *e) {
 	XButtonPressedEvent *ev = &e->xbutton;
 	DBG_ENTER();
 
-	 if((c = zwm_client_get(ev->window))) {
+	 if((c = zwm_client_lookup(ev->window))) {
 		zwm_client_focus(c);
 
 		if(ev->button == Button1) {
@@ -151,11 +152,11 @@ static void maprequest(XEvent *e) {
 		return;
 	if(wa.override_redirect)
 		return;
-	if(!zwm_client_get(ev->window)) {
+	if(!zwm_client_lookup(ev->window)) {
 		zwm_client_manage(ev->window, &wa);
 	} else {
 		Client *c;
-		c = zwm_client_get(ev->window);
+		c = zwm_client_lookup(ev->window);
 		zwm_client_focus(c);
 	}
 }
@@ -178,7 +179,7 @@ static void configurerequest(XEvent *e) {
 	XWindowChanges wc;
 	DBG_ENTER();
 
-	c = zwm_client_get(ev->window);
+	c = zwm_client_lookup(ev->window);
 	if(c && c->type == ZwmNormalWindow) {
 		if( c->isfloating ) {
 			if(ev->value_mask & CWX)
@@ -225,7 +226,7 @@ static void destroynotify(XEvent *e) {
 	XDestroyWindowEvent *ev = &e->xdestroywindow;
 	DBG_ENTER();
 
-	if((c = zwm_client_get(ev->window)))
+	if((c = zwm_client_lookup(ev->window)))
 		zwm_client_unmanage(c);
 }
 
@@ -237,7 +238,7 @@ static void enternotify(XEvent *e) {
 	if(ev->mode != NotifyNormal || ev->detail == NotifyInferior)
 		return;
 
-	if((c = zwm_client_get(ev->window)) && c->frame == ev->window)
+	if((c = zwm_client_lookup(ev->window)) && c->frame == ev->window)
 		zwm_client_focus(c);
 }
 
@@ -248,12 +249,12 @@ static void propertynotify(XEvent *e) {
 	DBG_ENTER();
 	if(ev->state == PropertyDelete)
 		return; /* ignore */
-	if((c = zwm_client_get(ev->window))){ 
+	if((c = zwm_client_lookup(ev->window))){ 
 		switch (ev->atom) {
 			default: break;
 			case XA_WM_TRANSIENT_FOR:
 				XGetTransientForHint(dpy, ev->window, &trans);
-				if((zwm_client_get(trans) != NULL))
+				if((zwm_client_lookup(trans) != NULL))
 					zwm_layout_dirty();
 				break;
 			case XA_WM_NORMAL_HINTS:
@@ -272,7 +273,7 @@ static void unmapnotify(XEvent *e) {
 	XUnmapEvent *ev = &e->xunmap;
 	DBG_ENTER();
 
-	if((c = zwm_client_get(ev->window)))
+	if((c = zwm_client_lookup(ev->window)))
 		zwm_client_unmanage(c);
 
 }

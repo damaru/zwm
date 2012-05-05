@@ -33,7 +33,7 @@ void zwm_panel_show(void)
 	if(panel){
 		zwm_client_moveresize(panel, panel->x, oldy, panel->w, panel->h);
 		zwm_screen_rescan(False);
-		zwm_layout_dirty();
+//		zwm_layout_dirty();
 	}
 }
 
