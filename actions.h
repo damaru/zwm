@@ -254,3 +254,16 @@ static void cycle(const char *arg) {
 		zwm_layout_dirty();
 	}
 }
+
+static void fullscreen(const char *arg) {
+	if(!sel){
+		return;
+	}
+
+	if(sel->isfloating) {
+		zwm_client_unfullscreen(sel);
+	} else {
+		zwm_client_fullscreen(sel);
+	}
+
+}

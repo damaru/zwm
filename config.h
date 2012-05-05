@@ -77,11 +77,12 @@ ZwmConfig config =
 		{"Alt-Shift-0", set_view, "9"},
 
 		{"Alt-Delete", close_window, NULL},
-		{"Alt-F11", toggle_panel, NULL},
 
 		{"Alt-j", focus, "0"},
 		{"Alt-k", focus, "1"},
 		{"Alt-f", focus, "2"},
+		{"Alt-F11", fullscreen, NULL},
+		{"Alt-F10", toggle_panel, NULL},
 
 		{"Alt-Return", zen, NULL},
 		{"Alt-Shift-r", show_all, NULL},
