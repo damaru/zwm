@@ -8,19 +8,14 @@ static XftFont *ifont = NULL;
 static char icons[64];
 static XftColor xcolor;
 Colormap cmap;
-int date_width;
-char title[1024];
-char status[1024];
+static int date_width;
+static char title[1024];
+static char status[1024];
+static GC gc;
 
+static ulong alloc_color(const char *colstr);
 static void set_xcolor(unsigned long tcolor, unsigned short alpha);
-static void get_status(char *s, int w)
-{
-	struct tm *tm;
-	time_t t = 0;
-	time(&t);
-	tm = localtime(&t);
-	strftime(s, w, "%r", tm);
-}
+static void get_status(char *s, int w);
 
 void zwm_decor_init(void)
 {
@@ -36,6 +31,15 @@ void zwm_decor_init(void)
 	if(!ifont)ifont = XftFontOpenXlfd(dpy, scr, config.icons);
 	XftColorAllocValue(dpy, DefaultVisual(dpy, scr), cmap, &xcolor.color, &xcolor);
 
+	config.xcolor_nborder = alloc_color(config.normal_border_color);
+	config.xcolor_fborder = alloc_color(config.focus_border_color);
+	config.xcolor_nbg = alloc_color(config.normal_bg_color);
+	config.xcolor_fbg = alloc_color(config.focus_bg_color);
+	config.xcolor_nshadow = alloc_color(config.normal_shadow_color);
+	config.xcolor_fshadow = alloc_color(config.focus_shadow_color);
+	config.xcolor_ntitle = alloc_color(config.normal_title_color);
+	config.xcolor_ftitle = alloc_color(config.focus_title_color);
+	gc = XCreateGC(dpy, root, 0, NULL);
 
 	get_status(icons, 64);
 	XftTextExtentsUtf8(dpy, xfont, (FcChar8*)icons, strlen(icons), &info);
@@ -120,4 +124,24 @@ static void set_xcolor(unsigned long tcolor, unsigned short alpha)
 	xcolor.color.blue = ((tcolor  & 0x0000FF) )* 0x101;
 	xcolor.color.alpha = alpha;
 	xcolor.pixel = 0xFFFFFF00;
+}
+
+static void get_status(char *s, int w)
+{
+	struct tm *tm;
+	time_t t = 0;
+	time(&t);
+	tm = localtime(&t);
+	strftime(s, w, "%r", tm);
+}
+
+static ulong alloc_color(const char *colstr) {
+	Colormap cmap = DefaultColormap(dpy, scr);
+	XColor color;
+
+	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
+	{
+		zwm_util_perror("unable to allocate color\n");
+	}
+	return color.pixel;
 }

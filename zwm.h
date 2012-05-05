@@ -213,7 +213,6 @@ extern int scr;
 extern Display *dpy;
 extern Window root;
 extern unsigned int numlockmask;
-extern GC gc;
 extern Client* sel;
 extern Client* head;
 extern Client* tail;

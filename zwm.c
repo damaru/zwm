@@ -8,12 +8,10 @@ Display *dpy;
 Window root;
 
 unsigned int numlockmask = 0;
-GC gc;
 
 static int wm_error(Display *dsply, XErrorEvent *ee);
 static int wm_error_dummy(Display *dpy, XErrorEvent *ee);
 static void wm_check(void);
-static ulong wm_color(const char *colstr);
 static void wm_numlock_init(void);
 static void wm_init(void);
 static void wm_cleanup(void);
@@ -123,17 +121,6 @@ static void wm_check(void) {
 	XSetErrorHandler(NULL);
 }
 
-static ulong wm_color(const char *colstr) {
-	Colormap cmap = DefaultColormap(dpy, scr);
-	XColor color;
-
-	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
-	{
-		zwm_util_perror("unable to allocate color\n");
-	}
-	return color.pixel;
-}
-
 static void wm_numlock_init(void) {
 	unsigned int i, j;
 	XModifierKeymap *modmap;
@@ -185,16 +172,6 @@ static void wm_init(void) {
 	XChangeWindowAttributes(dpy, root, CWEventMask | CWCursor, &swa);
 	XSelectInput(dpy, root, swa.event_mask);
 
-	/* init appearance */
-	config.xcolor_nborder = wm_color(config.normal_border_color);
-	config.xcolor_fborder = wm_color(config.focus_border_color);
-	config.xcolor_nbg = wm_color(config.normal_bg_color);
-	config.xcolor_fbg = wm_color(config.focus_bg_color);
-	config.xcolor_nshadow = wm_color(config.normal_shadow_color);
-	config.xcolor_fshadow = wm_color(config.focus_shadow_color);
-	config.xcolor_ntitle = wm_color(config.normal_title_color);
-	config.xcolor_ftitle = wm_color(config.focus_title_color);
-	gc = XCreateGC(dpy, root, 0, NULL);
 	zwm_util_spawn("~/.zwm/init");
 	zwm_decor_init();
 	zwm_client_scan();
