@@ -167,6 +167,8 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_client_configure_window(c);
 	zwm_layout_rearrange(True);
 	zwm_client_raise(c, True);
+	zwm_client_save_geometry(c, &c->fpos);
+	zwm_client_save_geometry(c, &c->bpos);
 	config.num_clients++;
 	return c;
 }

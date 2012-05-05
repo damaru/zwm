@@ -5,8 +5,12 @@ static int view_next(Bool occupied)
 {
 	int next = screen[zwm_current_screen()].prev;
 
-	if(occupied)
+	if (occupied) {
+		if( !zwm_view_has_clients(next) ){
+			next = (zwm_current_view() + 1) % (config.screen_count+1);
+		} 
 		return next;
+	}
 
 	if(next <0 || next == zwm_current_view() || next >= ZVIEW ){
 		next = (zwm_current_view() + 1) % (config.screen_count+1);
