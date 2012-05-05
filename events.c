@@ -1,15 +1,15 @@
 #include "zwm.h"
 
-static void expose(XEvent *e);
-static void buttonpress(XEvent *e);
-static void maprequest(XEvent *e);
-static void configurenotify(XEvent *e);
-static void configurerequest(XEvent *e);
-static void destroynotify(XEvent *e);
-static void enternotify(XEvent *e);
-static void propertynotify(XEvent *e);
-static void unmapnotify(XEvent *e);
-static int quit = 0;
+static void ev_expose(XEvent *e);
+static void ev_button_press(XEvent *e);
+static void ev_map(XEvent *e);
+static void ev_configure_notify(XEvent *e);
+static void ev_configure_request(XEvent *e);
+static void ev_destroy(XEvent *e);
+static void ev_enter(XEvent *e);
+static void ev_property(XEvent *e);
+static void ev_unmap(XEvent *e);
+static int ev_wait(void);
 
 typedef struct Handler
 {
@@ -20,11 +20,31 @@ typedef struct Handler
 
 static Handler *handlers[ZwmMaxEvents];
 
+void zwm_event_init()
+{
+	int i;
+	for(i = 0; i < ZwmMaxEvents; i++)
+	{
+		handlers[i] = NULL;
+	}
+	zwm_event_register(ButtonPress, (ZwmEFunc)ev_button_press, NULL);
+	zwm_event_register(Expose, (ZwmEFunc)ev_expose, NULL);
+	zwm_event_register(EnterNotify, (ZwmEFunc)ev_enter, NULL);
+	zwm_event_register(ConfigureRequest, (ZwmEFunc)ev_configure_request, NULL);
+	zwm_event_register(ConfigureNotify, (ZwmEFunc)ev_configure_notify, NULL);
+	zwm_event_register(DestroyNotify, (ZwmEFunc)ev_destroy, NULL);
+	zwm_event_register(MapRequest, (ZwmEFunc)ev_map, NULL);
+	zwm_event_register(UnmapNotify, (ZwmEFunc)ev_unmap, NULL);
+	zwm_event_register(PropertyNotify, (ZwmEFunc)ev_property, NULL);
+}
+
 void zwm_x11_flush_events(long mask)
 {
 	XEvent ev;
 	while(XCheckMaskEvent(dpy, mask, &ev));
 }
+
+static int quit = 0;
 
 void zwm_event_quit(void)
 {
@@ -34,9 +54,6 @@ void zwm_event_quit(void)
 void zwm_event_loop(void) {
 	XEvent ev;
 	XSync(dpy, False);
-	int fd = ConnectionNumber(dpy);
-	fd_set fds;
-	struct timeval t;
 	while(!quit) {
 		while(XPending(dpy) > 0) {
 			XNextEvent(dpy, &ev);
@@ -53,38 +70,11 @@ void zwm_event_loop(void) {
 				c->dirty = 0;
 			}
 		}
-		FD_ZERO(&fds);
-		FD_SET(fd, &fds);
-		t.tv_sec = 1;
-		t.tv_usec = 0;
-		if(select(fd + 1, &fds, 0, &fds, &t) < 0) {
-			break;
-		}
 
-		if(sel)zwm_decor_update(sel);
-
-		if(quit){
-			break;
+		if(!quit && ev_wait() ==  0 && sel) {
+			zwm_decor_update(sel);
 		}
 	}
-}
-
-void zwm_event_init()
-{
-	int i;
-	for(i = 0; i < ZwmMaxEvents; i++)
-	{
-		handlers[i] = NULL;
-	}
-	zwm_event_register(ButtonPress, (ZwmEFunc)buttonpress, NULL);
-	zwm_event_register(Expose, (ZwmEFunc)expose, NULL);
-	zwm_event_register(EnterNotify, (ZwmEFunc)enternotify, NULL);
-	zwm_event_register(ConfigureRequest, (ZwmEFunc)configurerequest, NULL);
-	zwm_event_register(ConfigureNotify, (ZwmEFunc)configurenotify, NULL);
-	zwm_event_register(DestroyNotify, (ZwmEFunc)destroynotify, NULL);
-	zwm_event_register(MapRequest, (ZwmEFunc)maprequest, NULL);
-	zwm_event_register(UnmapNotify, (ZwmEFunc)unmapnotify, NULL);
-	zwm_event_register(PropertyNotify, (ZwmEFunc)propertynotify, NULL);
 }
 
 void zwm_event_emit(ZwmEvent e, void *p)
@@ -106,7 +96,18 @@ void zwm_event_register(ZwmEvent e, ZwmEFunc f, void *priv)
 	handlers[e] = h;
 }
 
-static void expose(XEvent *e) {
+static int ev_wait(void) {
+	struct timeval t;
+	int fd = ConnectionNumber(dpy);
+	fd_set fds;
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+	t.tv_sec = 1;
+	t.tv_usec = 0;
+	return select(fd + 1, &fds, 0, &fds, &t);
+}
+
+static void ev_expose(XEvent *e) {
 	Client *c;
 	XExposeEvent *ev = &e->xexpose;
 	 if((c = zwm_client_lookup(ev->window))){
@@ -115,7 +116,7 @@ static void expose(XEvent *e) {
 	 }
 }
 
-static void buttonpress(XEvent *e) {
+static void ev_button_press(XEvent *e) {
 	Client *c;
 	XButtonPressedEvent *ev = &e->xbutton;
 	DBG_ENTER();
@@ -143,7 +144,7 @@ static void buttonpress(XEvent *e) {
 	}
 }
 
-static void maprequest(XEvent *e) {
+static void ev_map(XEvent *e) {
 	XWindowAttributes wa;
 	XMapRequestEvent *ev = &e->xmaprequest;
 	DBG_ENTER();
@@ -161,7 +162,7 @@ static void maprequest(XEvent *e) {
 	}
 }
 
-static void configurenotify(XEvent *e) {
+static void ev_configure_notify(XEvent *e) {
 	XConfigureEvent *ev = &e->xconfigure;
 
 	if(ev->window == root &&
@@ -173,7 +174,7 @@ static void configurenotify(XEvent *e) {
 	}
 }
 
-static void configurerequest(XEvent *e) {
+static void ev_configure_request(XEvent *e) {
 	Client *c;
 	XConfigureRequestEvent *ev = &e->xconfigurerequest;
 	XWindowChanges wc;
@@ -221,7 +222,7 @@ static void configurerequest(XEvent *e) {
 	}
 }
 
-static void destroynotify(XEvent *e) {
+static void ev_destroy(XEvent *e) {
 	Client *c;
 	XDestroyWindowEvent *ev = &e->xdestroywindow;
 	DBG_ENTER();
@@ -230,7 +231,7 @@ static void destroynotify(XEvent *e) {
 		zwm_client_unmanage(c);
 }
 
-static void enternotify(XEvent *e) {
+static void ev_enter(XEvent *e) {
 	Client *c;
 	XCrossingEvent *ev = &e->xcrossing;
 	DBG_ENTER();
@@ -242,7 +243,7 @@ static void enternotify(XEvent *e) {
 		zwm_client_focus(c);
 }
 
-static void propertynotify(XEvent *e) {
+static void ev_property(XEvent *e) {
 	Client *c;
 	Window trans;
 	XPropertyEvent *ev = &e->xproperty;
@@ -257,18 +258,16 @@ static void propertynotify(XEvent *e) {
 				if((zwm_client_lookup(trans) != NULL))
 					zwm_layout_dirty();
 				break;
-			case XA_WM_NORMAL_HINTS:
-				//updatesizehints(c);
+			case XA_WM_NORMAL_HINTS: //todo
+			case XA_WM_HINTS:        //todo
 				break;
 		}
-		if(ev->atom == _NET_WM_NAME ||
-		   ev->atom == WM_NAME)
+		if(ev->atom == XA_WM_NAME || ev->atom == _NET_WM_NAME)
 			zwm_client_update_name(c);
 	}
-
 }
 
-static void unmapnotify(XEvent *e) {
+static void ev_unmap(XEvent *e) {
 	Client *c;
 	XUnmapEvent *ev = &e->xunmap;
 	DBG_ENTER();
@@ -277,4 +276,3 @@ static void unmapnotify(XEvent *e) {
 		zwm_client_unmanage(c);
 
 }
-

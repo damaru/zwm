@@ -25,5 +25,3 @@ zwm_x11_cursor_get(ZwmCursor c)
 {
 	return cursor[c];
 }
-
-
