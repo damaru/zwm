@@ -42,4 +42,11 @@ void zwm_client_push_tail(Client *c)
 	tail = c;
 }
 
+void zwm_client_push_next(Client *c, Client *prev)
+{
+	c->prev = prev;
+	c->next = prev->next;
+	prev->next = c;
+}
+
 

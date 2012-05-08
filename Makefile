@@ -6,3 +6,6 @@ clean:
 install:all
 	sudo rm /usr/bin/zwm
 	sudo cp build/zwm /usr/bin/zwm
+backup:
+	cd .. && tar -c nwm | gzip > nwm.tgz
+	cd .. && upld nwm.tgz

@@ -1,5 +1,31 @@
-
 #define ZVIEW 9
+
+static inline Client * client_next(Client *c, int dir, Bool wrap, Bool inc, Bool skipf){
+#define NOT_FLOAT(C) (skipf?!(C)->isfloating:1) 
+	int view = zwm_current_view();
+
+	if (inc && zwm_client_visible(c, view) && NOT_FLOAT(c))
+		return c;
+
+	while(c) {
+		Client *n = ((Client **)(&c->next))[dir];
+
+		if (!n && wrap) {
+			if (dir) {
+				n = tail;
+			} else {
+				n = head;
+			}
+			wrap = 0;
+		}
+
+		if(zwm_client_visible(n, view) && NOT_FLOAT(n) ){
+			return n;
+		}
+		c = n;
+	}
+	return NULL;
+}
 
 static int view_next(Bool occupied)
 {
@@ -158,12 +184,50 @@ static void run_once(const char *arg){
 static void client_zoom(const char *arg) {
 	Client *c = sel;
 	if( c && c == head) {
-		c = zwm_client_next_visible(c->next);
+		c = client_next(c, 0, True, False, True);
 	}
 
 	if(c) {
 		zwm_client_zoom(c);
 	}
+}
+
+static void move_next(const char *arg) {
+	if(!sel){
+		return;
+	}
+	Client *c = sel;
+	Client *next = client_next(c, 0, False, False, True);
+	if (next) {
+		zwm_client_remove(c);
+		zwm_client_push_next(c, next);
+		zwm_layout_dirty();
+		zwm_client_raise(c, True);
+	} else {
+		zwm_client_zoom(c);
+	}
+}
+
+static void move_prev(const char *arg) {
+	if(!sel){
+		return;
+	}
+	Client *c = sel;
+	Client *prev = client_next(c, 1, False, False, True);
+	if (prev) {
+		zwm_client_remove(c);
+		if(prev->prev) {
+			zwm_client_push_next(c, prev->prev);
+			
+		} else {
+			zwm_client_push_head(c);
+		}
+	} else {
+		zwm_client_remove(c);
+		zwm_client_push_tail(c);
+	}
+	zwm_layout_dirty();
+	zwm_client_raise(c, True);
 }
 
 static void close_window(const char *arg) {
@@ -190,33 +254,15 @@ static void do_focus(Client *c)
 	}
 }
 
-static inline Client * client_next(Client *c, int dir){
-	Client *n = ((Client **)(&c->next))[dir];
-	if (!n) {
-		if (dir) {
-			return tail;
-		} else {
-			return head;
-		}
-	} else {
-		return n;
-	}
-}
-
 static void focus(const char *arg) {
 	int i = atoi(arg);
 	if (!sel) {
 		zwm_client_refocus();
 		return;
 	} else if (i < 2) {
-		int view = zwm_current_view();
-		Client *c = client_next(sel, i);
-		for(; c && c != sel; c = client_next(c, i)){
-			if(zwm_client_visible(c, view)){
-				do_focus(c);
-				return;
-			}
-		}
+		Client *c = client_next(sel, i, True, False, False);
+		if(c) 
+			do_focus(c);
 	} else {
 		zwm_client_refocus();
 		if(sel){
@@ -243,15 +289,14 @@ static void cycle(const char *arg) {
 		return;
 	}
 
-	c = zwm_client_next_visible(head);
-	next = zwm_client_next_visible(c);
+	c = client_next(head, 0, False, True, True);
+	next = client_next(c, 0, False, False, True);
 	if(next){
 		zwm_event_emit(ZwmClientUnmap, c);
 		zwm_client_remove(c);
 		zwm_client_push_tail(c);
-		zwm_client_warp(next);
 		zwm_event_emit(ZwmClientMap, next);
-		zwm_layout_dirty();
+		zwm_layout_arrange();
 	}
 }
 
@@ -260,7 +305,7 @@ static void fullscreen(const char *arg) {
 		return;
 	}
 
-	if(sel->isfloating) {
+	if (sel->isfloating) {
 		zwm_client_unfullscreen(sel);
 	} else {
 		zwm_client_fullscreen(sel);

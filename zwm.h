@@ -245,6 +245,7 @@ void zwm_client_update_name(Client* );
 Bool zwm_client_visible(Client* c, int view);
 void zwm_client_warp(Client* c);
 void zwm_client_zoom(Client* );
+void zwm_client_push_next(Client *c, Client *prev);
 
 int zwm_current_screen();
 int zwm_current_view();

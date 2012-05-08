@@ -90,6 +90,8 @@ ZwmConfig config =
 		{"Alt-Shift-space", toggle_floating, NULL},
 		{"Alt-space", zwm_layout_set, NULL},
 		{"Alt-Shift-h", client_zoom, NULL},
+		{"Alt-Shift-j", move_next, NULL},
+		{"Alt-Shift-k", move_prev, NULL},
 		{"Alt-Tab", cycle, NULL},
 		{"Ctrl-Alt-l", zwm_util_spawn, "standby"},
 		{"Ctrl-Alt-q", zwm_wm_quit, NULL},

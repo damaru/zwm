@@ -223,7 +223,7 @@ Client *zwm_client_lookup(Window w)
 
 Bool zwm_client_visible(Client *c, int view) 
 {
-	return c->state == NormalState &&
+	return c && c->state == NormalState &&
 		zwm_view_mapped(c->view) && c->view == view &&
 		(c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) ;
 }
@@ -502,16 +502,6 @@ void zwm_client_update_name(Client *c)
 	zwm_event_emit(ZwmClientProperty, c);
 	zwm_decor_dirty(c);
 
-}
-
-Client *zwm_client_next_visible(Client *c)
-{
-       for(; c; c = c->next) {
-               if(zwm_client_visible(c, zwm_current_view()) && !c->isfloating){
-                       return c;
-               }
-       }
-       return c;
 }
 
 void zwm_client_toggle_floating(Client *c) {
