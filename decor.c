@@ -13,7 +13,8 @@ static GC gc;
 
 static ulong alloc_color(const char *colstr);
 static void set_xcolor(unsigned long tcolor, unsigned short alpha);
-static void draw_text(Client *c, XftFont *fnt, int fill, int tcol, int scol, int x, int y, char *str);
+static void draw_text(Client *c, XftFont *fnt, int fill, int tcol, int scol,
+		int x, int y, const char *str);
 static void get_status(char *s, int w);
 
 void zwm_decor_init(void)
@@ -86,7 +87,10 @@ void zwm_decor_update(Client *c)
 
 	if (c->frame) {
 		int iw= c->w - (config.button_width*config.button_count) - 4*c->border;
-		//sprintf(title, "%s %s", c->isfloating?"":config.viewnames[c->view], c->name);
+		int vx = 4*c->border;
+		const char* vtxt = c->isfloating?"":config.viewnames[c->view];
+		int tx = vx + !c->isfloating*config.button_width;
+		int ty = config.title_y;
 
 		XSetWindowBackground(dpy, c->frame, fill);
 		XSetWindowBorder(dpy, c->frame, bcolor);
@@ -94,17 +98,18 @@ void zwm_decor_update(Client *c)
 		XSetForeground(dpy, gc, fill);
 		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, c->h);
 
-		draw_text(c, xfont, fill, tcolor, shadow, 4*c->border, config.title_y,  config.viewnames[c->view]); 
-		draw_text(c, xfont, fill, tcolor, shadow, 4*c->border + config.button_width, config.title_y,  c->name); 
+		draw_text(c, xfont, fill, tcolor, shadow, vx, ty, vtxt); 
+		draw_text(c, xfont, fill, tcolor, shadow, tx, ty, c->name); 
 		if(c->focused){
 			get_status(title, 1024);
-			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 10, config.title_y, title); 
+			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 10, ty, title); 
 		}
 		draw_text(c, ifont, fill, tcolor, shadow, iw, config.icon_y, icons); 
 	}
 }
 
-static void draw_text(Client *c, XftFont *fnt, int fill, int tcol, int scol, int x, int y, char *str)
+static void draw_text(Client *c, XftFont *fnt, int fill, int tcol, int scol,
+		int x, int y, const char *str)
 {
 	XSetForeground(dpy, gc, fill);
 	XFillRectangle (dpy, c->frame, gc, x-5, 0, c->w, config.title_height);
