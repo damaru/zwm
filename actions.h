@@ -119,6 +119,7 @@ static void zen(const char *arg) {
 	int s = zwm_current_screen();
 	int v = ZVIEW + s;
 	Client *c = sel;
+	Client *t;
 
 	if(!c){
 		return;
@@ -130,6 +131,12 @@ static void zen(const char *arg) {
 		zwm_client_raise(c, True);
 		zwm_panel_show();
 		return;
+	}
+
+	zwm_client_foreach(t) {
+		if(t->view >= ZVIEW){
+			t->view = t->fpos.view;
+		}
 	}
 
 	c->fpos.view = c->view;

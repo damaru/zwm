@@ -1,6 +1,5 @@
 
 #include "zwm.h"
-#include <X11/Xft/Xft.h>
 #include <time.h>
 
 static XftFont *xfont = NULL;
@@ -10,25 +9,29 @@ static XftColor xcolor;
 Colormap cmap;
 static int date_width;
 static char title[1024];
-static char status[1024];
 static GC gc;
 
 static ulong alloc_color(const char *colstr);
 static void set_xcolor(unsigned long tcolor, unsigned short alpha);
+static void draw_text(Client *c, XftFont *fnt, int fill, int tcol, int scol, int x, int y, char *str);
 static void get_status(char *s, int w);
 
 void zwm_decor_init(void)
 {
 	int i;
 	XGlyphInfo info;
+
 	cmap = DefaultColormap(dpy, scr);
+	gc = XCreateGC(dpy, root, 0, NULL);
 
 	memset(icons,0,64);
 
 	xfont = XftFontOpenName (dpy, scr, "Sans-9:bold");
 	if(!xfont)xfont = XftFontOpenXlfd(dpy, scr, config.font);
+
 	ifont = XftFontOpenName (dpy, scr, "Sans-16:bold");
 	if(!ifont)ifont = XftFontOpenXlfd(dpy, scr, config.icons);
+
 	XftColorAllocValue(dpy, DefaultVisual(dpy, scr), cmap, &xcolor.color, &xcolor);
 
 	config.xcolor_nborder = alloc_color(config.normal_border_color);
@@ -39,7 +42,6 @@ void zwm_decor_init(void)
 	config.xcolor_fshadow = alloc_color(config.focus_shadow_color);
 	config.xcolor_ntitle = alloc_color(config.normal_title_color);
 	config.xcolor_ftitle = alloc_color(config.focus_title_color);
-	gc = XCreateGC(dpy, root, 0, NULL);
 
 	get_status(icons, 64);
 	XftTextExtentsUtf8(dpy, xfont, (FcChar8*)icons, strlen(icons), &info);
@@ -51,12 +53,12 @@ void zwm_decor_init(void)
 		config.button_count = i+1;
 	}
 
-	
 	if(config.button_count){
 		XftTextExtentsUtf8(dpy, ifont, (FcChar8*)icons, strlen(icons), &info);
 		config.button_width = info.width / config.button_count;
 		config.icon_y = info.height + (config.title_height - info.height)/2 + 1;
 	}
+
 	config.title_y = config.title_height - xfont->descent - 2;
 }
 
@@ -82,39 +84,34 @@ void zwm_decor_update(Client *c)
 		tcolor = config.xcolor_ntitle;
 	}
 
-	if(c->frame) {
-
-		XftDraw *draw = XftDrawCreate(dpy, c->frame, DefaultVisual(dpy, scr), cmap);
+	if (c->frame) {
 		int iw= c->w - (config.button_width*config.button_count) - 4*c->border;
-		int y = config.title_y;
-		sprintf(title, "%s %s", c->isfloating?"":config.viewnames[c->view], c->name);
+		//sprintf(title, "%s %s", c->isfloating?"":config.viewnames[c->view], c->name);
 
 		XSetWindowBackground(dpy, c->frame, fill);
 		XSetWindowBorder(dpy, c->frame, bcolor);
+
 		XSetForeground(dpy, gc, fill);
 		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, c->h);
 
-		set_xcolor(shadow, 0xFFFF);
-
-		XftDrawStringUtf8(draw, &xcolor, xfont, 4*c->border, y, (XftChar8 *)title, strlen(title));
-		XftDrawStringUtf8(draw, &xcolor, ifont, iw, config.icon_y, (FcChar8*)icons, strlen(icons));
-
-		set_xcolor(tcolor, 0xFFFF);
-
-		XftDrawStringUtf8(draw, &xcolor, xfont, 4*c->border-1, y-1, (XftChar8 *)title, strlen(title));
-		XftDrawStringUtf8(draw, &xcolor, ifont, iw-1, config.icon_y-1, (FcChar8*)icons, strlen(icons));
-
-		if(c->focused) {
-			get_status(status, 1024);
-			set_xcolor(shadow, 0xFFFF);
-			XftDrawStringUtf8(draw, &xcolor, xfont, iw - date_width - 5, y, (XftChar8 *)status, strlen(status));
-			set_xcolor(tcolor, 0xFFFF);
-			XftDrawStringUtf8(draw, &xcolor, xfont, iw - date_width - 5 -1 , y-1, (XftChar8 *)status, strlen(status));
+		draw_text(c, xfont, fill, tcolor, shadow, 4*c->border, config.title_y,  config.viewnames[c->view]); 
+		draw_text(c, xfont, fill, tcolor, shadow, 4*c->border + config.button_width, config.title_y,  c->name); 
+		if(c->focused){
+			get_status(title, 1024);
+			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 10, config.title_y, title); 
 		}
-
-
-		free(draw);
+		draw_text(c, ifont, fill, tcolor, shadow, iw, config.icon_y, icons); 
 	}
+}
+
+static void draw_text(Client *c, XftFont *fnt, int fill, int tcol, int scol, int x, int y, char *str)
+{
+	XSetForeground(dpy, gc, fill);
+	XFillRectangle (dpy, c->frame, gc, x-5, 0, c->w, config.title_height);
+	set_xcolor(scol, 0xFFFF);
+	XftDrawStringUtf8(c->draw, &xcolor, fnt, x, y, (XftChar8 *)str, strlen(str));
+	set_xcolor(tcol, 0xFFFF);
+	XftDrawStringUtf8(c->draw, &xcolor, fnt, x-1, y-1, (XftChar8 *)str, strlen(str));
 }
 
 static void set_xcolor(unsigned long tcolor, unsigned short alpha)
@@ -132,7 +129,7 @@ static void get_status(char *s, int w)
 	time_t t = 0;
 	time(&t);
 	tm = localtime(&t);
-	strftime(s, w, "%r", tm);
+	strftime(s, w, config.date_fmt, tm);
 }
 
 static ulong alloc_color(const char *colstr) {

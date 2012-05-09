@@ -113,7 +113,7 @@ static void key_press(XEvent *e, void *p) {
 
 	ev = &e->xkey;
 	
-	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
+	keysym = XLookupKeysym(ev, 0);
 
 	for (h = list; h != NULL; h = h->next) {
 		if (h->keysym == keysym 

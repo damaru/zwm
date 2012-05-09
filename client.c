@@ -2,9 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#define BUTTONMASK		(ButtonPressMask | ButtonReleaseMask)
-#define MOUSEMASK		(BUTTONMASK | PointerMotionMask)
 #define MODKEY			Mod1Mask
+#define BUTTONMASK		(ButtonPressMask | ButtonReleaseMask)
 
 unsigned int num_floating = 0;
 static int privcount = 0;
@@ -167,6 +166,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_client_configure_window(c);
 	zwm_layout_rearrange(True);
 	zwm_client_raise(c, True);
+	zwm_client_update_hints(c);
 	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_save_geometry(c, &c->bpos);
 	config.num_clients++;
@@ -188,6 +188,7 @@ void zwm_client_unmanage(Client *c)
 	}
 
 	if(c->frame){
+		free(c->draw);
 		XDestroyWindow(dpy, c->frame);
 	}
 
@@ -367,89 +368,6 @@ void zwm_client_float(Client *c)
 	}
 }
 
-void zwm_client_mousemove(Client *c) {
-	int x1, y1, ocx, ocy, di, nx, ny;
-	unsigned int dui;
-	Window dummy;
-	XEvent ev;
-	DBG_ENTER();
-
-	ocx = c->x;
-	ocy = c->y;
-	if(XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
-			None, zwm_x11_cursor_get(CurMove), CurrentTime) != GrabSuccess)
-		return;
-	
-
-	zwm_client_save_geometry(c, &c->fpos);
-	zwm_client_float(c);
-	zwm_layout_rearrange(True);
-
-	XQueryPointer(dpy, root, &dummy, &dummy, &x1, &y1, &di, &di, &dui);
-
-	do {
-		XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask, &ev);
-		switch (ev.type) {
-		case ConfigureRequest:
-		case Expose:
-		case MapRequest:
-			zwm_event_emit(ev.type, &ev);
-			break;
-		case MotionNotify:
-			XSync(dpy, False);
-			nx = ocx + (ev.xmotion.x - x1);
-			ny = ocy + (ev.xmotion.y - y1);
-			zwm_client_moveresize(c, nx, ny, c->w, c->h);
-			break;
-		}
-	} while(ev.type != ButtonRelease);
-	XUngrabPointer(dpy, CurrentTime);
-	zwm_client_save_geometry(c, &c->fpos);
-	zwm_client_save_geometry(c, &c->bpos);
-}
-
-void zwm_client_mouseresize(Client *c) {
-	int ocx, ocy;
-	int nw, nh;
-	XEvent ev;
-	DBG_ENTER();
-
-	ocx = c->x;
-	ocy = c->y;
-	if(XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
-			None, zwm_x11_cursor_get(CurResize), CurrentTime) != GrabSuccess)
-		return;
-
-	zwm_client_save_geometry(c, &c->fpos);
-	zwm_client_float(c);
-	zwm_layout_rearrange(True);
-
-	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->border - 1, c->h + c->border - 1);
-	do {
-		XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask, &ev);
-		switch(ev.type) {
-		case ConfigureRequest:
-		case Expose:
-		case MapRequest:
-			zwm_event_emit(ev.type, &ev);
-			break;
-		case MotionNotify:
-			XSync(dpy, False);
-			if((nw = ev.xmotion.x - ocx - 2 * c->border + 1) <= 0)
-				nw = 1;
-			if((nh = ev.xmotion.y - ocy - 2 * c->border + 1) <= 0)
-				nh = 1;
-			zwm_client_moveresize(c, c->x, c->y, nw, nh);
-			break;
-		}
-		zwm_decor_update(c);
-	} while(ev.type != ButtonRelease);
-	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->border - 1,
-		       	c->h + c->border - 1);
-	XUngrabPointer(dpy, CurrentTime);
-	zwm_client_save_geometry(c, &c->fpos);
-	while(XCheckMaskEvent(dpy, EnterWindowMask, &ev));
-}
 
 static Bool
 isprotodel(Client *c) {
@@ -596,6 +514,21 @@ static void create_frame_window(Client *c)
 		XReparentWindow(dpy, c->win, c->frame, 0, config.title_height);
 		XMoveResizeWindow(dpy, c->win, 0, config.title_height, c->w, c->h-config.title_height);
 	}
+	c->draw = XftDrawCreate(dpy, c->frame, DefaultVisual(dpy, scr), cmap);
 }
 
+void zwm_client_update_hints(Client *c)
+{
+	XSizeHints size;
+	long sz;
+
+	XGetWMNormalHints(dpy, c->win, &size, &sz);
+	if(size.flags & PMinSize){
+		c->minw = size.min_width + 2*c->border;
+		c->minh = size.min_height + config.title_height + 2*c->border;
+	} else {
+		c->minw = config.minw;
+		c->minh = config.minh;
+	}
+}
 

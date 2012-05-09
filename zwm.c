@@ -142,12 +142,11 @@ static void wm_init(void) {
 	XSetWindowAttributes swa;
 
 	XSetErrorHandler(wm_error_dummy);
-	/* init atoms */
+
 	zwm_x11_atom_init();
 	zwm_event_init();
 	zwm_layout_init();
-	/* init cursors */
-	zwm_x11_cursor_init(dpy);
+	zwm_mouse_init(dpy);
 
 	wm_numlock_init();
 
@@ -167,7 +166,7 @@ static void wm_init(void) {
 		PropertyChangeMask|
 		StructureNotifyMask;
 
-	swa.cursor = zwm_x11_cursor_get(CurNormal);
+	swa.cursor = cursor_normal;
 	
 	XChangeWindowAttributes(dpy, root, CWEventMask | CWCursor, &swa);
 	XSelectInput(dpy, root, swa.event_mask);
@@ -179,7 +178,7 @@ static void wm_init(void) {
 
 static void wm_cleanup(void) {
 	XUngrabKey(dpy, AnyKey, AnyModifier, root);
-	zwm_x11_cursor_free(dpy);
+	zwm_mouse_cleanup(dpy);
 	XSetInputFocus(dpy, PointerRoot, RevertToPointerRoot, CurrentTime);
 	XSync(dpy, False);
 }

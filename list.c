@@ -44,9 +44,21 @@ void zwm_client_push_tail(Client *c)
 
 void zwm_client_push_next(Client *c, Client *prev)
 {
+	if(prev == tail){
+		zwm_client_push_tail(c);
+		return;
+	}
 	c->prev = prev;
-	c->next = prev->next;
-	prev->next = c;
+	if (prev) {
+		c->next = prev->next;
+		if(prev->next){
+			prev->next->prev = c;
+		}
+		prev->next = c;
+	} else {
+		c->next = NULL;
+		tail = head = c;
+	}
 }
 
 

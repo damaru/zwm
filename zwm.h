@@ -11,18 +11,15 @@
 #include <X11/Xlib.h>
 #include <X11/X.h>
 #include <X11/Xatom.h>
+#include <X11/Xft/Xft.h>
 
 typedef unsigned long ulong;
 typedef int (*ZwmLFunc)(int scrn, int view);
 typedef int (*ZwmEFunc)(void *, void *);
 typedef void (*KeyFunc)(const char *);
 
-typedef enum {
-       	CurNormal,
-       	CurResize,
-       	CurMove,
-       	CurLast
-} ZwmCursor;
+#define min(a,b) ((a)<(b)?(a):(b))
+#define max(a,b) ((a)>(b)?(a):(b))
 
 typedef struct ZwmGeom
 {
@@ -87,6 +84,9 @@ struct Client
 	double ow;
 	double oh;
 
+	int minh;
+	int minw;
+
 	int anim_steps;
 	int border;
 	int focused;
@@ -104,6 +104,7 @@ struct Client
 	Window lastfocused;
 	Client* next;
 	Client* prev;
+	XftDraw *draw;
 	char name[256];
 	char cname[256];
 } __attribute__((aligned));
@@ -126,6 +127,7 @@ typedef struct
 
 	const char *font;
 	const char *icons;
+	const char *date_fmt;
 
 	float opacity;
 	int anim_steps;
@@ -136,6 +138,8 @@ typedef struct
 	int button_width;
 	int button_count;
 	int reparent;
+	int minh;
+	int minw;
 
 	unsigned int xcolor_nborder;
 	unsigned int xcolor_fborder;
@@ -212,10 +216,12 @@ extern ZwmView views[MAX_SCREENS];
 extern int scr;
 extern Display *dpy;
 extern Window root;
+extern Cursor cursor_normal;
 extern unsigned int numlockmask;
 extern Client* sel;
 extern Client* head;
 extern Client* tail;
+extern Colormap cmap;
 
 void zwm_client_configure_window(Client* c);
 void zwm_client_focus(Client* c);
@@ -245,7 +251,9 @@ void zwm_client_update_name(Client* );
 Bool zwm_client_visible(Client* c, int view);
 void zwm_client_warp(Client* c);
 void zwm_client_zoom(Client* );
+void zwm_client_float(Client* );
 void zwm_client_push_next(Client *c, Client *prev);
+void zwm_client_update_hints(Client *c);
 
 int zwm_current_screen();
 int zwm_current_view();
@@ -302,9 +310,8 @@ void zwm_x11_atom_init(void);
 ulong zwm_x11_atom_list(Window w, Atom a, Atom type, ulong *ret, ulong nitems, ulong *left);
 Bool zwm_x11_atom_set(Window w, Atom a, Atom type, ulong *val, ulong);
 Bool zwm_x11_atom_text(Window w, Atom atom, char *text, unsigned int size);
-void zwm_x11_cursor_free(Display *dpy);
-Cursor zwm_x11_cursor_get(ZwmCursor c);
-void zwm_x11_cursor_init(Display *dpy);
+void zwm_mouse_init(Display *dpy);
+void zwm_mouse_cleanup(Display *dpy);
 void zwm_x11_flush_events(long mask);
 
 #define zwm_client_foreach(c) for((c)=head;(c);(c)=(c)->next)

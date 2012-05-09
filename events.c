@@ -1,7 +1,6 @@
 #include "zwm.h"
 
 static void ev_expose(XEvent *e);
-static void ev_button_press(XEvent *e);
 static void ev_map(XEvent *e);
 static void ev_configure_notify(XEvent *e);
 static void ev_configure_request(XEvent *e);
@@ -27,7 +26,6 @@ void zwm_event_init()
 	{
 		handlers[i] = NULL;
 	}
-	zwm_event_register(ButtonPress, (ZwmEFunc)ev_button_press, NULL);
 	zwm_event_register(Expose, (ZwmEFunc)ev_expose, NULL);
 	zwm_event_register(EnterNotify, (ZwmEFunc)ev_enter, NULL);
 	zwm_event_register(ConfigureRequest, (ZwmEFunc)ev_configure_request, NULL);
@@ -102,7 +100,7 @@ static int ev_wait(void) {
 	fd_set fds;
 	FD_ZERO(&fds);
 	FD_SET(fd, &fds);
-	t.tv_sec = 1;
+	t.tv_sec = 10;
 	t.tv_usec = 0;
 	return select(fd + 1, &fds, 0, &fds, &t);
 }
@@ -114,34 +112,6 @@ static void ev_expose(XEvent *e) {
 		 zwm_client_configure_window(c);
 		 zwm_decor_dirty(c);
 	 }
-}
-
-static void ev_button_press(XEvent *e) {
-	Client *c;
-	XButtonPressedEvent *ev = &e->xbutton;
-	DBG_ENTER();
-
-	 if((c = zwm_client_lookup(ev->window))) {
-		zwm_client_focus(c);
-
-		if(ev->button == Button1) {
-			int j = c->w - config.button_count*config.button_width;
-			if(ev->x > j )
-			{
-				int i = (ev->x - j)/config.button_width;
-				if(i < config.button_count) config.buttons[i].func(c);
-				return ;
-			}
-			zwm_client_raise(c, False);
-			zwm_client_mousemove(c);
-		}
-		else if(ev->button == Button2) {
-			zwm_client_toggle_floating(c);
-		}
-		else if(ev->button == Button3 ) {
-			zwm_client_mouseresize(c);
-		}
-	}
 }
 
 static void ev_map(XEvent *e) {
@@ -258,7 +228,9 @@ static void ev_property(XEvent *e) {
 				if((zwm_client_lookup(trans) != NULL))
 					zwm_layout_dirty();
 				break;
-			case XA_WM_NORMAL_HINTS: //todo
+			case XA_WM_NORMAL_HINTS:
+				zwm_client_update_hints(c);
+				break;
 			case XA_WM_HINTS:        //todo
 				break;
 		}
