@@ -139,22 +139,6 @@ void zwm_layout_register(ZwmLFunc f, char *name, int skip)
 	views[screen[zwm_current_screen()].view].layout = l;
 }
 
-void zwm_layout_next(void)
-{
-	ZwmLayout  *sel_layout = views[screen[zwm_current_screen()].view].layout;
-	while(sel_layout) {
-		sel_layout = sel_layout->next;
-		if(sel_layout && !sel_layout->skip){
-			break;
-		}
-	}
-
-	if(!sel_layout){	
-		sel_layout = layouts;
-	}
-	views[screen[zwm_current_screen()].view].layout = sel_layout;
-}
-
 void zwm_layout_set(const char *name)
 {
 	ZwmLayout *l = NULL;
@@ -168,13 +152,19 @@ void zwm_layout_set(const char *name)
 		}
 	}
 
-	if(l)
-	{
-		views[screen[zwm_current_screen()].view].layout = l;
-	} else {
-		zwm_layout_next();
+	if(!l) {
+		l = views[screen[zwm_current_screen()].view].layout;
+		while(l) {
+			l = l->next;
+			if(l && !l->skip){
+				break;
+			}
+		}
+		if(!l){	
+			l = layouts;
+		}
 	}
-	zwm_event_emit(ZwmLayoutChange, views[screen[zwm_current_screen()].view].layout->name);	
+	views[screen[zwm_current_screen()].view].layout = l;
 	zwm_layout_dirty();
 }
 

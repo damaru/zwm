@@ -57,10 +57,7 @@ void zwm_event_loop(void) {
 			XNextEvent(dpy, &ev);
 			if(ev.type < LASTEvent) {
 				zwm_event_emit(ev.type, &ev);
-			} else {
-				zwm_event_emit(ZwmX11Event, &ev);
 			}
-
 			zwm_layout_rearrange(False);
 			Client *c;
 			for(c = head; c; c = c->next) {

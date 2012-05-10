@@ -177,22 +177,13 @@ typedef enum
 {
 	/* our event numbers start after X11 events */
 	ZwmClientFocus = LASTEvent,
-	ZwmClientUnFocus,
-	ZwmClientProperty,
 	ZwmClientMap,
 	ZwmClientUnmap,
 	ZwmClientView,
 	ZwmClientState,
-	ZwmClientDamage,
-	ZwmClientResize,
-	ZwmClientFloating,
 	ZwmClientConfigure,
 	ZwmViewChange,
-	ZwmLayoutChange,
-	ZwmX11Event,
 	ZwmScreenSize,
-	ZwmManageScreen,
-	ZwmAllEvents,
 	ZwmMaxEvents
 }ZwmEvent;
 
@@ -276,7 +267,6 @@ void zwm_layout_arrange(void);
 void zwm_layout_dirty(void);
 void zwm_layout_init(void);
 void zwm_layout_moveresize(Client* c, int x, int y, int w, int h);
-void zwm_layout_next(void);
 void zwm_layout_rearrange(Bool force);
 void zwm_layout_register(ZwmLFunc f, char *name, int);
 void zwm_layout_set(const char *name);

@@ -6,7 +6,7 @@ unsigned int num_floating = 0;
 static int privcount = 0;
 Client *sel = NULL;
 
-static int zwm_x11_window_type(Window w);
+static int window_type(Window w);
 static void create_frame_window(Client *c);
 
 void zwm_client_configure_window(Client *c)
@@ -107,7 +107,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	c->state =  NormalState;
 	c->view = vew;
 	c->border = config.border_width;
-	c->type = zwm_x11_window_type(w);
+	c->type = window_type(w);
 	zwm_client_update_name(c);
 
 	switch (c->type) {
@@ -259,7 +259,6 @@ void zwm_client_focus(Client *c)
 		sel->focused = False;
 		zwm_mouse_grab(sel, False);
 		zwm_decor_dirty(sel);
-		zwm_event_emit(ZwmClientUnFocus, sel);
 	}
 
 	/* focus */
@@ -380,15 +379,12 @@ void zwm_client_update_name(Client *c)
 	if(!zwm_x11_atom_text(c->win, _NET_WM_NAME, c->name, sizeof c->name))
 	zwm_x11_atom_text(c->win, WM_NAME, c->name, sizeof c->name);
 	zwm_x11_atom_text(c->win, WM_CLASS, c->cname, sizeof c->cname);
-	zwm_event_emit(ZwmClientProperty, c);
 	zwm_decor_dirty(c);
 
 }
 
 void zwm_client_toggle_floating(Client *c) {
 	c->isfloating = !c->isfloating;
-	zwm_event_emit(ZwmClientFloating, c);
-
 	if(c->isfloating){
 		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
 		num_floating++;
@@ -424,7 +420,7 @@ void zwm_client_restore_geometry(Client *c, ZwmGeom *g)
 		zwm_layout_moveresize(c, g->x, g->y, g->w, g->h);
 }
 
-static int zwm_x11_window_type(Window w)
+static int window_type(Window w)
 {
 	if(zwm_x11_atom_check(w, _NET_WM_STATE, _NET_WM_STATE_FULLSCREEN)){
 		return ZwmFullscreenWindow;
