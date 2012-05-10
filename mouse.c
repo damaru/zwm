@@ -2,12 +2,15 @@
 #include "zwm.h"
 #include <X11/cursorfont.h>
 
-#define MOUSEMASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
+#define MODKEY	   Mod1Mask
+#define MOUSEMASK  (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
+#define BUTTONMASK (ButtonPressMask | ButtonReleaseMask)
 
 Cursor cursor_normal;
 static Cursor cursor_resize;
 static Cursor cursor_move;
 static void ev_button_press(XEvent *e);
+static void grab(Window win, unsigned int button);
 
 void
 zwm_mouse_init(Display *dpy)
@@ -26,14 +29,51 @@ zwm_mouse_cleanup(Display *dpy)
 	XFreeCursor(dpy, cursor_resize);
 }
 
+void zwm_mouse_grab(Client *c, Bool focused) {
+	if(focused) {
+		XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
+		grab(c->win, Button1);
+		grab(c->win, Button2);
+		grab(c->win, Button3);
+	} else {
+		XGrabButton(dpy, AnyButton, AnyModifier, c->win, False, BUTTONMASK,
+				GrabModeAsync, GrabModeSync, None, None);
+	}
+}
+
+static void grab(Window win, unsigned int button)
+{
+	unsigned int modifiers[] = { 0, LockMask, numlockmask, numlockmask|LockMask };
+	int j;
+
+	for(j = 0; j < sizeof(modifiers)/sizeof(unsigned int); j++) {
+		XGrabButton(dpy, button, MODKEY | modifiers[j], win, False,
+			       	BUTTONMASK, GrabModeAsync, GrabModeSync,
+			       	None, None);
+	}
+}
+
 enum {
 	DoMove = 0,
 	DoResize = 1
 };
 
-void mouse_move(Client *c, int resize) {
+static void move_resize(Client *c, int resize, int x, int y) {
+	if (resize) {
+		c->w = max(x - c->fpos.x - 2 * c->border + 1, c->minw);
+		c->h = max(y - c->fpos.y - 2 * c->border + 1, c->minh);
+	} else {
+		int s = zwm_current_screen();
+		int sx = screen[s].x;
+		int sy = screen[s].y;
+		c->x =  min(max(c->fpos.x + (x - c->bpos.x), sx), sx + screen[s].w - c->w);
+		c->y =  min(max(c->fpos.y + (y - c->bpos.y), sy), sy + screen[s].h - c->h);
+	}
+}
+
+static void mouse_move(Client *c, int resize) {
 	unsigned int dui;
-	int di;
+	int di, mx, my;
 	Window dummy;
 	XEvent ev;
 	Cursor cur = resize?cursor_resize:cursor_move;
@@ -44,7 +84,8 @@ void mouse_move(Client *c, int resize) {
 
 	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_float(c);
-	XQueryPointer(dpy, root, &dummy, &dummy, &c->bpos.x, &c->bpos.y, &di, &di, &dui);
+	XQueryPointer(dpy, root, &dummy, &dummy, &mx, &my, &di, &di, &dui);
+	c->bpos.x = mx, c->bpos.y = my;
 	zwm_layout_rearrange(False);
 
 	if (resize) {
@@ -60,22 +101,13 @@ void mouse_move(Client *c, int resize) {
 			zwm_event_emit(ev.type, &ev);
 			break;
 		case MotionNotify:
-			XSync(dpy, False);
-			if (resize) {
-				c->w = max(ev.xmotion.x - c->fpos.x - 2 * c->border + 1, c->minw);
-				c->h = max(ev.xmotion.y - c->fpos.y - 2 * c->border + 1, c->minh);
-			} else {
-				int s = zwm_current_screen();
-				int sx = screen[s].x;
-				int sy = screen[s].y;
-				c->x =  min(max(c->fpos.x + (ev.xmotion.x - c->bpos.x), sx), sx + screen[s].w - c->w);
-				c->y =  min(max(c->fpos.y + (ev.xmotion.y - c->bpos.y), sy), sy + screen[s].h - c->h);
-			}
+			move_resize(c, resize, ev.xmotion.x, ev.xmotion.y);
 			zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 			break;
 		}
 		zwm_decor_update(c);
 	} while(ev.type != ButtonRelease);
+
 	XUngrabPointer(dpy, CurrentTime);
 	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_save_geometry(c, &c->bpos);

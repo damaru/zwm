@@ -2,12 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#define MODKEY			Mod1Mask
-#define BUTTONMASK		(ButtonPressMask | ButtonReleaseMask)
-
 unsigned int num_floating = 0;
 static int privcount = 0;
-static void grabbuttons(Client *c, Bool focused);
 Client *sel = NULL;
 
 static int zwm_x11_window_type(Window w);
@@ -37,7 +33,7 @@ void zwm_client_configure_window(Client *c)
 	ce.above = None;
 	ce.override_redirect = False;
 
-	if(config.reparent && c->hastitle){
+	if(c->hastitle){
 		ce.x = 0;
 		ce.y = th;
 		ce.width = c->w - c->border;
@@ -182,10 +178,7 @@ void zwm_client_unmanage(Client *c)
 	}
 
 	XGrabServer(dpy);
-
-	if(config.reparent){
-		XReparentWindow(dpy, c->win, root, c->x, c->y+config.title_height);
-	}
+	XReparentWindow(dpy, c->win, root, c->x, c->y+config.title_height);
 
 	if(c->frame){
 		free(c->draw);
@@ -264,13 +257,13 @@ void zwm_client_focus(Client *c)
 	if (sel && sel != c) {
 		c->lastfocused = sel->win;
 		sel->focused = False;
-		grabbuttons(sel, False);
+		zwm_mouse_grab(sel, False);
 		zwm_decor_dirty(sel);
 		zwm_event_emit(ZwmClientUnFocus, sel);
 	}
 
 	/* focus */
-	grabbuttons(c, True);
+	zwm_mouse_grab(c, True);
 	sel = c;
 	c->focused = True;
 	XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
@@ -288,47 +281,17 @@ void zwm_client_raise(Client *c, Bool warp)
 	}
 }
 
-static void grab_one_button(Window win, unsigned int button)
-{
-	unsigned int modifiers[] = { 0, LockMask, numlockmask, numlockmask|LockMask };
-	int j;
-
-	for(j = 0; j < sizeof(modifiers)/sizeof(unsigned int); j++) {
-		XGrabButton(dpy, button, MODKEY | modifiers[j], win, False,
-			       	BUTTONMASK, GrabModeAsync, GrabModeSync,
-			       	None, None);
-	}
-}
-
-static void grabbuttons(Client *c, Bool focused) {
-	if(focused) {
-		XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
-		grab_one_button(c->win, Button1);
-		grab_one_button(c->win, Button2);
-		grab_one_button(c->win, Button3);
-	} else {
-		XGrabButton(dpy, AnyButton, AnyModifier, c->win, False, BUTTONMASK,
-				GrabModeAsync, GrabModeSync, None, None);
-	}
-}
-
 void zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 {
-
 	c->x =  x;
 	c->y =  y;
 	c->w =  w;
 	c->h =  h;
 
 	if(c->hastitle && c->frame){
-		if(config.reparent) {
-			XMoveResizeWindow(dpy, c->frame, x, y, w, h);
-			XMoveResizeWindow(dpy, c->win, c->border, config.title_height, 
-					w-2*c->border, h-config.title_height-2*c->border);
-		} else {
-			XMoveResizeWindow(dpy, c->frame, x, y, w, config.title_height);
-			XMoveResizeWindow(dpy, c->win, x, y+config.title_height, w, h-config.title_height);
-		}
+		XMoveResizeWindow(dpy, c->frame, x, y, w, h);
+		XMoveResizeWindow(dpy, c->win, c->border, config.title_height, 
+				w-2*c->border, h-config.title_height-2*c->border);
 	} else {
 		XMoveResizeWindow(dpy, c->win, x, y, w, h);
 		if(c->frame)XMoveResizeWindow(dpy, c->frame, x, y, w, h);
@@ -450,11 +413,7 @@ void zwm_client_zoom(Client *c) {
 
 void zwm_client_save_geometry(Client *c, ZwmGeom *g)
 {
-	g->view = c->view;
-	g->x = c->x;
-	g->y = c->y;
-	g->w = c->w;
-	g->h = c->h;
+	*g = c->geom;
 }
 
 void zwm_client_restore_geometry(Client *c, ZwmGeom *g)
@@ -510,10 +469,8 @@ static void create_frame_window(Client *c)
 	if(config.show_title)XMapWindow(dpy,c->frame);
 	XSetClassHint(dpy, c->frame, &hint);
 	XRaiseWindow(dpy, c->frame);
-	if (config.reparent) {
-		XReparentWindow(dpy, c->win, c->frame, 0, config.title_height);
-		XMoveResizeWindow(dpy, c->win, 0, config.title_height, c->w, c->h-config.title_height);
-	}
+	XReparentWindow(dpy, c->win, c->frame, 0, config.title_height);
+	XMoveResizeWindow(dpy, c->win, 0, config.title_height, c->w, c->h-config.title_height);
 	c->draw = XftDrawCreate(dpy, c->frame, DefaultVisual(dpy, scr), cmap);
 }
 

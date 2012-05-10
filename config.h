@@ -21,7 +21,7 @@ ZwmConfig config =
 	.title_height = 20,
 	.minh = 200,
 	.minw = 400,
-	.reparent = 1,
+	.mwfact = 0.5,
 	.buttons = {
 		//{"▭", client_iconify},
 		{"✖", zwm_client_kill},
@@ -86,6 +86,9 @@ ZwmConfig config =
 		{"Alt-f", focus, "2"},
 		{"Alt-F11", fullscreen, NULL},
 		{"Alt-F10", toggle_panel, NULL},
+
+		{"Alt-Shift-Up", mwfact, "0.05"},
+		{"Alt-Shift-Down", mwfact, "-0.05"},
 
 		{"Alt-Return", zen, NULL},
 		{"Alt-Shift-r", show_all, NULL},

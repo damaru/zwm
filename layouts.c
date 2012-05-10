@@ -29,10 +29,7 @@ void zwm_layout_moveresize(Client *c, int x, int y, int w, int h)
 {
 	if(c->noanim) {
 		c->noanim = 0;
-		c->ox = c->x;
-		c->oy = c->y;
-		c->ow = c->w;
-		c->oh = c->h;
+		zwm_client_save_geometry(c, &c->oldpos);
 	}
 	c->x  = x;
 	c->y  = y;
@@ -50,20 +47,14 @@ void zwm_layout_animate(void)
 	}
 	for(c = head; c; c = c->next) {
 		if(!c->noanim){
-			c->dx = (c->x - c->ox)/config.anim_steps;
-			c->dy = (c->y - c->oy)/config.anim_steps;
-			c->dh = (c->h - c->oh)/config.anim_steps;
-			c->dw = (c->w - c->ow)/config.anim_steps;
-
-			if(config.reparent) {
-				int h = c->h>c->oh?c->h:c->oh;
-				int w = c->w>c->ow?c->w:c->ow;
-				XMoveResizeWindow(dpy, c->win, c->border, config.title_height, 
-						w-2*c->border, h-config.title_height-2*c->border);
-			} else {
-				zwm_client_moveresize(c, c->ox, c->oy, c->w, c->h);
-			}
-
+			c->dx = (c->x - c->oldpos.x)/config.anim_steps;
+			c->dy = (c->y - c->oldpos.y)/config.anim_steps;
+			c->dh = (c->h - c->oldpos.h)/config.anim_steps;
+			c->dw = (c->w - c->oldpos.w)/config.anim_steps;
+			int h = c->h>c->oldpos.h?c->h:c->oldpos.h;
+			int w = c->w>c->oldpos.w?c->w:c->oldpos.w;
+			XMoveResizeWindow(dpy, c->win, c->border, config.title_height, 
+					w-2*c->border, h-config.title_height-2*c->border);
 			XSync(dpy, False);
 		}
 	}
@@ -72,19 +63,19 @@ void zwm_layout_animate(void)
 		struct timespec req = {0, 100000000/config.anim_steps };
 		for(c = head; c; c = c->next) {
 			if(!c->noanim){
-				c->ox += c->dx;
-				c->oy += c->dy;
-				c->oh += c->dh;
-				c->ow += c->dw;
-				if( abs(c->y - c->oy) > 0 || 
-				    abs(c->x - c->ox) > 0 ||
-				    abs(c->w - c->ow) > 0 ||
-				    abs(c->h - c->oh) > 0 ) {
-					if (config.reparent) {
-						XMoveResizeWindow(dpy, c->frame, c->ox, c->oy, c->ow, c->oh);
-					} else {
-						zwm_client_moveresize(c, c->ox, c->oy, c->w, c->oh);
-					}
+				c->oldpos.x += c->dx;
+				c->oldpos.y += c->dy;
+				c->oldpos.h += c->dh;
+				c->oldpos.w += c->dw;
+				if( abs(c->y - c->oldpos.y) > 0 || 
+				    abs(c->x - c->oldpos.x) > 0 ||
+				    abs(c->w - c->oldpos.w) > 0 ||
+				    abs(c->h - c->oldpos.h) > 0 ) {
+					XMoveResizeWindow(dpy, c->frame, 
+							c->oldpos.x,
+							c->oldpos.y,
+							c->oldpos.w,
+							c->oldpos.h);
 				}
 			}
 		}

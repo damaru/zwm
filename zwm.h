@@ -24,10 +24,10 @@ typedef void (*KeyFunc)(const char *);
 typedef struct ZwmGeom
 {
 	int view;
-	int x;
-	int y;
-	int w;
-	int h;
+	double x;
+	double y;
+	double w;
+	double h;
 } ZwmGeom;
 
 typedef struct ZwmLayout
@@ -68,21 +68,21 @@ enum
 typedef struct Client Client;
 struct Client
 {
-	int view;
-	double x;
-	double y;
-	double w;
-	double h;
+	union {
+		struct {
+			int view;
+			double x;
+			double y;
+			double w;
+			double h;
+		};
+		ZwmGeom geom;
+	};
 
 	double dx;
 	double dy;
 	double dw;
 	double dh;
-
-	double ox;
-	double oy;
-	double ow;
-	double oh;
 
 	int minh;
 	int minw;
@@ -97,6 +97,7 @@ struct Client
 	int type;
 	int dirty;
 	Bool isfloating;
+	ZwmGeom oldpos;
 	ZwmGeom fpos;
 	ZwmGeom bpos;
 	Window win;
@@ -130,6 +131,7 @@ typedef struct
 	const char *date_fmt;
 
 	float opacity;
+	float mwfact;
 	int anim_steps;
 	int show_title;
 	int title_height;
@@ -137,7 +139,6 @@ typedef struct
 	int icon_y;
 	int button_width;
 	int button_count;
-	int reparent;
 	int minh;
 	int minw;
 
@@ -223,17 +224,18 @@ extern Client* head;
 extern Client* tail;
 extern Colormap cmap;
 
+Bool zwm_client_visible(Client* c, int view);
+Client* zwm_client_lookup(Window w);
+Client* zwm_client_manage(Window w, XWindowAttributes *wa);
+int zwm_client_screen(Client* );
 void zwm_client_configure_window(Client* c);
+void zwm_client_float(Client* );
 void zwm_client_focus(Client* c);
 void zwm_client_fullscreen(Client* c);
-Client* zwm_client_lookup(Window w);
 void zwm_client_kill(Client* c);
-Client* zwm_client_manage(Window w, XWindowAttributes *wa);
-void zwm_client_mousemove(Client* c);
-void zwm_client_mouseresize(Client* c);
 void zwm_client_moveresize(Client* c, int,int,int,int);
-Client* zwm_client_next_visible(Client* c);
 void zwm_client_push_head(Client* );
+void zwm_client_push_next(Client *c, Client *prev);
 void zwm_client_push_tail(Client* );
 void zwm_client_raise(Client* c, Bool warp);
 void zwm_client_refocus(void);
@@ -241,19 +243,15 @@ void zwm_client_remove(Client* c);
 void zwm_client_restore_geometry(Client* c, ZwmGeom *g);
 void zwm_client_save_geometry(Client* c, ZwmGeom *g);
 void zwm_client_scan(void);
-int zwm_client_screen(Client* );
-void zwm_client_setstate(Client* c, int state);
 void zwm_client_set_view(Client* c, int v);
+void zwm_client_setstate(Client* c, int state);
 void zwm_client_toggle_floating(Client* c);
 void zwm_client_unfullscreen(Client* c);
 void zwm_client_unmanage(Client* );
+void zwm_client_update_hints(Client *c);
 void zwm_client_update_name(Client* );
-Bool zwm_client_visible(Client* c, int view);
 void zwm_client_warp(Client* c);
 void zwm_client_zoom(Client* );
-void zwm_client_float(Client* );
-void zwm_client_push_next(Client *c, Client *prev);
-void zwm_client_update_hints(Client *c);
 
 int zwm_current_screen();
 int zwm_current_view();
@@ -283,6 +281,10 @@ void zwm_layout_rearrange(Bool force);
 void zwm_layout_register(ZwmLFunc f, char *name, int);
 void zwm_layout_set(const char *name);
 
+void zwm_mouse_init(Display *dpy);
+void zwm_mouse_cleanup(Display *dpy);
+void zwm_mouse_grab(Client *c, Bool focused);
+
 void zwm_panel_hide();
 void zwm_panel_init(void);
 void zwm_panel_show();
@@ -310,8 +312,6 @@ void zwm_x11_atom_init(void);
 ulong zwm_x11_atom_list(Window w, Atom a, Atom type, ulong *ret, ulong nitems, ulong *left);
 Bool zwm_x11_atom_set(Window w, Atom a, Atom type, ulong *val, ulong);
 Bool zwm_x11_atom_text(Window w, Atom atom, char *text, unsigned int size);
-void zwm_mouse_init(Display *dpy);
-void zwm_mouse_cleanup(Display *dpy);
 void zwm_x11_flush_events(long mask);
 
 #define zwm_client_foreach(c) for((c)=head;(c);(c)=(c)->next)
