@@ -8,10 +8,10 @@ ZwmConfig config =
 	.focus_bg_color = "#5975CA",
 	.focus_shadow_color = "#444",
 	.focus_title_color = "#FFF",
-	.normal_border_color = "#111",
-	.normal_bg_color = "#33363D",
-	.normal_shadow_color = "#000",
-	.normal_title_color = "#777",
+	.normal_border_color = "#5975CA",
+	.normal_bg_color = "#E3EAFF",
+	.normal_shadow_color = "#FFF",
+	.normal_title_color = "#5975CA",
 	.date_fmt = " [ %a %d %b, %l:%M %p ] ",
 	.opacity = 0.85,
 	.anim_steps = 10,
@@ -22,6 +22,7 @@ ZwmConfig config =
 	.minh = 200,
 	.minw = 400,
 	.mwfact = 0.5,
+	.zen_wallpaper = 0,
 	.buttons = {
 		//{"▭", client_iconify},
 		{"✖", zwm_client_kill},
@@ -90,7 +91,7 @@ ZwmConfig config =
 		{"Alt-Shift-Up", mwfact, "0.05"},
 		{"Alt-Shift-Down", mwfact, "-0.05"},
 
-		{"Alt-Return", zen, NULL},
+		{"Alt-Return", zwm_zen, NULL},
 		{"Alt-Shift-r", show_all, NULL},
 
 		{"Alt-Shift-space", toggle_floating, NULL},
@@ -112,7 +113,6 @@ ZwmConfig config =
 		{"Alt-r", run_once, "Rox;rox"},
 		{"Alt-Shift-m", run_once, "Mixer;st -c Mixer -t Mixer -e alsamixer"},
 		{"Alt-Shift-Return", run_once, "Screen;st -t Screen -c Screen -e screen -Rd"},
-
 
 		{NULL, NULL, NULL},
 	},

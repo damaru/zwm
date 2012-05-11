@@ -1,4 +1,3 @@
-#define ZVIEW 9
 
 static inline Client * client_next(Client *c, int dir, Bool wrap, Bool inc, Bool skipf){
 #define NOT_FLOAT(C) (skipf?!(C)->isfloating:1) 
@@ -38,7 +37,7 @@ static int view_next(Bool occupied)
 		return next;
 	}
 
-	if(next <0 || next == zwm_current_view() || next >= ZVIEW ){
+	if(next <0 || next == zwm_current_view() || next >= ZWM_ZEN_VIEW ){
 		next = (zwm_current_view() + 1) % (config.screen_count+1);
 	}
 
@@ -61,7 +60,7 @@ static void goto_view(const char *arg) {
 static void banish(const char *arg) {
 
 	int next = view_next(False);
-	if(sel && sel->view < ZVIEW ){
+	if(sel && sel->view < ZWM_ZEN_VIEW ){
 		zwm_client_set_view(sel, next);
 		screen[zwm_current_screen()].prev = next;
 	}
@@ -115,9 +114,9 @@ static void show_all(const char *arg) {
 	zwm_client_raise(s, True);
 }
 
-static void zen(const char *arg) {
+void zwm_zen(const char *arg) {
 	int s = zwm_current_screen();
-	int v = ZVIEW + s;
+	int v = ZWM_ZEN_VIEW + s;
 	Client *c = sel;
 	Client *t;
 
@@ -125,8 +124,8 @@ static void zen(const char *arg) {
 		return;
 	}
 
-	if(c->view >= ZVIEW){
-		c->view = c->fpos.view;
+	if(c->view >= ZWM_ZEN_VIEW){
+		c->view = screen[s].prev;
 		zwm_view_set(c->view);
 		zwm_client_raise(c, True);
 		zwm_panel_show();
@@ -134,12 +133,13 @@ static void zen(const char *arg) {
 	}
 
 	zwm_client_foreach(t) {
-		if(t->view >= ZVIEW){
+		if(t->view >= ZWM_ZEN_VIEW){
 			t->view = t->fpos.view;
 		}
 	}
 
 	c->fpos.view = c->view;
+	views[v].current = c;
 	zwm_client_set_view(c, v);
 	zwm_view_set(v);
 	zwm_layout_set("zen");

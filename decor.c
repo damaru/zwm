@@ -88,7 +88,8 @@ void zwm_decor_update(Client *c)
 	if (c->frame) {
 		int iw= c->w - (config.button_width*config.button_count) - 4*c->border;
 		int vx = 4*c->border;
-		const char* vtxt = c->isfloating?"":config.viewnames[c->view];
+		//const char* vtxt = c->isfloating?"":config.viewnames[c->view];
+		const char* vtxt = config.viewnames[c->view];
 		int tx = vx + !c->isfloating*config.button_width;
 		int ty = config.title_y;
 

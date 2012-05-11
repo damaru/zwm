@@ -48,12 +48,6 @@ typedef struct ZwmScreen
 	int h;
 } ZwmScreen;
 
-typedef struct ZwmView
-{
-	ZwmLayout *layout;
-	int screen;
-} ZwmView;
-
 enum
 {
 	ZwmNormalWindow,
@@ -141,6 +135,7 @@ typedef struct
 	int button_count;
 	int minh;
 	int minw;
+	int zen_wallpaper;
 
 	unsigned int xcolor_nborder;
 	unsigned int xcolor_fborder;
@@ -166,6 +161,14 @@ typedef struct
 } ZwmConfig;
 
 extern ZwmConfig config;
+
+typedef struct ZwmView
+{
+	ZwmLayout *layout;
+	Client *current;
+	int screen;
+} ZwmView;
+
 
 enum
 {
@@ -305,5 +308,11 @@ Bool zwm_x11_atom_text(Window w, Atom atom, char *text, unsigned int size);
 void zwm_x11_flush_events(long mask);
 
 #define zwm_client_foreach(c) for((c)=head;(c);(c)=(c)->next)
+#define ZWM_ZEN_VIEW 9
+
+void zwm_zen(const char *);
+void zwm_fullscreen(const char *);
+void zwm_focus_next(const char *);
+void zwm_focus_prev(const char *);
 
 #endif

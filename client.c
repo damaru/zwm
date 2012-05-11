@@ -87,6 +87,11 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 {
 	int scr = zwm_current_screen();
 	int vew = zwm_current_view();
+
+	if (vew >= ZWM_ZEN_VIEW) {
+		vew = screen[scr].prev;
+	}
+
 	Client* old = zwm_client_lookup(w);
 	
 	if(old && old->win == w ){
@@ -160,8 +165,8 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_event_emit(ZwmClientMap, c);
 	zwm_layout_dirty();
 	zwm_client_configure_window(c);
-	zwm_layout_rearrange(True);
 	zwm_client_raise(c, True);
+	zwm_layout_rearrange(True);
 	zwm_client_update_hints(c);
 	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_save_geometry(c, &c->bpos);
@@ -249,7 +254,8 @@ void zwm_client_refocus(void)
 
 void zwm_client_focus(Client *c) 
 {
-	if(!zwm_client_visible(c, zwm_current_view())){
+	int v = zwm_current_view();
+	if(!zwm_client_visible(c, v)){
 		zwm_client_refocus();
 	}
 
@@ -263,6 +269,9 @@ void zwm_client_focus(Client *c)
 
 	/* focus */
 	zwm_mouse_grab(c, True);
+	if (!c->isfloating) {
+		views[v].current = c;
+	}
 	sel = c;
 	c->focused = True;
 	XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
@@ -357,6 +366,7 @@ void zwm_client_kill(Client *c) {
 		ev.xclient.data.l[1] = CurrentTime;
 		XSendEvent(dpy, c->win, False, NoEventMask, &ev);
 	} else {
+		zwm_client_moveresize(c, c->x, -c->y-c->h, c->w, c->h);
 		XKillClient(dpy, c->win);
 	}
 }
