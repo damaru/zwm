@@ -18,6 +18,7 @@ static void wm_cleanup(void);
 static void wm_signal(int s);
 
 #include "actions.h"
+#include "layouts.h"
 #include "config.h"
 
 int main(int argc, char *argv[]) {
@@ -145,7 +146,6 @@ static void wm_init(void) {
 
 	zwm_x11_atom_init();
 	zwm_event_init();
-	zwm_layout_init();
 	zwm_mouse_init(dpy);
 
 	wm_numlock_init();

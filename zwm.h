@@ -14,7 +14,7 @@
 #include <X11/Xft/Xft.h>
 
 typedef unsigned long ulong;
-typedef int (*ZwmLFunc)(int scrn, int view);
+typedef void (*ZwmLFunc)(int scrn, int view);
 typedef int (*ZwmEFunc)(void *, void *);
 typedef void (*KeyFunc)(const char *);
 
@@ -33,10 +33,9 @@ typedef struct ZwmGeom
 
 typedef struct ZwmLayout
 {
-	ZwmLFunc handler;
+	ZwmLFunc func;
+	char *name;
 	int skip;
-	char name[64];
-	struct ZwmLayout *next;
 }ZwmLayout;
 
 typedef struct ZwmScreen
@@ -160,6 +159,9 @@ typedef struct
 		void *f;
 		const char *arg;
 	} keys[64];
+
+	ZwmLayout layouts[16];
+
 } ZwmConfig;
 
 extern ZwmConfig config;
@@ -271,7 +273,6 @@ void zwm_key_init(void);
 
 void zwm_layout_arrange(void);
 void zwm_layout_dirty(void);
-void zwm_layout_init(void);
 void zwm_layout_moveresize(Client* c, int x, int y, int w, int h);
 void zwm_layout_rearrange(Bool force);
 void zwm_layout_register(ZwmLFunc f, char *name, int);

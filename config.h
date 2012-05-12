@@ -14,7 +14,7 @@ ZwmConfig config =
 	.normal_title_color = "#5975CA",
 	.date_fmt = " [ %a %d %b, %l:%M %p ] ",
 	.opacity = 0.85,
-	.anim_steps = 10,
+	.anim_steps = 30,
 	.show_title = 1,
 	.font = "-*-dejavu sans mono-bold-r-*-*-14-*-*-*-*-*-*-*",
  	.icons = "-*-webdings-bold-r-*-*-16-*-*-*-*-*-*-*",
@@ -115,6 +115,14 @@ ZwmConfig config =
 		{"Alt-Shift-Return", run_once, "Screen;st -t Screen -c Screen -e screen -Rd"},
 
 		{NULL, NULL, NULL},
+	},
+
+	.layouts = {
+		{ tile, "tile", 0 },
+		{ monocle, "monocle", 0 },
+		{ zen, "zen", 1 },
+		{ floating, "float", 1 },
+		{NULL, NULL, 0},
 	},
 };
 

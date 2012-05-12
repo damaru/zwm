@@ -261,9 +261,9 @@ void zwm_client_refocus(void)
 void zwm_client_focus(Client *c) 
 {
 	int v = zwm_current_view();
-	if(!zwm_client_visible(c, v)){
-		zwm_client_refocus();
-	}
+//	if(!zwm_client_visible(c, v)){
+//		zwm_client_refocus();
+//	}
 
 	/* unfocus */
 	if (sel && sel != c) {
