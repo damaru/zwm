@@ -50,17 +50,22 @@ void zwm_screen_set_view(int scr, int view)
 	}
 }
 
-int zwm_client_screen(Client *c)
-{
-	int i;
+static int
+screen_coords (int x, int y) {
+	int i = 0;
 	for (i=0; i<config.screen_count; i++) {
-		if(c->x >= screen[i].x && c->x <=screen[i].x+screen[i].w){
-			if(c->y >= screen[i].y && c->y <=screen[i].y+screen[i].h){
+		if (x >= screen[i].x && x <= screen[i].x+screen[i].w) {
+			if (y >= screen[i].y && y <= screen[i].y+screen[i].h) {
 				return i;
 			}
 		}
 	}
 	return i;
+}
+
+int zwm_client_screen(Client *c)
+{
+	return screen_coords(c->x, c->y);
 }
 
 int zwm_current_screen()
@@ -70,20 +75,13 @@ int zwm_current_screen()
 	int wx, wy;
 	unsigned int mask;
 	Window root = DefaultRootWindow(dpy);
-	int i;
 
 	Bool ret = XQueryPointer(dpy, root, &rr, &ch, &x, &y, &wx, &wy, &mask);
-	if(ret){
-		for(i=0; i<config.screen_count; i++) {
-			if(x > screen[i].x && x <screen[i].x+screen[i].w){
-				if(y>=screen[i].y && y <= screen[i].y+screen[i].h){
-					return i;
-				}
-			}
-		}
+	if (ret) {
+		return screen_coords(x, y);
 	}
 
-	if(sel){
+	if (sel) {
 		return zwm_view_get_screen(sel->view);
 	}
 
@@ -103,7 +101,7 @@ void zwm_view_rescan(void)
 	int min_view = 32;
 	int viewc[32] = { [0 ... 31] = 0,  };
 
-	zwm_client_foreach (c) {
+	zwm_client_foreach (c) 
 	{
 		max_view = c->view > max_view ? c->view: max_view;
 		min_view = c->view < min_view ? c->view: min_view;
