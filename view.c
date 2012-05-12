@@ -175,8 +175,10 @@ void zwm_screen_rescan(Bool init) {
 
 	if(init){
 		for(i=0;i<config.screen_count;i++) {
-			views[i].mwfact = config.mwfact;
 			zwm_screen_set_view(i, i);
+		}
+		for(i=0; i<MAX_VIEWS; i++){
+			views[i].mwfact = config.mwfact;
 		}
 	}
 	zwm_event_emit(ZwmScreenSize, NULL);

@@ -316,7 +316,7 @@ void zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 		c->screen = zwm_client_screen(c);
 		if(c->screen < config.screen_count) {
 			c->view = screen[c->screen].view;
-		} else {
+		} else if(zwm_client_visible(c, c->view)) {
 			c->screen = 0;
 			c->view = screen[0].view;
 			zwm_client_toggle_floating(c);
