@@ -20,7 +20,7 @@ void tile(int scr, int v) {
 				zwm_layout_moveresize(c, 
 						screen[scr].x + (screen[scr].w * config.mwfact),
 						screen[scr].y + (i-1)*h , 
-						screen[scr].w * (1-config.mwfact), h );
+						screen[scr].w * (1-config.mwfact) - B, h );
 				i++;
 			}
 		}

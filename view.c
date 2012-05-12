@@ -175,7 +175,6 @@ void zwm_screen_rescan(Bool init) {
 
 	if(init){
 		for(i=0;i<config.screen_count;i++) {
-			screen[i].view = i;
 			zwm_screen_set_view(i, i);
 		}
 	}
