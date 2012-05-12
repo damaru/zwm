@@ -57,7 +57,7 @@ int zwm_client_screen(Client *c)
 			}
 		}
 	}
-	return 0;
+	return i;
 }
 
 int zwm_current_screen()
@@ -175,6 +175,7 @@ void zwm_screen_rescan(Bool init) {
 
 	if(init){
 		for(i=0;i<config.screen_count;i++) {
+			views[i].mwfact = config.mwfact;
 			zwm_screen_set_view(i, i);
 		}
 	}

@@ -22,7 +22,7 @@ ZwmConfig config =
 	.minh = 200,
 	.minw = 400,
 	.mwfact = 0.5,
-	.zen_wallpaper = 0,
+	.zen_wallpaper = 1,
 	.buttons = {
 		//{"▭", client_iconify},
 		{"✖", zwm_client_kill},

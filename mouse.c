@@ -103,6 +103,7 @@ static void mouse_move(Client *c, int resize) {
 		case MotionNotify:
 			move_resize(c, resize, ev.xmotion.x, ev.xmotion.y);
 			zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
+			c->view = screen[zwm_client_screen(c)].view;
 			break;
 		}
 		zwm_decor_update(c);

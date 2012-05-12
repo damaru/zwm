@@ -24,6 +24,7 @@ typedef void (*KeyFunc)(const char *);
 typedef struct ZwmGeom
 {
 	int view;
+	int screen;
 	double x;
 	double y;
 	double w;
@@ -65,6 +66,7 @@ struct Client
 	union {
 		struct {
 			int view;
+			int screen;
 			double x;
 			double y;
 			double w;
@@ -166,6 +168,7 @@ typedef struct ZwmView
 {
 	ZwmLayout *layout;
 	Client *current;
+	double mwfact;
 	int screen;
 } ZwmView;
 

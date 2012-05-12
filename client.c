@@ -168,8 +168,14 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_client_raise(c, True);
 	zwm_layout_rearrange(True);
 	zwm_client_update_hints(c);
-	zwm_client_save_geometry(c, &c->fpos);
-	zwm_client_save_geometry(c, &c->bpos);
+
+	c->fpos.x = (screen[scr].w - c->w)/2;
+	c->fpos.y = (screen[scr].h - c->h)/2;
+	c->fpos.w = c->w;
+	c->fpos.h = c->h;
+	c->fpos.view = c->view;
+	c->fpos.screen = scr;
+	
 	config.num_clients++;
 	return c;
 }
@@ -304,10 +310,18 @@ void zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 		XMoveResizeWindow(dpy, c->win, x, y, w, h);
 		if(c->frame)XMoveResizeWindow(dpy, c->frame, x, y, w, h);
 	}
-	if (c->isfloating && zwm_client_screen(c) != -1) {
-		c->view = screen[zwm_client_screen(c)].view;
-	}
 	XSync(dpy, False);
+
+	if (c->isfloating) {
+		c->screen = zwm_client_screen(c);
+		if(c->screen < config.screen_count) {
+			c->view = screen[c->screen].view;
+		} else {
+			c->screen = 0;
+			c->view = screen[0].view;
+			zwm_client_toggle_floating(c);
+		}
+	}
 }
 
 void zwm_client_fullscreen(Client *c)
@@ -420,14 +434,13 @@ void zwm_client_zoom(Client *c) {
 void zwm_client_save_geometry(Client *c, ZwmGeom *g)
 {
 	*g = c->geom;
+	g->screen = zwm_client_screen(c);
 }
 
 void zwm_client_restore_geometry(Client *c, ZwmGeom *g)
 {
-	int s = zwm_client_screen(c);
-	if(g->x >= screen[s].x && g->x <= (screen[s].w+screen[s].x) && 
-		g->y >= screen[s].y && g->y <= (screen[s].h+screen[s].y))
-		zwm_layout_moveresize(c, g->x, g->y, g->w, g->h);
+	int delta = screen[views[c->view].screen].x - screen[g->screen].x;
+	zwm_layout_moveresize(c, g->x + delta, g->y, g->w, g->h);	
 }
 
 static int window_type(Window w)

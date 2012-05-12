@@ -92,27 +92,18 @@ void zwm_layout_arrange(void)
 		return;
 	}
 	for(; c; c = c->next) {
-		if (zwm_client_visible(c, screen[zwm_client_screen(c)].view) && c->bpos.w) {
-			zwm_client_restore_geometry(c, &c->bpos);
-			c->bpos.w = 0;
-		}
-
 		c->anim_steps = config.anim_steps;
-
-		if( !c->isfloating && (c->type == ZwmNormalWindow ||
-			c->type == ZwmDialogWindow) && 
-			!zwm_client_visible(c, screen[zwm_client_screen(c)].view)  ) {
+		c->noanim = 0;
+		if( (c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) && 
+			(!zwm_client_visible(c, c->view) || c->isfloating) ) {
 			if (c->bpos.w == 0) {
 				zwm_client_save_geometry(c, &c->bpos);
 			}
-			//TODO fix this
-			if(c->state == IconicState) {
-				zwm_layout_moveresize(c, c->x, c->y+screen[0].h, c->w, c->h);
-			} else if(config.screen_count > 1){
-				zwm_layout_moveresize(c, c->x, c->y-2*screen[0].h, c->w, c->h);
-			} else {
-				zwm_layout_moveresize(c, screen[config.screen_count-1].x + screen[config.screen_count-1].w + 2+c->x, c->y, c->w, c->h);
-			}
+			zwm_layout_moveresize(c, c->x, c->y - 2*screen[0].h, c->w, c->h);
+		}
+		if (zwm_client_visible(c, c->view) && c->bpos.w) {
+			zwm_client_restore_geometry(c, &c->bpos);
+			c->bpos.w = 0;
 		}
 	}
 	

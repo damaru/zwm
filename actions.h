@@ -321,7 +321,7 @@ static void fullscreen(const char *arg) {
 }
 
 static void mwfact(const char *arg) {
-	config.mwfact += atof(arg);
+	views[zwm_current_view()].mwfact += atof(arg);
 	zwm_layout_dirty();
 }
 
