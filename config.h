@@ -122,6 +122,7 @@ ZwmConfig config =
 		{ monocle, "monocle", 0 },
 		{ zen, "zen", 1 },
 		{ floating, "float", 1 },
+		{ grid, "grid", 0 },
 		{NULL, NULL, 0},
 	},
 };

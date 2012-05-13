@@ -1,12 +1,10 @@
 
-
 static Bool zwm_layout_visible(Client *c, int view) 
 {
 	return c->state == NormalState &&
 		c->view == view && 
 		(c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) ;
 }
-
 
 static void zen(int scr, int v) {
 	Client *c;
@@ -88,4 +86,40 @@ static void monocle(int scr, int v) {
 	}
 }
 
+static void
+grid(int scr, int v) {
+	unsigned int i, cx, cy, cw, ch, aw, ah, ax=0, cols=0, rows=0;
+	Client *c;
+	unsigned int n;
+
+	zwm_client_foreach (c, n = 0) {
+		if(zwm_layout_visible(c, v) && !c->isfloating){
+			c->noanim = 0;
+			n++;
+		}
+	}
+
+	/* grid dimensions */
+	for(rows = 0; rows <= n/2; rows++)
+		if(rows*rows >= n)
+			break;
+	cols = (rows && (rows - 1) * rows >= n) ? rows - 1 : rows;
+
+	/* window geoms (cell height/width) */
+	ch = screen[0].h / (rows ? rows : 1);
+	cw = screen[0].w / (cols ? cols : 1);
+
+	zwm_client_foreach(c, i=0) {
+		if(zwm_client_visible(c, v) && !c->isfloating){
+			cx = ax + (i / rows) * cw;
+			cy = (i % rows) * ch + screen[0].y;
+			/* adjust height/width of last row/column's windows */
+			ah = ((i + 1) % rows == 0) ? screen[0].h - ch * rows : 0;
+			aw = (i >= rows * (cols - 1)) ? screen[0].w - cw * cols : 0;
+			zwm_layout_moveresize(c, cx, cy, cw - 2 + aw - config.border_width,
+				       	ch - 2  + ah -  config.border_width);
+			i++;
+		}
+	}
+}
 

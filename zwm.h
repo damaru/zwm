@@ -311,7 +311,7 @@ Bool zwm_x11_atom_set(Window w, Atom a, Atom type, ulong *val, ulong);
 Bool zwm_x11_atom_text(Window w, Atom atom, char *text, unsigned int size);
 void zwm_x11_flush_events(long mask);
 
-#define zwm_client_foreach(c) for((c)=head;(c);(c)=(c)->next)
+#define zwm_client_foreach(c, args...) for((c)=head, ##args;(c);(c)=(c)->next)
 #define ZWM_ZEN_VIEW 9
 
 void zwm_zen(const char *);
