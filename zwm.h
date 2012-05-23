@@ -124,6 +124,7 @@ typedef struct
 	const char *font;
 	const char *icons;
 	const char *date_fmt;
+	const char *menucmd;
 
 	float opacity;
 	float mwfact;
@@ -137,6 +138,7 @@ typedef struct
 	int minh;
 	int minw;
 	int zen_wallpaper;
+	int attach_last;
 
 	unsigned int xcolor_nborder;
 	unsigned int xcolor_fborder;

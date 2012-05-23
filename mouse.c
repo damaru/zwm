@@ -131,6 +131,10 @@ static void ev_button_press(XEvent *e) {
 	XButtonPressedEvent *ev = &e->xbutton;
 	Client *c;
 
+	if(ev->window == root && config.menucmd){
+		zwm_util_spawn(config.menucmd);
+	}
+
 	 if((c = zwm_client_lookup(ev->window))) {
 		zwm_client_focus(c);
 		switch(ev->button) {

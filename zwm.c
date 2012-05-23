@@ -163,6 +163,7 @@ static void wm_init(void) {
 		EnterWindowMask |
 		LeaveWindowMask |
 		ExposureMask|
+		ButtonPressMask|
 		PropertyChangeMask|
 		StructureNotifyMask;
 

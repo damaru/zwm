@@ -105,14 +105,19 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	Client *c =  zwm_util_malloc(sizeof(Client) + (sizeof(void*)*privcount));
 	c->win = w;
 	c->isfloating = False;
-	c->x = wa->x;
-	c->y = wa->y;
-	c->w = wa->width;
-	c->h = wa->height;
 	c->state =  NormalState;
-	c->view = vew;
 	c->border = config.border_width;
 	c->type = window_type(w);
+	c->view = vew;
+	c->w = wa->width;
+	c->h = wa->height;
+	c->x =(screen[scr].w - c->w)/2;
+	c->y =(screen[scr].h - c->h)/2;
+	zwm_client_save_geometry(c, &c->fpos);
+	c->fpos.view = c->view;
+	c->fpos.screen = scr;
+	zwm_client_update_hints(c);
+
 	zwm_client_update_name(c);
 
 	switch (c->type) {
@@ -161,35 +166,31 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
 
 	zwm_decor_update(c);
-	zwm_client_push_head(c);
+	if(config.attach_last) {
+		zwm_client_push_tail(c);
+	} else {
+		zwm_client_push_head(c);
+	}
 	zwm_event_emit(ZwmClientMap, c);
 	zwm_layout_dirty();
 	zwm_client_configure_window(c);
 	zwm_client_raise(c, True);
 	zwm_layout_rearrange(True);
-	zwm_client_update_hints(c);
 
-	c->fpos.x = (screen[scr].w - c->w)/2;
-	c->fpos.y = (screen[scr].h - c->h)/2;
-	c->fpos.w = c->w;
-	c->fpos.h = c->h;
-	c->fpos.view = c->view;
-	c->fpos.screen = scr;
-	
 	config.num_clients++;
 	return c;
 }
 
 void zwm_client_unmanage(Client *c) 
 {
-	if(c->ignore)
+	if(c->ignore>0)
 	{
 		c->ignore--;
 		return;
 	}
 
 	XGrabServer(dpy);
-	XReparentWindow(dpy, c->win, root, c->x, c->y+config.title_height);
+	XReparentWindow(dpy, c->win, root, c->x, c->y);
 
 	if(c->frame){
 		free(c->draw);
@@ -261,9 +262,6 @@ void zwm_client_refocus(void)
 void zwm_client_focus(Client *c) 
 {
 	int v = zwm_current_view();
-//	if(!zwm_client_visible(c, v)){
-//		zwm_client_refocus();
-//	}
 
 	/* unfocus */
 	if (sel && sel != c) {
@@ -426,7 +424,7 @@ void zwm_client_zoom(Client *c) {
 	if(c) {
 		zwm_client_remove(c);
 		zwm_client_push_head(c);
-		zwm_layout_rearrange(True);
+		zwm_layout_rearrange(False);
 		zwm_client_raise(c, True);
 	}
 }

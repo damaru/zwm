@@ -69,10 +69,12 @@ void zwm_layout_animate(void)
 		XSync(dpy, False);
 	}
 
+	//int d = 1000000;
 	int d = 1;
 	for(i = 0; i<config.anim_steps; i++){
 		struct timespec req = {0, d/config.anim_steps };
-		d = d * 2;
+		d *= 2;
+		//d += 1000000;
 		nanosleep(&req, NULL);
 		zwm_client_foreach(c) {
 			if(c->noanim){

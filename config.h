@@ -1,18 +1,27 @@
 #include <string.h>
 
+#define FOCUS_FG "#F0F0F0"
+#define FOCUS_BG "#6A91B1"
+#define SHADOW "#444"
+#define FG  "#C9C9C9"
+#define BG  "#5C5C5C"
+
+
 ZwmConfig config = 
 {
 	.num_views = 1,
 	.border_width = 1,
-	.focus_border_color = "#374CFF",
-	.focus_bg_color = "#5975CA",
-	.focus_shadow_color = "#444",
-	.focus_title_color = "#FFF",
-	.normal_border_color = "#5975CA",
-	.normal_bg_color = "#E3EAFF",
-	.normal_shadow_color = "#FFF",
-	.normal_title_color = "#5975CA",
-	.date_fmt = " [ %a %d %b, %l:%M %p ] ",
+	.attach_last = 1,
+	.focus_border_color = FOCUS_BG,
+	.focus_bg_color = FOCUS_BG,
+	.focus_shadow_color = SHADOW,
+	.focus_title_color = FOCUS_FG,
+	.normal_border_color = BG,
+	.normal_bg_color = BG,
+	.normal_shadow_color = SHADOW,
+	.normal_title_color = FG,
+	.date_fmt = "%a %d %b, %l:%M %p ",
+	.menucmd = "dwmenu",
 	.opacity = 0.85,
 	.anim_steps = 30,
 	.show_title = 1,
@@ -110,7 +119,8 @@ ZwmConfig config =
 		{"Alt-m", run_once, "Mutt;st -t Mail -c Mutt -e mutt"},
 		{"Alt-n", run_once, "News;st -c News -t News -e newsbeuter"},
 		{"Alt-p", run_once, "zmenu;dwmenu"},
-		{"Alt-r", run_once, "Rox;rox"},
+		{"Alt-r", run_once, "Ranger;st -t Ranger -c Ranger -e ranger"},
+		{"Alt-z", run_once, "zmail;zmail"},
 		{"Alt-Shift-m", run_once, "Mixer;st -c Mixer -t Mixer -e alsamixer"},
 		{"Alt-Shift-Return", run_once, "Screen;st -t Screen -c Screen -e screen -Rd"},
 
@@ -122,7 +132,7 @@ ZwmConfig config =
 		{ monocle, "monocle", 0 },
 		{ zen, "zen", 1 },
 		{ floating, "float", 1 },
-		{ grid, "grid", 0 },
+		{ grid, "grid", 1 },
 		{NULL, NULL, 0},
 	},
 };
