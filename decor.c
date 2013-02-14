@@ -8,6 +8,7 @@ static char icons[64];
 static XftColor xcolor;
 Colormap cmap;
 static int date_width;
+static int char_width;
 static char title[1024];
 static GC gc;
 
@@ -39,12 +40,15 @@ void zwm_decor_init(void)
 	config.xcolor_fborder = alloc_color(config.focus_border_color);
 	config.xcolor_nbg = alloc_color(config.normal_bg_color);
 	config.xcolor_fbg = alloc_color(config.focus_bg_color);
+	config.xcolor_flbg = alloc_color(config.float_bg_color);
 	config.xcolor_nshadow = alloc_color(config.normal_shadow_color);
 	config.xcolor_fshadow = alloc_color(config.focus_shadow_color);
 	config.xcolor_ntitle = alloc_color(config.normal_title_color);
 	config.xcolor_ftitle = alloc_color(config.focus_title_color);
 
 	get_status(icons, 64);
+	XftTextExtentsUtf8(dpy, xfont, (FcChar8*)" ~ ", 3, &info);
+	char_width = info.width;
 	XftTextExtentsUtf8(dpy, xfont, (FcChar8*)icons, strlen(icons), &info);
 	date_width = info.width;
 	icons[0] = 0;
@@ -85,12 +89,18 @@ void zwm_decor_update(Client *c)
 		tcolor = config.xcolor_ntitle;
 	}
 
+	if(c->isfloating){
+		fill = config.xcolor_flbg;
+		bcolor = config.xcolor_flbg;
+	}
+
 	if (c->frame) {
 		int iw= c->w - (config.button_width*config.button_count) - 4*c->border;
 		int vx = 4*c->border;
 		const char* vtxt = config.viewnames[c->view];
 		int tx = vx + config.button_width;
 		int ty = config.title_y;
+		char n[256];
 
 		XSetWindowBackground(dpy, c->frame, fill);
 		XSetWindowBorder(dpy, c->frame, bcolor);
@@ -99,12 +109,14 @@ void zwm_decor_update(Client *c)
 		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, c->h);
 
 		draw_text(c, xfont, fill, tcolor, shadow, vx, ty, vtxt); 
-		draw_text(c, xfont, fill, tcolor, shadow, tx, ty, c->name); 
+		sprintf(n, "%c %s (%lu)",
+				c->isfloating?'~':' ', c->name, c->pid);
+		draw_text(c, xfont, fill, tcolor, shadow, tx, ty, n); 
 		if(c->focused){
 			get_status(title, 1024);
 			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 10, ty, title); 
+			draw_text(c, ifont, fill, tcolor, shadow, iw, config.icon_y, icons); 
 		}
-		draw_text(c, ifont, fill, tcolor, shadow, iw, config.icon_y, icons); 
 	}
 }
 

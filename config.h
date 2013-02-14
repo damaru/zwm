@@ -1,11 +1,17 @@
 #include <string.h>
 
 #define FOCUS_FG "#F0F0F0"
-#define FOCUS_BG "#6A91B1"
+#define FOCUS_BG "#5F87D7"
 #define SHADOW "#444"
 #define FG  "#C9C9C9"
 #define BG  "#5C5C5C"
+#define FLOAT_BG "#5e74a1"
 
+#if 0
+static inline void zwm_mail(Client *c) { run_once("zmail;zmail"); }
+static inline void zwm_menu(Client *c) { run_once("zmenu;dwmenu"); }
+static inline void zwm_browser(Client *c) { run_once("zweb;zweb"); }
+#endif
 
 ZwmConfig config = 
 {
@@ -20,6 +26,7 @@ ZwmConfig config =
 	.normal_bg_color = BG,
 	.normal_shadow_color = SHADOW,
 	.normal_title_color = FG,
+	.float_bg_color = FLOAT_BG,
 	.date_fmt = "%a %d %b, %l:%M %p ",
 	.menucmd = "dwmenu",
 	.opacity = 0.85,
@@ -33,7 +40,15 @@ ZwmConfig config =
 	.mwfact = 0.5,
 	.zen_wallpaper = 1,
 	.buttons = {
-		//{"▭", client_iconify},
+#if 0
+		{"✇",  zwm_browser},
+		{"✉",  zwm_mail},
+		{"❤",  zwm_menu},
+		{"▭", client_iconify},
+		{"⇔", flip},
+		{"↪",  banish},
+		{"⇛",  banish_all},
+#endif
 		{"✖", zwm_client_kill},
 		{ NULL, NULL}
 	},
@@ -115,14 +130,15 @@ ZwmConfig config =
 		{"Ctrl-Alt-r", zwm_wm_restart, NULL},
 		{"Ctrl-Shift-Return", zwm_util_spawn, "simshell"},
 
-		{"Alt-g", run_once, "zweb;zweb"},
-		{"Alt-m", run_once, "Mutt;st -t Mail -c Mutt -e mutt"},
-		{"Alt-n", run_once, "News;st -c News -t News -e newsbeuter"},
+		{"Alt-z", run_once, "zweb;zweb"},
+		{"Alt-g", run_once, "dwb;dwb"},
+		{"Alt-n", run_once, "zmail;zmail folder:News and tag:unread"},
 		{"Alt-p", run_once, "zmenu;dwmenu"},
 		{"Alt-r", run_once, "Ranger;st -t Ranger -c Ranger -e ranger"},
-		{"Alt-z", run_once, "zmail;zmail"},
-		{"Alt-Shift-m", run_once, "Mixer;st -c Mixer -t Mixer -e alsamixer"},
-		{"Alt-Shift-Return", run_once, "Screen;st -t Screen -c Screen -e screen -Rd"},
+		{"Alt-m", run_once, "zmail;zmail"},
+		{"Alt-Shift-v", run_once, "Mixer;st -c Mixer -t Mixer -e alsamixer"},
+		{"Alt-Shift-m", run_once, "Mutt;st -t Mail -c Mutt -e mutt"},
+		{"Alt-Shift-Return", run_once, "Screen;xterm -title Screen -class Screen -e screen -Rd"},
 
 		{NULL, NULL, NULL},
 	},
@@ -133,6 +149,7 @@ ZwmConfig config =
 		{ zen, "zen", 1 },
 		{ floating, "float", 1 },
 		{ grid, "grid", 1 },
+		{ l_fullscreen, "fullscreen", 1 },
 		{NULL, NULL, 0},
 	},
 };

@@ -118,6 +118,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	c->fpos.screen = scr;
 	zwm_client_update_hints(c);
 
+	zwm_x11_atom_list(c->win, _NET_WM_PID, AnyPropertyType, &c->pid, 1, NULL);
 	zwm_client_update_name(c);
 
 	switch (c->type) {
@@ -322,22 +323,47 @@ void zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 	}
 }
 
-void zwm_client_fullscreen(Client *c)
-{
-	c->isfloating = True;
-	c->hastitle = 0;
-	num_floating++;
-	zwm_client_moveresize(c, screen[0].x - c->border,
-			   screen[0].y - c->border, 
-			   screen[0].w + 2*c->border , 
-			   screen[0].h + 2*c->border );
+void zwm_client_fullscreen(Client *c) {
+	int s = zwm_client_screen(c);
+	int v = ZWM_ZEN_VIEW + s;
+	Client *t;
+
+	if(c->view >= ZWM_ZEN_VIEW){
+		c->view = screen[s].prev;
+		zwm_view_set(c->view);
+		zwm_client_raise(c, True);
+		zwm_panel_show();
+		return;
+	}
+
+	zwm_client_foreach(t) {
+		if(t->view >= ZWM_ZEN_VIEW){
+			t->view = t->fpos.view;
+		}
+	}
+
+	c->fpos.view = c->view;
+	views[v].current = c;
+	zwm_client_set_view(c, v);
+	zwm_screen_set_view( zwm_current_screen(), v );
+	zwm_layout_set("fullscreen");
 }
 
 void zwm_client_unfullscreen(Client *c)
 {
+	int s = zwm_client_screen(c);
+	if(c->view >= ZWM_ZEN_VIEW){
+		c->view = screen[s].prev;
+		zwm_view_set(c->view);
+		zwm_client_raise(c, True);
+		zwm_panel_show();
+		return;
+	}
+
+
 	c->isfloating = False;
 	c->hastitle = 1;
-	num_floating--;
+//	num_floating--;
 	c->border = config.border_width;
 	XSetWindowBorderWidth(dpy, c->win, c->border);
 	zwm_decor_dirty(c);

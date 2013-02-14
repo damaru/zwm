@@ -91,6 +91,7 @@ struct Client
 	int state;
 	int type;
 	int dirty;
+	ulong pid;
 	Bool isfloating;
 	ZwmGeom oldpos;
 	ZwmGeom fpos;
@@ -120,6 +121,7 @@ typedef struct
 	const char *focus_shadow_color;
 	const char *normal_title_color;
 	const char *focus_title_color;
+	const char *float_bg_color;
 
 	const char *font;
 	const char *icons;
@@ -148,6 +150,7 @@ typedef struct
 	unsigned int xcolor_nshadow;
 	unsigned int xcolor_ftitle;
 	unsigned int xcolor_ntitle;
+	unsigned int xcolor_flbg;
 	
 	char *viewnames[32];
 

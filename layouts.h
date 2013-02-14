@@ -6,6 +6,29 @@ static Bool zwm_layout_visible(Client *c, int view)
 		(c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) ;
 }
 
+static void l_fullscreen(int scr, int v) {
+	Client *c;
+	int x,y,w,h;
+	if(v<ZWM_ZEN_VIEW)
+		return;
+
+	zwm_client_foreach(c) {
+		if (zwm_layout_visible(c,v) && !c->isfloating) {
+			x = screen[scr].x - 2*c->border;
+			y = screen[scr].y - c->border - (config.title_height ) * c->hastitle;
+			w = screen[scr].w + 2*c->border;
+			h = screen[scr].h + 2*c->border + config.title_height * c->hastitle;
+			c->noanim = 0;
+			if(views[v].current != c) {
+				zwm_client_set_view(c, screen[scr].prev);
+			} else {
+				zwm_layout_moveresize(c, x, y, w, h);
+			}
+		}
+	}
+}
+
+
 static void zen(int scr, int v) {
 	Client *c;
 	int x,y,w,h;

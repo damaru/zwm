@@ -9,3 +9,6 @@ install:all
 backup:
 	cd .. && tar -c nwm | gzip > nwm.tgz
 	cd .. && upld nwm.tgz
+restore:clean
+	cd .. && dnld nwm.tgz
+	cd .. && tar zxvf nwm.tgz

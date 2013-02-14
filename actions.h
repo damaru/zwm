@@ -146,7 +146,21 @@ void zwm_zen(const char *arg) {
 	zwm_panel_hide();
 }
 
+static void view_set_next(const char *arg) {
+	int n = zwm_current_view() ;
+	if(n+1 < config.num_views){
+		zwm_view_set(n+1);
+	} else
+		zwm_view_set(0);
+	
+}
+
 static void screen_next(const char *arg) {
+
+	if(config.screen_count == 1) {
+		view_set_next(arg);
+	}
+
 	int s = (zwm_current_screen()+1) % config.screen_count;
 	if(s < config.screen_count) {
 		XWarpPointer(dpy, None, root, 0,0,0,0, screen[s].x+100, screen[s].y+100);
