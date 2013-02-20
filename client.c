@@ -503,6 +503,10 @@ void zwm_client_restore_geometry(Client *c, ZwmGeom *g)
 
 static int window_type(Window w)
 {
+	if(zwm_x11_atom_check(w, _OL_DECOR_DEL,_OL_DECOR_HEADER )){
+		return ZwmDialogWindow;
+	}
+
 	if(zwm_x11_atom_check(w, _NET_WM_STATE, _NET_WM_STATE_FULLSCREEN)){
 		return ZwmFullscreenWindow;
 	} else if(zwm_x11_atom_check(w, _NET_WM_WINDOW_TYPE, _NET_WM_STATE_MODAL)){
@@ -514,13 +518,15 @@ static int window_type(Window w)
 		unsigned long n = zwm_x11_atom_list(w, _NET_WM_WINDOW_TYPE, XA_ATOM, 
 				a, 32, &left);
 		for(i = 0; i<n; i++) {
-#define CHECK_RET(t, r) do{if(a[i] == t){return r;}}while(0)
+			printf("a[%d] = %d\n",i, a[i]);
+#define CHECK_RET(t, r) do{if(a[i] == t){  printf("%d: %s\n",__LINE__, #r);return r;}}while(0)
+			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASHSCREEN, ZwmSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_DOCK, ZwmDockWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_NORMAL, ZwmNormalWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_DIALOG, ZwmDialogWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_UTILITY, ZwmDialogWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_DESKTOP, ZwmDesktopWindow);
-			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLBAR, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_DND, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_MENU, ZwmSplashWindow);

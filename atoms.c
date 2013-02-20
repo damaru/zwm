@@ -15,7 +15,7 @@ zwm_x11_atom_init(void) {
 #define _X(name) _atoms.name = XInternAtom(dpy, #name, False)
 #include "atoms.h"
 #undef _X
-#define _X(name) name = _atoms.name;
+#define _X(name) name = _atoms.name;printf("%d = %s\n",name, #name);
 #include "atoms.h"
 #undef _X
 
