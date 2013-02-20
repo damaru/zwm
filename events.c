@@ -170,7 +170,7 @@ static void ev_configure_request(XEvent *e) {
 	if (ev->value_mask & CWWidth)
 		w = ev->width+2*c->border;
 	if (ev->value_mask & CWHeight)
-		h = ev->height + config.title_height;
+		h = ev->height+config.title_height+2*c->border;
 
 
 	if(c->type == ZwmNormalWindow) {
