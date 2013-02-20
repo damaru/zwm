@@ -91,6 +91,7 @@ struct Client
 	int state;
 	int type;
 	int dirty;
+	int has_shape;
 	ulong pid;
 	Bool isfloating;
 	ZwmGeom oldpos;
@@ -308,6 +309,7 @@ void zwm_view_update();
 
 void zwm_wm_quit(const char *arg);
 void zwm_wm_restart(const char *);
+void zwm_wm_fallback(const char *);
 
 Bool zwm_x11_atom_check(Window win, Atom bigatom, Atom smallatom);
 void zwm_x11_atom_init(void);

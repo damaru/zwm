@@ -68,6 +68,18 @@ void zwm_util_free(void *p)
 	free(p);
 }
 
+void zwm_wm_fallback(const char *p) {
+	Client *c = head;
+	while(c){
+		zwm_client_unmanage(c);
+		c = head;
+	}
+	XCloseDisplay(dpy);
+	setsid();
+	execlp( p, "", NULL);
+	fprintf(stderr, "restart failed");
+}
+
 void zwm_wm_restart(const char *p) {
 	Client *c = head;
 	while(c){

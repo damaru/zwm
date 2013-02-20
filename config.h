@@ -128,6 +128,7 @@ ZwmConfig config =
 		{"Ctrl-Alt-q", zwm_wm_quit, NULL},
 		{"Ctrl-Alt-Return", iconify, NULL},
 		{"Ctrl-Alt-r", zwm_wm_restart, NULL},
+		{"Ctrl-Shift-Alt-r", zwm_wm_fallback, "rewm"},
 		{"Ctrl-Shift-Return", zwm_util_spawn, "simshell"},
 
 		{"Alt-z", run_once, "zweb;zweb"},
@@ -146,8 +147,8 @@ ZwmConfig config =
 	.layouts = {
 		{ tile, "tile", 0 },
 		{ monocle, "monocle", 0 },
-		{ zen, "zen", 1 },
 		{ floating, "float", 1 },
+		{ zen, "zen", 1 },
 		{ grid, "grid", 1 },
 		{ l_fullscreen, "fullscreen", 1 },
 		{NULL, NULL, 0},

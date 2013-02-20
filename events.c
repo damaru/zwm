@@ -106,7 +106,7 @@ static void ev_expose(XEvent *e) {
 	Client *c;
 	XExposeEvent *ev = &e->xexpose;
 	 if((c = zwm_client_lookup(ev->window))){
-		 zwm_client_configure_window(c);
+	//	 zwm_client_configure_window(c);
 		 zwm_decor_dirty(c);
 	 }
 }
@@ -145,33 +145,11 @@ static void ev_configure_request(XEvent *e) {
 	Client *c;
 	XConfigureRequestEvent *ev = &e->xconfigurerequest;
 	XWindowChanges wc;
+	int x, y, w, h;
 	DBG_ENTER();
 
 	c = zwm_client_lookup(ev->window);
-	if(c && c->type == ZwmNormalWindow) {
-		if( c->isfloating ) {
-			if(ev->value_mask & CWX)
-				c->x = ev->x;
-			if(ev->value_mask & CWY)
-				c->y = ev->y;
-			if(ev->value_mask & CWWidth)
-				c->w = ev->width+2*c->border;
-			if(ev->value_mask & CWHeight)
-				c->h = ev->height+config.title_height+c->border;
-
-			if((ev->value_mask & (CWX | CWY))
-			&& !(ev->value_mask & (CWWidth | CWHeight)))
-				zwm_client_configure_window(c);
-
-			if(zwm_client_visible(c, c->view))
-			zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
-
-		} else {
-			zwm_client_configure_window(c);
-			if(!zwm_client_visible(c, c->view))
-				zwm_client_raise(c, False);
-		}
-	} else {
+	if(!c){
 		/* unmanaged window? pass on the event to the client */
 		wc.x = ev->x;
 		wc.y = ev->y;
@@ -181,12 +159,40 @@ static void ev_configure_request(XEvent *e) {
 		wc.sibling = ev->above;
 		wc.stack_mode = ev->detail;
 		XConfigureWindow(dpy, ev->window, ev->value_mask, &wc);
+		XSync(dpy, False);
+		return;
 	}
 
-	if(c)
-	{
-		zwm_event_emit(ZwmClientConfigure,c);
+	if (ev->value_mask & CWX)
+		x = ev->x;
+	if (ev->value_mask & CWY)
+		y = ev->y;
+	if (ev->value_mask & CWWidth)
+		w = ev->width+2*c->border;
+	if (ev->value_mask & CWHeight)
+		h = ev->height + config.title_height;
+
+
+	if(c->type == ZwmNormalWindow) {
+		if(!(ev->value_mask & (CWX | CWY))
+			&& (ev->value_mask & (CWWidth | CWHeight)))
+			zwm_client_moveresize(c, c->x, c->y, w, h);
+
+		if((ev->value_mask & (CWX | CWY))
+				&& !(ev->value_mask & (CWWidth | CWHeight)))
+			zwm_client_moveresize(c, x, y, c->w, c->h);
+
+		if((ev->value_mask & (CWX | CWY))
+				&& (ev->value_mask & (CWWidth | CWHeight)))
+			zwm_client_moveresize(c, x, y, w, h);
+
+		if(ev->value_mask & CWStackMode)
+			zwm_client_configure_window(c);
+
+		if(!zwm_client_visible(c, c->view))
+			zwm_client_raise(c, False);
 	}
+	zwm_event_emit(ZwmClientConfigure,c);
 }
 
 static void ev_destroy(XEvent *e) {

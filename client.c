@@ -1,11 +1,13 @@
 #include "zwm.h"
 #include <string.h>
 #include <stdio.h>
+#include <X11/extensions/shape.h>
 
 unsigned int num_floating = 0;
 static int privcount = 0;
 Client *sel = NULL;
 
+static int jcount = 0;
 static int window_type(Window w);
 static void create_frame_window(Client *c);
 
@@ -83,6 +85,20 @@ void zwm_client_scan(void)
 		XFree(wins);
 }
 
+
+void set_shape(Client *c)
+{
+	int n, order;
+	XRectangle *dummy;
+	dummy = XShapeGetRectangles(dpy, c->win, ShapeBounding, &n, &order);
+	if (n > 1)
+	{
+		c->hastitle = 0;
+		c->has_shape = 1;
+	}
+	XFree(dummy);
+}
+
 Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 {
 	int scr = zwm_current_screen();
@@ -154,6 +170,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 			c->hastitle = 1;
 			break;
 	}
+	set_shape(c);
 
 	if(c->hastitle){
 		c->h += config.title_height;
@@ -163,8 +180,18 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	XMapWindow(dpy, c->win);
 	XRaiseWindow(dpy, c->win);
 
+	if(c->has_shape){
+		zwm_client_float(c);
+	}
+
 	if(c->isfloating)
 		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
+
+	if(strstr(c->cname, "sun-awt")){
+		config.anim_steps = 0;
+		jcount++;
+		zwm_client_configure_window(c);
+	}
 
 	zwm_decor_update(c);
 	if(config.attach_last) {
@@ -208,6 +235,13 @@ void zwm_client_unmanage(Client *c)
 			zwm_client_raise(n, True);
 		} else {
 			zwm_client_refocus();
+		}
+	}
+
+	if(strstr(c->cname, "sun-awt")){
+		jcount--;
+		if(jcount==0){
+			config.anim_steps = 20;
 		}
 	}
 
