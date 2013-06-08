@@ -174,7 +174,7 @@ static void warp_to_screen(const char *arg) {
 	if(s < config.screen_count) {
 		XWarpPointer(dpy, None, root, 0,0,0,0, screen[s].x+100, screen[s].y+100);
 	}
-		zwm_client_refocus();
+	zwm_client_refocus();
 	zwm_layout_dirty();
 }
 
@@ -298,11 +298,7 @@ static void iconify(const char *args) {
 	}
 }
 
-static void client_iconify(Client *c) {
-	zwm_client_setstate(c, IconicState);
-}
-
-static void cycle(const char *arg) {
+void zwm_cycle(const char *arg) {
 	Client *c, *next;
 
 	if(!sel) {
@@ -317,6 +313,26 @@ static void cycle(const char *arg) {
 		zwm_client_remove(c);
 		zwm_client_push_tail(c);
 		zwm_event_emit(ZwmClientMap, next);
+		zwm_layout_arrange();
+	}
+}
+
+
+void zwm_cycle2(const char *arg) {
+	Client *c, *next;
+
+	if(!sel) {
+		zwm_client_refocus();
+		return;
+	}
+
+	c = tail;
+	next = head;
+	if(c != next){
+		zwm_event_emit(ZwmClientUnmap, c);
+		zwm_client_remove(c);
+		zwm_client_push_head(c);
+		zwm_event_emit(ZwmClientMap, c);
 		zwm_layout_arrange();
 	}
 }
@@ -339,3 +355,61 @@ static void mwfact(const char *arg) {
 	zwm_layout_dirty();
 }
 
+extern int super_on;
+
+static void zwm_util_unfollow(const char *arg){
+	super_on = 0;
+	Client *c;
+	for(c = head; c; c = c->next) {
+		zwm_decor_update(c);
+	}
+}
+
+static void zwm_util_follow(const char *arg){
+	super_on = 1;
+	KeySym keysym;
+	Client *c;
+	Client *n = NULL;
+	int v = zwm_current_view();
+	int count = 'a';
+
+	if(!sel){
+		return;
+	}
+
+	for(c = head; c; c = c->next) {
+		c->oldpos.view = c->view;
+		c->view = v;
+		sprintf(c->key,"%c",count++);
+	}
+
+	zwm_layout_push("grid");
+	zwm_layout_rearrange(1 );
+
+	for(c = head; c; c = c->next) {
+		zwm_decor_update(c);
+	}
+
+	keysym = zwm_getkey();
+	count = XKeysymToString(keysym)[0];
+	super_on = 0;
+
+	for(c = head; c; c = c->next) {
+		zwm_client_set_view(c, c->oldpos.view);
+		if(c->key[0] == count){
+			n = c;
+		}
+		zwm_decor_update(c);
+	}
+
+	zwm_layout_pop( );
+	if(count >= '0' && count <= '9'){
+		zwm_view_set(count-'0'-1);
+	}
+	if(n){
+		zwm_view_set(n->oldpos.view);
+	}
+	if(n){
+		zwm_client_zoom(n);
+	}
+}

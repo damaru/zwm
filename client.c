@@ -11,6 +11,11 @@ static int jcount = 0;
 static int window_type(Window w);
 static void create_frame_window(Client *c);
 
+static inline void view_set(Client *c, int view) {
+	c->view = view;
+	zwm_x11_atom_set(c->win, _ZWM_VIEW, XA_INTEGER, (ulong *)&c->view, 1);
+}
+
 void zwm_client_configure_window(Client *c)
 {
 	int th = 0;
@@ -103,6 +108,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 {
 	int scr = zwm_current_screen();
 	int vew = zwm_current_view();
+	char ins[64];
 
 	if (vew >= ZWM_ZEN_VIEW) {
 		vew = screen[scr].prev;
@@ -120,11 +126,24 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 
 	Client *c =  zwm_util_malloc(sizeof(Client) + (sizeof(void*)*privcount));
 	c->win = w;
+	c->ucount = 0;
 	c->isfloating = False;
 	c->state =  NormalState;
 	c->border = config.border_width;
 	c->type = window_type(w);
-	c->view = vew;
+	ulong cv = 0;
+	if(zwm_x11_atom_get(c->win, _ZWM_VIEW, XA_INTEGER, &cv)){
+		c->view = -1;
+		zwm_client_set_view(c, cv);
+		zwm_view_set(cv);
+	} else {
+		view_set(c, vew);
+	}
+	
+	if(zwm_x11_atom_get(c->win, _ZWM_COUNT, XA_INTEGER, &cv)){
+		c->ucount = cv;
+	}
+
 	c->w = wa->width;
 	c->h = wa->height;
 	c->x =(screen[scr].w - c->w)/2;
@@ -134,7 +153,6 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	c->fpos.screen = scr;
 	zwm_client_update_hints(c);
 
-	zwm_x11_atom_list(c->win, _NET_WM_PID, AnyPropertyType, &c->pid, 1, NULL);
 	zwm_client_update_name(c);
 
 	switch (c->type) {
@@ -194,17 +212,27 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	}
 
 	zwm_decor_update(c);
-	if(config.attach_last) {
-		zwm_client_push_tail(c);
+	if(zwm_x11_atom_text(c->win, _ZWM_INSERT, ins, 32)) {
+		if(strcmp(ins,"START")==0){
+			zwm_client_push_head(c);
+		} else {
+			zwm_client_push_tail(c);
+		}
 	} else {
-		zwm_client_push_head(c);
+		if(config.attach_last) {
+			zwm_client_push_tail(c);
+		} else {
+			zwm_client_push_head(c);
+		}
 	}
+	zwm_view_rescan();
 	zwm_event_emit(ZwmClientMap, c);
 	zwm_layout_dirty();
 	zwm_client_configure_window(c);
-	zwm_client_raise(c, True);
+	if(c->view == vew){
+		zwm_client_raise(c, True);
+	}
 	zwm_layout_rearrange(True);
-
 	config.num_clients++;
 	return c;
 }
@@ -326,6 +354,7 @@ void zwm_client_raise(Client *c, Bool warp)
 		zwm_layout_rearrange(True);
 		zwm_client_warp(c);
 	}
+	zwm_client_configure_window(c);
 }
 
 void zwm_client_moveresize(Client *c, int x, int y, int w, int h)
@@ -348,10 +377,10 @@ void zwm_client_moveresize(Client *c, int x, int y, int w, int h)
 	if (c->isfloating) {
 		c->screen = zwm_client_screen(c);
 		if(c->screen < config.screen_count) {
-			c->view = screen[c->screen].view;
+			view_set(c, screen[c->screen].view);
 		} else if(zwm_client_visible(c, c->view)) {
 			c->screen = 0;
-			c->view = screen[0].view;
+			view_set(c, screen[0].view);
 			zwm_client_toggle_floating(c);
 		}
 	}
@@ -363,7 +392,7 @@ void zwm_client_fullscreen(Client *c) {
 	Client *t;
 
 	if(c->view >= ZWM_ZEN_VIEW){
-		c->view = screen[s].prev;
+		view_set(c, screen[s].prev);
 		zwm_view_set(c->view);
 		zwm_client_raise(c, True);
 		zwm_panel_show();
@@ -387,7 +416,7 @@ void zwm_client_unfullscreen(Client *c)
 {
 	int s = zwm_client_screen(c);
 	if(c->view >= ZWM_ZEN_VIEW){
-		c->view = screen[s].prev;
+		view_set(c, screen[s].prev);
 		zwm_view_set(c->view);
 		zwm_client_raise(c, True);
 		zwm_panel_show();
@@ -446,8 +475,8 @@ void zwm_client_kill(Client *c) {
 void zwm_client_set_view(Client *c, int v)
 {
 	if (c->view != v) {
-		c->view = v;
-		if(v > config.num_views)
+		view_set(c, v);
+		if(v >= config.num_views)
 		{
 			config.num_views = v+1;
 		}
@@ -458,16 +487,45 @@ void zwm_client_set_view(Client *c, int v)
 
 void zwm_client_update_name(Client *c)
 {
+	zwm_x11_atom_list(c->win, _NET_WM_PID, AnyPropertyType, &c->pid, 1, NULL);
 	if(!zwm_x11_atom_text(c->win, _NET_WM_NAME, c->name, sizeof c->name))
 	zwm_x11_atom_text(c->win, WM_NAME, c->name, sizeof c->name);
 	zwm_x11_atom_text(c->win, WM_CLASS, c->cname, sizeof c->cname);
-	zwm_decor_dirty(c);
+//	if(!zwm_x11_atom_text(c->win, WM_COMMAND, c->cmd, sizeof c->cmd)){
+		char path[256];
+		sprintf(path, "/proc/%d/cmdline", (int)c->pid);
+		FILE *fp = fopen(path, "r");
+		if(fp){
+			struct stat st;
+			stat(path, &st);
 
+			if(st.st_uid == 0) {
+				c->root_user = 1;
+			} else {
+				c->root_user = 0;
+			}
+
+			int count = fread(c->cmd, 1, 256, fp);
+			fclose(fp);
+			int i;
+			for(i = 0; i<count; i++){
+				if(c->cmd[i] == 0){
+					c->cmd[i] = ' ';
+				}
+			}
+			c->cmd[count]=0;
+		}
+//	}
+	ZWM_DEBUG("%X: name:%s, clas:%s, cmd:%s\n",
+			c->win, c->name, c->cname, c->cmd);
+	zwm_client_configure_window(c);
+	zwm_decor_dirty(c);
 }
 
 void zwm_client_toggle_floating(Client *c) {
 	c->isfloating = !c->isfloating;
 	if(c->isfloating){
+		zwm_client_raise(c, True);
 		zwm_ewmh_set_window_opacity(c->frame, config.opacity);
 		num_floating++;
 		zwm_client_restore_geometry(c, &c->fpos);
@@ -518,8 +576,7 @@ static int window_type(Window w)
 		unsigned long n = zwm_x11_atom_list(w, _NET_WM_WINDOW_TYPE, XA_ATOM, 
 				a, 32, &left);
 		for(i = 0; i<n; i++) {
-			printf("a[%d] = %d\n",i, a[i]);
-#define CHECK_RET(t, r) do{if(a[i] == t){  printf("%d: %s\n",__LINE__, #r);return r;}}while(0)
+#define CHECK_RET(t, r) do{if(a[i] == t){  /*printf("%d: %s\n",__LINE__, #r);*/return r;}}while(0)
 			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASHSCREEN, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_DOCK, ZwmDockWindow);

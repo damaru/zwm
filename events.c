@@ -1,4 +1,5 @@
 #include "zwm.h"
+#include <time.h>
 
 static void ev_expose(XEvent *e);
 static void ev_map(XEvent *e);
@@ -49,6 +50,22 @@ void zwm_event_quit(void)
 	quit = 1;
 }
 
+void zwm_event_process(void) {
+	XEvent ev;
+	while(XPending(dpy) > 0) {
+		XNextEvent(dpy, &ev);
+		if(ev.type < LASTEvent) {
+			zwm_event_emit(ev.type, &ev);
+		}
+		zwm_layout_rearrange(False);
+		Client *c;
+		for(c = head; c; c = c->next) {
+			if(c->dirty)zwm_decor_update(c);
+			c->dirty = 0;
+		}
+	}
+}
+
 void zwm_event_loop(void) {
 	XEvent ev;
 	XSync(dpy, False);
@@ -65,6 +82,7 @@ void zwm_event_loop(void) {
 				c->dirty = 0;
 			}
 		}
+		zwm_session_save();
 
 		if(!quit && ev_wait() ==  0 && sel) {
 			zwm_decor_update(sel);
@@ -97,9 +115,16 @@ static int ev_wait(void) {
 	fd_set fds;
 	FD_ZERO(&fds);
 	FD_SET(fd, &fds);
-	t.tv_sec = 10;
+	t.tv_sec = config.sleep_time;
 	t.tv_usec = 0;
-	return select(fd + 1, &fds, 0, &fds, &t);
+	int tcount = time(NULL);
+	int ret  = select(fd + 1, &fds, 0, &fds, &t);
+	tcount = time(NULL) - tcount;
+	if(sel){
+		sel->ucount += tcount;
+		zwm_x11_atom_set(sel->win, _ZWM_COUNT, XA_INTEGER, &sel->ucount, 1);
+	}
+	return ret;
 }
 
 static void ev_expose(XEvent *e) {
@@ -173,7 +198,7 @@ static void ev_configure_request(XEvent *e) {
 		h = ev->height+config.title_height+2*c->border;
 
 
-	if(c->type == ZwmNormalWindow) {
+	if(c->type == ZwmNormalWindow && c->isfloating) {
 		if(!(ev->value_mask & (CWX | CWY))
 			&& (ev->value_mask & (CWWidth | CWHeight)))
 			zwm_client_moveresize(c, c->x, c->y, w, h);
@@ -191,8 +216,9 @@ static void ev_configure_request(XEvent *e) {
 
 		if(!zwm_client_visible(c, c->view))
 			zwm_client_raise(c, False);
+
+		zwm_event_emit(ZwmClientConfigure,c);
 	}
-	zwm_event_emit(ZwmClientConfigure,c);
 }
 
 static void ev_destroy(XEvent *e) {

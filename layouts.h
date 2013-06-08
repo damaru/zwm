@@ -6,7 +6,9 @@ static Bool zwm_layout_visible(Client *c, int view)
 		(c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) ;
 }
 
-static void l_fullscreen(int scr, int v) {
+static void
+l_fullscreen(int scr, int v)
+{
 	Client *c;
 	int x,y,w,h;
 	if(v<ZWM_ZEN_VIEW)
@@ -29,7 +31,9 @@ static void l_fullscreen(int scr, int v) {
 }
 
 
-static void zen(int scr, int v) {
+static void 
+zen(int scr, int v)
+{
 	Client *c;
 	int x,y,w,h;
 	if(v<ZWM_ZEN_VIEW)
@@ -57,7 +61,9 @@ static void zen(int scr, int v) {
 	}
 }
 
-static void floating(int scr, int v) {
+static void 
+floating(int scr, int v) 
+{
 	Client *c;
 	for(c = head; c; c = c->next) {
 		c->noanim = 1;
@@ -67,7 +73,9 @@ static void floating(int scr, int v) {
 	}
 }
 
-static void tile(int scr, int v) {
+static void 
+tile(int scr, int v) 
+{
 	Client *c, *lh = NULL;
 	unsigned int i, n = 0;
 	int B = 2*config.border_width;
@@ -95,7 +103,9 @@ static void tile(int scr, int v) {
 	}
 }
 
-static void monocle(int scr, int v) {
+static void 
+monocle(int scr, int v) 
+{
 	Client *c;
 	zwm_client_foreach(c) {
 		if (zwm_layout_visible(c,v) && !c->isfloating) {
@@ -110,8 +120,9 @@ static void monocle(int scr, int v) {
 }
 
 static void
-grid(int scr, int v) {
-	unsigned int i, cx, cy, cw, ch, aw, ah, ax=0, cols=0, rows=0;
+grid(int scr, int v)
+{
+	unsigned int i, cx, cy, cw, ch, aw, ah, cols=0, rows=0;
 	Client *c;
 	unsigned int n;
 
@@ -129,12 +140,12 @@ grid(int scr, int v) {
 	cols = (rows && (rows - 1) * rows >= n) ? rows - 1 : rows;
 
 	/* window geoms (cell height/width) */
-	ch = screen[0].h / (rows ? rows : 1);
-	cw = screen[0].w / (cols ? cols : 1);
+	ch = screen[scr].h / (rows ? rows : 1);
+	cw = screen[scr].w / (cols ? cols : 1);
 
 	zwm_client_foreach(c, i=0) {
 		if(zwm_client_visible(c, v) && !c->isfloating){
-			cx = ax + (i / rows) * cw;
+			cx = screen[scr].x + (i / rows) * cw;
 			cy = (i % rows) * ch + screen[0].y;
 			/* adjust height/width of last row/column's windows */
 			ah = ((i + 1) % rows == 0) ? screen[0].h - ch * rows : 0;

@@ -52,7 +52,8 @@ void zwm_panel_toggle(void)
 	}
 }
 
-static void panel_map(Client *c, void *priv) {
+static void panel_map(Client *c, void *priv)
+{
 	if(c->type == ZwmDockWindow && !panel)
 	{
 		panel = c;
@@ -60,14 +61,16 @@ static void panel_map(Client *c, void *priv) {
 	}
 }
 
-static void panel_configure(Client *c, void *priv) {
+static void panel_configure(Client *c, void *priv)
+{
 	if(c == panel)
 	{
 		zwm_screen_rescan(False);
 	}
 }
 
-static void panel_unmap(Client *c, void *priv) {
+static void panel_unmap(Client *c, void *priv)
+{
 	if(c == panel)
 	{
 		panel = NULL;
@@ -75,7 +78,8 @@ static void panel_unmap(Client *c, void *priv) {
 	}
 }
 
-static void panel_rescan(const char *layout, void *priv) {
+static void panel_rescan(const char *layout, void *priv)
+{
 	int i;
 	XWindowAttributes wa;
 	if(panel) {

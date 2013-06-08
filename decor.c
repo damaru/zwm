@@ -45,9 +45,10 @@ void zwm_decor_init(void)
 	config.xcolor_fshadow = alloc_color(config.focus_shadow_color);
 	config.xcolor_ntitle = alloc_color(config.normal_title_color);
 	config.xcolor_ftitle = alloc_color(config.focus_title_color);
+	config.xcolor_root = alloc_color(config.root_bg_color);
 
 	get_status(icons, 64);
-	XftTextExtentsUtf8(dpy, xfont, (FcChar8*)" ~ ", 3, &info);
+	XftTextExtentsUtf8(dpy, xfont, (FcChar8*)" [000] ", 7, &info);
 	char_width = info.width;
 	XftTextExtentsUtf8(dpy, xfont, (FcChar8*)icons, strlen(icons), &info);
 	date_width = info.width;
@@ -71,7 +72,7 @@ void zwm_decor_dirty(Client *c){
 	c->dirty++;
 }
 
-void zwm_decor_update(Client *c)
+void decor_win_follow(Client *c)
 {
 	int bcolor = config.xcolor_fborder;
 	int fill = config.xcolor_fbg;
@@ -82,7 +83,45 @@ void zwm_decor_update(Client *c)
 		return;
 	}
 
-	if(c->focused == False){
+	if (!c->frame) {
+		return;
+	}
+
+
+	int ty = config.title_y;
+	char n[256];
+
+	XSetWindowBackground(dpy, c->frame, fill);
+	XSetWindowBorder(dpy, c->frame, bcolor);
+
+	XSetForeground(dpy, gc, fill);
+	XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, c->h);
+	sprintf(n, "%s %s : %s",config.viewnames[c->oldpos.view], c->key, c->name);
+	draw_text(c, xfont, fill, tcolor, shadow, 3, ty, n); 
+}
+
+
+extern int super_on;
+
+
+void zwm_decor_update(Client *c)
+{
+
+	if(super_on){
+		decor_win_follow(c);
+		return;
+	}
+
+	int bcolor = c->root_user?config.xcolor_root:config.xcolor_fborder;
+	int fill = c->root_user?config.xcolor_root:config.xcolor_fbg;
+	int shadow = config.xcolor_fshadow;
+	int tcolor = config.xcolor_ftitle;
+
+	if(!c->hastitle){
+		return;
+	}
+
+	if(c->focused == False && !super_on){
 		bcolor = config.xcolor_nborder;
 		fill = config.xcolor_nbg;
 		shadow = config.xcolor_nshadow;
@@ -109,12 +148,14 @@ void zwm_decor_update(Client *c)
 		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, c->h);
 
 		draw_text(c, xfont, fill, tcolor, shadow, vx, ty, vtxt); 
-		sprintf(n, "%c %s (%lu)",
-				c->isfloating?'~':' ', c->name, c->pid);
+		sprintf(n, "%s %s", c->isfloating?"▬":views[c->view].layout->symbol , c->name);
 		draw_text(c, xfont, fill, tcolor, shadow, tx, ty, n); 
 		if(c->focused){
 			get_status(title, 1024);
-			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 10, ty, title); 
+			char tmp[256];
+			sprintf(tmp, "%s[%d]",title, c->ucount/60);
+			strcpy(title,tmp);
+			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 10 - char_width, ty, title); 
 			draw_text(c, ifont, fill, tcolor, shadow, iw, config.icon_y, icons); 
 		}
 	}

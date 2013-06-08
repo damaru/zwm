@@ -15,7 +15,7 @@ zwm_x11_atom_init(void) {
 #define _X(name) _atoms.name = XInternAtom(dpy, #name, False)
 #include "atoms.h"
 #undef _X
-#define _X(name) name = _atoms.name;printf("%d = %s\n",name, #name);
+#define _X(name) name = _atoms.name;
 #include "atoms.h"
 #undef _X
 
@@ -45,6 +45,13 @@ zwm_x11_atom_check(Window win, Atom bigatom, Atom smallatom){
     }
     return False;
 }
+
+Bool
+zwm_x11_atom_get(Window w, Atom a, Atom type, ulong *val)
+{
+	return zwm_x11_atom_list(w, a, type, val, 1, NULL);
+}
+
 
 Bool
 zwm_x11_atom_set(Window w, Atom a, Atom type, ulong *val,

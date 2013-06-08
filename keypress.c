@@ -7,25 +7,34 @@ typedef struct HotKey {
 	KeyFunc func;
 	const char* args;
 	struct HotKey *next;
+	int rel;
 } HotKey;
 
 static HotKey *list = NULL;
-
 static int key_error(Display* d, XErrorEvent* e);
 static unsigned int key_parse(char* name, const char* full_spec);
 static void key_press(XEvent *e, void *p);
+static void key_release(XEvent *e, void *p);
 
-void zwm_key_init(void) {
+void zwm_key_init(void)
+{
 	int i;
+
 	zwm_event_register(KeyPress, (ZwmEFunc)key_press, NULL);
+	zwm_event_register(KeyRelease, (ZwmEFunc)key_release, NULL);
+
 	for(i = 0; config.keys[i].f; i++){
-		zwm_key_bind(config.keys[i].key, config.keys[i].f, config.keys[i].arg);
+		zwm_key_bind(config.keys[i].key, config.keys[i].f, config.keys[i].arg, 0);
+	}
+	for(i = 0; config.relkeys[i].f; i++){
+		zwm_key_bind(config.relkeys[i].key, config.relkeys[i].f, config.relkeys[i].arg, 1);
 	}
 }
 
 #define CLEANMASK(mask)		(mask & ~(numlockmask | LockMask))
 
-void zwm_key_bind(const char* keyname, void *f, const char *arg) {
+void zwm_key_bind(const char* keyname, void *f, const char *arg, int rel)
+{
 	char* copy = strdup(keyname);
 	HotKey* new_key;
 	char* unmodified;
@@ -49,6 +58,8 @@ void zwm_key_bind(const char* keyname, void *f, const char *arg) {
 	new_key->func = f;
 	new_key->args = arg;
 	new_key->next = list;
+	new_key->rel = rel;
+
 	list = new_key;
 
 	attempting_to_grab = keyname;
@@ -63,7 +74,8 @@ void zwm_key_bind(const char* keyname, void *f, const char *arg) {
 	XSetErrorHandler(p);
 }
 
-static int key_error(Display* d, XErrorEvent* e) {
+static int key_error(Display* d, XErrorEvent* e)
+{
 	const char* reason = "unknown reason";
 	if (e->error_code == BadAccess) {
 		reason = "the key/button combination is already in use by another client";
@@ -77,7 +89,8 @@ static int key_error(Display* d, XErrorEvent* e) {
 	return 0;
 }
 
-static unsigned int key_parse(char* name, const char* full_spec) {
+static unsigned int key_parse(char* name, const char* full_spec)
+{
 	char* separator = strchr(name, '-');
 	unsigned int modifiers = 0;
 	if (separator != NULL) {
@@ -102,11 +115,35 @@ static unsigned int key_parse(char* name, const char* full_spec) {
 	return modifiers;
 }
 
-static void key_press(XEvent *e, void *p) {
+int super_on = 0;
+
+static void key_release(XEvent *e, void *p)
+{
 	KeySym keysym;
 	XKeyEvent *ev;
 	HotKey* h;
+	if(e->type != KeyRelease) {
+		return;
+	}
 
+	ev = &e->xkey;
+	
+	keysym = XLookupKeysym(ev, 0);
+
+	for (h = list; h != NULL; h = h->next) {
+		if (h->keysym == keysym 
+			&& h->rel == 1
+			&& CLEANMASK(ev->state) == CLEANMASK(h->modifiers)) {
+			h->func(h->args);
+		}
+	}
+}
+
+static void key_press(XEvent *e, void *p)
+{
+	KeySym keysym;
+	XKeyEvent *ev;
+	HotKey* h;
 	if(e->type != KeyPress) {
 		return;
 	}
@@ -117,6 +154,7 @@ static void key_press(XEvent *e, void *p) {
 
 	for (h = list; h != NULL; h = h->next) {
 		if (h->keysym == keysym 
+			&& h->rel == 0
 			&& CLEANMASK(ev->state) == CLEANMASK(h->modifiers)) {
 			h->func(h->args);
 		}

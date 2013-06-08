@@ -36,6 +36,7 @@ typedef struct ZwmLayout
 	ZwmLFunc func;
 	char *name;
 	int skip;
+	char *symbol;
 }ZwmLayout;
 
 typedef struct ZwmScreen
@@ -82,7 +83,6 @@ struct Client
 	int minh;
 	int minw;
 
-	int anim_steps;
 	int border;
 	int focused;
 	int hastitle;
@@ -92,6 +92,8 @@ struct Client
 	int type;
 	int dirty;
 	int has_shape;
+	int root_user;
+	int ucount;
 	ulong pid;
 	Bool isfloating;
 	ZwmGeom oldpos;
@@ -105,6 +107,8 @@ struct Client
 	XftDraw *draw;
 	char name[256];
 	char cname[256];
+	char cmd[256];
+	char key[32];
 } __attribute__((aligned));
 
 typedef struct
@@ -123,6 +127,7 @@ typedef struct
 	const char *normal_title_color;
 	const char *focus_title_color;
 	const char *float_bg_color;
+	const char *root_bg_color;
 
 	const char *font;
 	const char *icons;
@@ -142,6 +147,7 @@ typedef struct
 	int minw;
 	int zen_wallpaper;
 	int attach_last;
+	int sleep_time;
 
 	unsigned int xcolor_nborder;
 	unsigned int xcolor_fborder;
@@ -152,6 +158,7 @@ typedef struct
 	unsigned int xcolor_ftitle;
 	unsigned int xcolor_ntitle;
 	unsigned int xcolor_flbg;
+	unsigned int xcolor_root;
 	
 	char *viewnames[32];
 
@@ -164,7 +171,13 @@ typedef struct
 		const char *key;
 		void *f;
 		const char *arg;
-	} keys[64];
+	} keys[100];
+	struct {
+		const char *key;
+		void *f;
+		const char *arg;
+	} relkeys[64];
+
 
 	ZwmLayout layouts[16];
 
@@ -274,7 +287,7 @@ void zwm_event_register(ZwmEvent e, ZwmEFunc f, void *priv);
 void zwm_ewmh_init(void);
 void zwm_ewmh_set_window_opacity(Window win, float opacity);
 
-void zwm_key_bind(const char* keyname, void *f, const char *arg);
+void zwm_key_bind(const char* keyname, void *f, const char *arg, int);
 void zwm_key_init(void);
 
 void zwm_layout_arrange(void);
@@ -283,6 +296,8 @@ void zwm_layout_moveresize(Client* c, int x, int y, int w, int h);
 void zwm_layout_rearrange(Bool force);
 void zwm_layout_register(ZwmLFunc f, char *name, int);
 void zwm_layout_set(const char *name);
+void zwm_layout_push(const char *name);
+void zwm_layout_pop(void);
 
 void zwm_mouse_init(Display *dpy);
 void zwm_mouse_cleanup(Display *dpy);
@@ -317,13 +332,20 @@ ulong zwm_x11_atom_list(Window w, Atom a, Atom type, ulong *ret, ulong nitems, u
 Bool zwm_x11_atom_set(Window w, Atom a, Atom type, ulong *val, ulong);
 Bool zwm_x11_atom_text(Window w, Atom atom, char *text, unsigned int size);
 void zwm_x11_flush_events(long mask);
+Bool zwm_x11_atom_get(Window w, Atom a, Atom type, ulong *val);
 
 #define zwm_client_foreach(c, args...) for((c)=head, ##args;(c);(c)=(c)->next)
 #define ZWM_ZEN_VIEW 9
 
+KeySym zwm_getkey(void);
 void zwm_zen(const char *);
+void zwm_cycle(const char *);
+void zwm_cycle2(const char *);
 void zwm_fullscreen(const char *);
 void zwm_focus_next(const char *);
 void zwm_focus_prev(const char *);
+
+void zwm_session_save(void);
+void zwm_session_restore(void);
 
 #endif

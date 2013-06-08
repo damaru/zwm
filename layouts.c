@@ -69,13 +69,10 @@ void zwm_layout_animate(void)
 		XSync(dpy, False);
 	}
 
-	//int d = 1000000;
 	int d = 1;
 	for(i = 0; i<config.anim_steps; i++){
 		struct timespec req = {0, d/config.anim_steps };
 		d *= 2;
-		//d += 1000000;
-		nanosleep(&req, NULL);
 		zwm_client_foreach(c) {
 			if(c->noanim){
 				continue;
@@ -84,10 +81,10 @@ void zwm_layout_animate(void)
 			c->oldpos.y += c->dy;
 			c->oldpos.w += c->dw;
 			c->oldpos.h += c->dh;
-			if( abs(c->y - c->oldpos.y) > 0 || 
-					abs(c->x - c->oldpos.x) > 0 ||
-					abs(c->w - c->oldpos.w) > 0 ||
-					abs(c->h - c->oldpos.h) > 0 ) {
+			if(abs(c->y - c->oldpos.y) > 0 || 
+				abs(c->x - c->oldpos.x) > 0 ||
+				abs(c->w - c->oldpos.w) > 0 ||
+				abs(c->h - c->oldpos.h) > 0 ) {
 				XMoveResizeWindow(dpy, c->frame, 
 						c->oldpos.x,
 						c->oldpos.y,
@@ -96,6 +93,7 @@ void zwm_layout_animate(void)
 			}
 		}
 		XSync(dpy, False);
+		nanosleep(&req, NULL);
 	}
 }
 
@@ -108,7 +106,6 @@ void zwm_layout_arrange(void)
 		return;
 
 	zwm_client_foreach(c) {
-		c->anim_steps = config.anim_steps;
 		c->noanim = 0;
 		if( (c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) && 
 			(!zwm_client_visible(c, c->view) || c->isfloating) ) {
@@ -137,3 +134,13 @@ void zwm_layout_arrange(void)
 	}
 }
 
+struct ZwmLayout *old;
+void zwm_layout_push(const char *name)
+{
+	old = views[screen[zwm_current_screen()].view].layout;
+	zwm_layout_set(name);
+}
+
+void zwm_layout_pop(void){
+	views[screen[zwm_current_screen()].view].layout = old;
+}

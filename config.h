@@ -6,6 +6,7 @@
 #define FG  "#C9C9C9"
 #define BG  "#5C5C5C"
 #define FLOAT_BG "#5e74a1"
+#define ROOT_BG "#FF0000"
 
 #if 0
 static inline void zwm_mail(Client *c) { run_once("zmail;zmail"); }
@@ -27,6 +28,7 @@ ZwmConfig config =
 	.normal_shadow_color = SHADOW,
 	.normal_title_color = FG,
 	.float_bg_color = FLOAT_BG,
+	.root_bg_color = ROOT_BG,
 	.date_fmt = "%a %d %b, %l:%M %p ",
 	.menucmd = "dwmenu",
 	.opacity = 0.85,
@@ -39,6 +41,7 @@ ZwmConfig config =
 	.minw = 400,
 	.mwfact = 0.5,
 	.zen_wallpaper = 1,
+	.sleep_time = 10,
 	.buttons = {
 #if 0
 		{"✇",  zwm_browser},
@@ -47,7 +50,7 @@ ZwmConfig config =
 		{"▭", client_iconify},
 		{"⇔", flip},
 		{"↪",  banish},
-		{"⇛",  banish_all},
+		{"□",  banish_all},
 #endif
 		{"✖", zwm_client_kill},
 		{ NULL, NULL}
@@ -108,7 +111,6 @@ ZwmConfig config =
 
 		{"Alt-j", focus, "0"},
 		{"Alt-k", focus, "1"},
-		{"Alt-f", focus, "2"},
 		{"Alt-F11", fullscreen, NULL},
 		{"Alt-F10", toggle_panel, NULL},
 
@@ -123,7 +125,8 @@ ZwmConfig config =
 		{"Alt-Shift-h", client_zoom, NULL},
 		{"Alt-Shift-j", move_next, NULL},
 		{"Alt-Shift-k", move_prev, NULL},
-		{"Alt-Tab", cycle, NULL},
+		{"Alt-Tab", zwm_cycle, NULL},
+		{"Alt-Shift-Tab", zwm_cycle2, NULL},
 		{"Ctrl-Alt-l", zwm_util_spawn, "standby"},
 		{"Ctrl-Alt-q", zwm_wm_quit, NULL},
 		{"Ctrl-Alt-Return", iconify, NULL},
@@ -131,26 +134,33 @@ ZwmConfig config =
 		{"Ctrl-Shift-Alt-r", zwm_wm_fallback, "rewm"},
 		{"Ctrl-Shift-Return", zwm_util_spawn, "simshell"},
 
-		{"Alt-z", run_once, "zweb;zweb"},
-		{"Alt-g", run_once, "dwb;dwb"},
-		{"Alt-n", run_once, "zmail;zmail folder:News and tag:unread"},
+		{"Alt-g", run_once, "zweb;zweb"},
+		{"Alt-n", run_once, "news;xterm -class news -e newsbeuter"},
 		{"Alt-p", run_once, "zmenu;dwmenu"},
-		{"Alt-r", run_once, "Ranger;st -t Ranger -c Ranger -e ranger"},
+		{"Alt-r", run_once, "Ranger;xterm -T Ranger -class Ranger -tn xterm-256color -e ranger"},
 		{"Alt-m", run_once, "zmail;zmail"},
-		{"Alt-Shift-v", run_once, "Mixer;st -c Mixer -t Mixer -e alsamixer"},
-		{"Alt-Shift-m", run_once, "Mutt;st -t Mail -c Mutt -e mutt"},
+		{"Alt-Shift-v", run_once, "Mixer;xterm -T Mixer -class Mixer -tn xterm-256color -e alsamixer"},
+		{"Alt-Shift-m", run_once, "Mutt;xterm -T Mail -class Mutt -tn xterm-256color -e mutt"},
 		{"Alt-Shift-Return", run_once, "Screen;xterm -title Screen -class Screen -e screen -Rd"},
+		{"Alt-x", zwm_util_spawn, "xterm"},
+		{"Alt-f", zwm_util_follow, "xterm"},
+		{"Super_L", zwm_util_follow, "xterm"},
 
 		{NULL, NULL, NULL},
 	},
 
+	.relkeys = {
+		{"Alt-f", zwm_util_unfollow, "xterm"},
+		{NULL, NULL, NULL},
+	},
+
 	.layouts = {
-		{ tile, "tile", 0 },
-		{ monocle, "monocle", 0 },
-		{ floating, "float", 1 },
-		{ zen, "zen", 1 },
-		{ grid, "grid", 1 },
-		{ l_fullscreen, "fullscreen", 1 },
+		{ tile, "tile", 0, "▤" },
+		{ monocle, "monocle", 0, "□" },
+		{ floating, "float", 1, "▭" },
+		{ zen, "zen", 1, "◉" },
+		{ grid, "grid", 0, "▦" },
+		{ l_fullscreen, "fullscreen", 1, "■" },
 		{NULL, NULL, 0},
 	},
 };

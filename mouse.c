@@ -29,7 +29,9 @@ zwm_mouse_cleanup(Display *dpy)
 	XFreeCursor(dpy, cursor_resize);
 }
 
-void zwm_mouse_grab(Client *c, Bool focused) {
+void 
+zwm_mouse_grab(Client *c, Bool focused)
+{
 	if(focused) {
 		XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
 		grab(c->win, Button1);
@@ -41,7 +43,8 @@ void zwm_mouse_grab(Client *c, Bool focused) {
 	}
 }
 
-static void grab(Window win, unsigned int button)
+static void 
+grab(Window win, unsigned int button)
 {
 	unsigned int modifiers[] = { 0, LockMask, numlockmask, numlockmask|LockMask };
 	int j;
@@ -58,7 +61,9 @@ enum {
 	DoResize = 1
 };
 
-static void move_resize(Client *c, int resize, int x, int y) {
+static void 
+move_resize(Client *c, int resize, int x, int y)
+{
 	if (resize) {
 		c->w = max(x - c->fpos.x - 2 * c->border + 1, c->minw);
 		c->h = max(y - c->fpos.y - 2 * c->border + 1, c->minh);
@@ -71,7 +76,9 @@ static void move_resize(Client *c, int resize, int x, int y) {
 	}
 }
 
-static void mouse_move(Client *c, int resize) {
+static void 
+mouse_move(Client *c, int resize)
+{
 	unsigned int dui;
 	int di, mx, my;
 	Window dummy;
@@ -112,10 +119,13 @@ static void mouse_move(Client *c, int resize) {
 	XUngrabPointer(dpy, CurrentTime);
 	zwm_client_save_geometry(c, &c->fpos);
 	zwm_client_save_geometry(c, &c->bpos);
+	zwm_client_save_geometry(c, &c->oldpos);
 	zwm_x11_flush_events(EnterWindowMask);
 }
 
-static void button_click(Client *c, int x) {
+static void
+button_click(Client *c, int x) 
+{
 	int j = c->w - config.button_count*config.button_width - 4*c->border;
 	if(x > j )
 	{
@@ -127,7 +137,9 @@ static void button_click(Client *c, int x) {
 	mouse_move(c, DoMove);
 }
 
-static void ev_button_press(XEvent *e) {
+static void 
+ev_button_press(XEvent *e) 
+{
 	XButtonPressedEvent *ev = &e->xbutton;
 	Client *c;
 
@@ -146,6 +158,12 @@ static void ev_button_press(XEvent *e) {
 			break;
 			case Button3:
 				mouse_move(c, DoResize);
+			break;
+			case Button4:
+				zwm_cycle(NULL);
+			break;
+			case Button5:
+				zwm_cycle2(NULL);
 			break;
 		}
 	}

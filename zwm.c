@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <locale.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
 int scr;
 Display *dpy;
@@ -22,6 +23,7 @@ static void wm_signal(int s);
 #include "config.h"
 
 int main(int argc, char *argv[]) {
+	struct stat stb;
 	setlocale(LC_ALL, getenv("LANG"));
 
 	if(!(dpy = XOpenDisplay(getenv("DISPLAY"))))
@@ -33,6 +35,10 @@ int main(int argc, char *argv[]) {
 	ZWM_DEBUG("open display %s\n",getenv("DISPLAY"));
 	scr = DefaultScreen(dpy);
 	root = RootWindow(dpy, scr);
+
+	if(stat("/usr/lib/libxwmhacks.so", &stb) == 0){
+		setenv("LD_PRELOAD", "/usr/lib/libxwmhacks.so", 1);
+	}
 
 	wm_check();
 
@@ -104,6 +110,7 @@ void zwm_util_spawn(const char *cmd)
 			if(dpy)
 				close(ConnectionNumber(dpy));
 			setsid();
+			setenv("ZWM_INSERT","START", 1);
 			execl(shell, shell, "-c", cmd, (char *)NULL);
 			fprintf(stderr, "zwm: execl '%s -c %s' failed (%s)", shell, cmd, sys_errlist[errno]);
 		}
@@ -113,6 +120,7 @@ void zwm_util_spawn(const char *cmd)
 }
 
 void zwm_wm_quit(const char *arg) {
+	zwm_session_save();
 	Client *c = head;
 	while(c){
 		zwm_client_unmanage(c);
@@ -187,6 +195,8 @@ static void wm_init(void) {
 	zwm_util_spawn("~/.zwm/init");
 	zwm_decor_init();
 	zwm_client_scan();
+	if(config.num_clients == 0)
+		zwm_session_restore();
 }
 
 static void wm_cleanup(void) {
@@ -200,3 +210,17 @@ static void wm_signal(int s) {
 	zwm_event_quit(NULL);
 }
 
+KeySym zwm_getkey(void) {
+	XEvent ev;
+	KeySym keysym;
+	XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, 
+			CurrentTime);
+	do {
+		XNextEvent(dpy, &ev);
+		if(ev.type == KeyPress){
+			keysym = XLookupKeysym(&ev.xkey, 0);
+		}
+	} while(ev.type != KeyPress);
+	XUngrabKeyboard(dpy, CurrentTime);
+	return keysym;
+}
