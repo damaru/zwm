@@ -1,3 +1,7 @@
+//
+//  Copyright(c) 2004, The Rasterman
+//  http://www.mail-archive.com/devel@xfree86.org/msg05806.html
+
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
