@@ -1,3 +1,4 @@
+#include <stdbool.h>
 
 static Bool zwm_layout_visible(Client *c, int view) 
 {
@@ -99,28 +100,6 @@ tile(int scr, int v)
 						screen[scr].w * (1-views[v].mwfact) - B, h );
 				i++;
 			}
-		}
-	}
-}
-
-static void 
-monocle_anim(int scr, int v) 
-{
-	Client *c;
-	zwm_client_foreach(c) {
-
-			int x = screen[scr].x;
-			int y = screen[scr].y;
-			int w = screen[scr].w - 2 * config.border_width;
-			int h = screen[scr].h;
-			c->noanim = 0;
-		if (zwm_layout_visible(c,v) /*&& !c->isfloating */&& c == head) {
-			zwm_client_moveresize(c, x, y - screen[scr].h , w, h);
-			zwm_client_save_geometry(c, &c->oldpos);
-			zwm_layout_moveresize(c, x, y , w, h);
-		} else {
-			zwm_layout_moveresize(c, x, y + screen[scr].h, w, h);
-			c->noanim = 0;
 		}
 	}
 }

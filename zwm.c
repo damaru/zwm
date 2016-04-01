@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
 void zwm_util_perror(const char *str)
 {
-	fprintf(stderr, str);
+	fprintf(stderr, "%s", str);
 	exit(-1);
 }
 

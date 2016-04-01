@@ -1,5 +1,6 @@
 
 #include "zwm.h"
+#include <stdint.h>
 #include <X11/extensions/Xinerama.h>
 
 ZwmScreen screen[MAX_SCREENS];
@@ -136,11 +137,16 @@ void zwm_view_rescan(void)
 
 void zwm_view_set(int  v)
 {
+	uint64_t v64 = v;
 	if (v < config.num_views && v != zwm_current_view()) {
 		zwm_screen_set_view( zwm_current_screen(), v );
 		zwm_layout_rearrange(True);
 		zwm_client_refocus();
+#if __x86_64__
+		zwm_event_emit(ZwmViewChange, (void*)v64);
+#else
 		zwm_event_emit(ZwmViewChange, (void*)v);
+#endif
 	}
 }
 

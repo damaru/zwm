@@ -179,34 +179,36 @@ static void warp_to_screen(const char *arg) {
 }
 
 
-static void pull(const char *arg){
-	char data[1024];
-	char *cmd;
+static int pull(const char *arg){
 	char *cls;
+	char data[1024];
 	Client *c = NULL;
 	strcpy(data,arg);
+	cls = strtok(data, ";");
 	zwm_client_foreach(c) {
-		if(strcasecmp(c->cname, data) == 0) {
+		if(strcasecmp(c->cname, cls) == 0) {
 			zwm_client_zoom(c);
-			return;
+			return 1;
 		}
 	}
 	zwm_client_foreach(c) {
-		if(strcasestr(c->name, data)) {
+		if(strcasestr(c->name, cls)) {
 			zwm_client_zoom(c);
-			return;
+			return 1;
 		}
 	}
+	return 0;
 }
 
 static void run_once(const char *arg){
 	char data[1024];
 	char *cmd;
 	char *cls;
-	Client *c = NULL;
+	//Client *c = NULL;
 	strcpy(data,arg);
 	cls = strtok(data, ";");
 	cmd = cls + strlen(cls) + 1;
+#if 0
 	zwm_client_foreach(c) {
 		if(strcasecmp(c->cname, cls) == 0) {
 			zwm_client_zoom(c);
@@ -219,7 +221,9 @@ static void run_once(const char *arg){
 			return;
 		}
 	}
-	zwm_util_spawn(cmd);
+#endif
+	if (!pull(arg))
+		zwm_util_spawn(cmd);
 }
 
 static void toggle(const char *arg){
