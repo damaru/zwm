@@ -1,5 +1,5 @@
 x11-window-id.so: x11-window-id.c
-	$(CC) -Os -shared -o $@ $< `pkg-config --cflags --libs x11`
+	$(CC) -Os -shared -o $@ $< `pkg-config --cflags --libs x11` -fPIC
 clean:
 	rm x11-window-id.so
 install:x11-window-id.so

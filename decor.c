@@ -28,10 +28,10 @@ void zwm_decor_init(void)
 
 	memset(icons,0,64);
 
-	xfont = XftFontOpenName (dpy, scr, "Sans-9:bold");
+	xfont = XftFontOpenName (dpy, scr, "DejaVu Sans-9:bold");
 	if(!xfont)xfont = XftFontOpenXlfd(dpy, scr, config.font);
 
-	ifont = XftFontOpenName (dpy, scr, "Sans-16:bold");
+	ifont = XftFontOpenName (dpy, scr, "DejaVu Sans-16:bold");
 	if(!ifont)ifont = XftFontOpenXlfd(dpy, scr, config.icons);
 
 	XftColorAllocValue(dpy, DefaultVisual(dpy, scr), cmap, &xcolor.color, &xcolor);
@@ -148,15 +148,34 @@ void zwm_decor_update(Client *c)
 		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, c->h);
 
 		draw_text(c, xfont, fill, tcolor, shadow, vx, ty, vtxt); 
-		sprintf(n, "%s %s", c->isfloating?"▬":views[c->view].layout->symbol , c->name);
+		sprintf(n, "%s %s", c->isfloating?"▬":views[c->view].layout->symbol, c->name );
 		draw_text(c, xfont, fill, tcolor, shadow, tx, ty, n); 
+//		draw_text(c, xfont, fill, tcolor, shadow, tx + config.button_width, ty, c->name); 
 		if(c->focused){
 			get_status(title, 1024);
 			char tmp[256];
-			sprintf(tmp, "%s[%d]",title, c->ucount/60);
+			char cap[32];
+
+			sprintf(tmp, "%s[%lu]",title, c->ucount/60);
 			strcpy(title,tmp);
-			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 10 - char_width, ty, title); 
+			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 20 - char_width, ty, title); 
 			draw_text(c, ifont, fill, tcolor, shadow, iw, config.icon_y, icons); 
+
+			FILE *b = fopen("/sys/class/power_supply/BAT0/capacity", "r");
+			if(b) {
+				fgets(cap, 32, b);
+				cap[3] = 0;
+				int p = atoi(cap) ;
+				if(p != 100) {
+					//int x = iw - date_width - 20 - char_width - 15;
+					int x = iw - config.button_width;
+					XSetForeground(dpy, gc, config.xcolor_ftitle);
+					XFillRectangle (dpy, c->frame, gc, x, 2, 8, ty);
+					XSetForeground(dpy, gc, config.xcolor_nborder);
+					XFillRectangle (dpy, c->frame, gc, x, 2, 8, (ty) * (100-p) / 100 );
+				}
+				fclose(b);
+			}
 		}
 	}
 }

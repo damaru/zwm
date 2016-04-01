@@ -32,7 +32,7 @@ ZwmConfig config =
 	.date_fmt = "%a %d %b, %l:%M %p ",
 	.menucmd = "dwmenu",
 	.opacity = 0.85,
-	.anim_steps = 30,
+	.anim_steps = 100,
 	.show_title = 1,
 	.font = "-*-dejavu sans mono-bold-r-*-*-14-*-*-*-*-*-*-*",
  	.icons = "-*-webdings-bold-r-*-*-16-*-*-*-*-*-*-*",
@@ -53,6 +53,7 @@ ZwmConfig config =
 		{"□",  banish_all},
 #endif
 		{"✖", zwm_client_kill},
+		//{"⠶", zwm_client_kill},
 		{ NULL, NULL}
 	},
 	.viewnames = {
@@ -65,7 +66,7 @@ ZwmConfig config =
 		[6] = "➐",
 		[7] = "➑",
 		[8] = "➒",
-		[9] = "●",
+		[9] = "✺",
 		[10] = "➀",
 		[11] = "➁",
 		[12] = "➂",
@@ -122,6 +123,7 @@ ZwmConfig config =
 
 		{"Alt-Shift-space", toggle_floating, NULL},
 		{"Alt-space", zwm_layout_set, NULL},
+		{"Alt-s", toggle, "sparkfile;xterm -T sparkfile -class sparkfile -tn xterm-256color -e vim /home/damaru/Dropbox/sync/sparkfile.txt"},
 		{"Alt-Shift-h", client_zoom, NULL},
 		{"Alt-Shift-j", move_next, NULL},
 		{"Alt-Shift-k", move_prev, NULL},
@@ -134,16 +136,21 @@ ZwmConfig config =
 		{"Ctrl-Shift-Alt-r", zwm_wm_fallback, "rewm"},
 		{"Ctrl-Shift-Return", zwm_util_spawn, "simshell"},
 
+		{"Alt-y", run_once, "youtube;youtube"},
 		{"Alt-g", run_once, "zweb;zweb"},
-		{"Alt-n", run_once, "news;xterm -class news -e newsbeuter"},
-		{"Alt-p", run_once, "zmenu;dwmenu"},
-		{"Alt-r", run_once, "Ranger;xterm -T Ranger -class Ranger -tn xterm-256color -e ranger"},
-		{"Alt-m", run_once, "zmail;zmail"},
+//		{"Alt-n", run_once, "news;xterm -class news -e newsbeuter"},
+		{"Alt-n", run_once, "feedly;feedly"},
+		{"Alt-r", run_once, "zmenu;dwmenu"},
+		//{"Alt-r", run_once, "Ranger;xterm -T Ranger -class Ranger -tn xterm-256color -e ranger"},
+		{"Alt-Shift-m", run_once, "zmail;zmail"},
 		{"Alt-Shift-v", run_once, "Mixer;xterm -T Mixer -class Mixer -tn xterm-256color -e alsamixer"},
-		{"Alt-Shift-m", run_once, "Mutt;xterm -T Mail -class Mutt -tn xterm-256color -e mutt"},
+//		{"Alt-m", pull, "Marketwatch"},
+//		{"Alt-o", pull, "Orderbook"},
+//		{"Alt-p", pull, "Positions"},
+		{"Alt-p", run_once, "zmenu;dwmenu"},
 		{"Alt-Shift-Return", run_once, "Screen;xterm -title Screen -class Screen -e screen -Rd"},
 		{"Alt-x", zwm_util_spawn, "xterm"},
-		{"Alt-f", zwm_util_follow, "xterm"},
+		{"Alt-f", run_once, "firefox"},
 		{"Super_L", zwm_util_follow, "xterm"},
 
 		{NULL, NULL, NULL},
@@ -162,6 +169,14 @@ ZwmConfig config =
 		{ grid, "grid", 0, "▦" },
 		{ l_fullscreen, "fullscreen", 1, "■" },
 		{NULL, NULL, 0},
+	},
+
+	.policies = {
+		{"Wine",ZwmDialogWindow},
+		{"wingpanel",ZwmDockWindow},
+		{"plank",ZwmDockWindow},
+		{"iexplore.exe",ZwmDialogWindow},
+		{NULL, 0}
 	},
 };
 

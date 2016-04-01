@@ -157,6 +157,7 @@ void zwm_screen_rescan(Bool init) {
 				screen[i].y = info[i].y_org;
 				screen[i].w = info[i].width;
 				screen[i].h = info[i].height;
+				fprintf(stderr,"%d %d %d\n",i, screen[i].w,screen[i].h);
 				config.screen_count++;
 			}
 		}
@@ -167,6 +168,8 @@ void zwm_screen_rescan(Bool init) {
 		screen[0].y = 0;
 		screen[0].w = DisplayWidth(dpy, scr);
 		screen[0].h = DisplayHeight(dpy, scr);
+
+		fprintf(stderr,"%d %d\n",screen[0].w,screen[0].h);
 	} 
 
 	if (init) {

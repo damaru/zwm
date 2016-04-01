@@ -59,6 +59,12 @@ enum
 	ZwmFullscreenWindow
 };
 
+typedef struct
+{
+	const char *cname;
+	int type;
+} ZwmPolicy;
+
 /* client */
 typedef struct Client Client;
 struct Client
@@ -93,7 +99,7 @@ struct Client
 	int dirty;
 	int has_shape;
 	int root_user;
-	int ucount;
+	long unsigned int ucount;
 	ulong pid;
 	Bool isfloating;
 	ZwmGeom oldpos;
@@ -178,8 +184,9 @@ typedef struct
 		const char *arg;
 	} relkeys[64];
 
-
 	ZwmLayout layouts[16];
+
+	ZwmPolicy policies[16];
 
 } ZwmConfig;
 
@@ -241,6 +248,7 @@ extern Client* sel;
 extern Client* head;
 extern Client* tail;
 extern Colormap cmap;
+extern int session_dirty;
 
 Bool zwm_client_visible(Client* c, int view);
 Client* zwm_client_lookup(Window w);

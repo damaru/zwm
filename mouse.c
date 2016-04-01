@@ -108,9 +108,28 @@ mouse_move(Client *c, int resize)
 			zwm_event_emit(ev.type, &ev);
 			break;
 		case MotionNotify:
+
+#if 0
+			if(
+					(c->bpos.x > c->x || c->bpos.y > c->y)
+					&& c->x < screen[zwm_client_screen(c)].x + 10  
+					&& c->y < screen[zwm_client_screen(c)].y +10
+					&& !resize
+
+				//	&& c->x+c->w == screen[zwm_client_screen(c)].w 
+				//	&& c->y+c->h == screen[zwm_client_screen(c)].h
+					){
+				zwm_client_toggle_floating(c);
+				zwm_client_remove(c);
+				zwm_client_push_head(c);
+				ev.type = ButtonRelease;
+			}
+#endif
+
 			move_resize(c, resize, ev.xmotion.x, ev.xmotion.y);
 			zwm_client_moveresize(c, c->x, c->y, c->w, c->h);
 			c->view = screen[zwm_client_screen(c)].view;
+
 			break;
 		}
 		zwm_decor_update(c);
@@ -121,6 +140,22 @@ mouse_move(Client *c, int resize)
 	zwm_client_save_geometry(c, &c->bpos);
 	zwm_client_save_geometry(c, &c->oldpos);
 	zwm_x11_flush_events(EnterWindowMask);
+
+	if(resize)return;
+
+	if(c->x == screen[zwm_client_screen(c)].x && c->y == screen[zwm_client_screen(c)].y) {
+
+				zwm_client_toggle_floating(c);
+				zwm_client_remove(c);
+				zwm_client_push_head(c);
+	}
+	if(c->x+c->w == screen[zwm_client_screen(c)].w && c->y+c->h == screen[zwm_client_screen(c)].h) {
+
+				zwm_client_toggle_floating(c);
+				zwm_client_remove(c);
+				zwm_client_push_tail(c);
+	}
+
 }
 
 static void

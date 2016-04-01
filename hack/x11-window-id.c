@@ -90,7 +90,7 @@ __e_hack_set_properties(Display *display, Window window)
         XChangeProperty(display, window, a_user_id, XA_STRING, 8, PropModeReplace, buf, strlen(buf));
         snprintf(buf, sizeof(buf), "%i", pid);
         XChangeProperty(display, window, a_process_id, XA_STRING, 8, PropModeReplace, buf, strlen(buf));
-        XChangeProperty(display, window, net_process_id, XA_CARDINAL, 32, PropModeReplace, &pid, 1);
+        XChangeProperty(display, window, net_process_id, XA_CARDINAL, 32, PropModeReplace, (const unsigned char *)&pid, 1);
         snprintf(buf, sizeof(buf), "%i", ppid);
         XChangeProperty(display, window, a_p_process_id, XA_STRING, 8, PropModeReplace, buf, strlen(buf));
         if (!uname(&ubuf))

@@ -112,7 +112,7 @@ void zwm_util_spawn(const char *cmd)
 			setsid();
 			setenv("ZWM_INSERT","START", 1);
 			execl(shell, shell, "-c", cmd, (char *)NULL);
-			fprintf(stderr, "zwm: execl '%s -c %s' failed (%s)", shell, cmd, sys_errlist[errno]);
+			fprintf(stderr, "zwm: execl '%s -c %s' failed (%s)", shell, cmd, strerror(errno));
 		}
 		exit(0);
 	}

@@ -5,6 +5,10 @@ all:
 clean:
 	rm -rvf build/* cscope.*
 	make -C hack clean
+
+distclean:
+	- find . -name *.un~ | xargs rm
+
 install:all
 	- sudo rm /usr/bin/zwm
 	sudo cp build/zwm /usr/bin/zwm

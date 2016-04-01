@@ -82,7 +82,8 @@ void zwm_event_loop(void) {
 				c->dirty = 0;
 			}
 		}
-		zwm_session_save();
+	//	if(session_dirty)
+			zwm_session_save();
 
 		if(!quit && ev_wait() ==  0 && sel) {
 			zwm_decor_update(sel);

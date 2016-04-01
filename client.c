@@ -7,6 +7,7 @@ unsigned int num_floating = 0;
 static int privcount = 0;
 Client *sel = NULL;
 
+int session_dirty = 0;
 static int jcount = 0;
 static int window_type(Window w);
 static void create_frame_window(Client *c);
@@ -108,6 +109,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 {
 	int scr = zwm_current_screen();
 	int vew = zwm_current_view();
+	int i;
 	char ins[64];
 
 	if (vew >= ZWM_ZEN_VIEW) {
@@ -131,6 +133,15 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	c->state =  NormalState;
 	c->border = config.border_width;
 	c->type = window_type(w);
+
+	for(i =0; i<16 && config.policies[i].cname; i++){
+		if(strcmp(c->cname, config.policies[i].cname) == 0){
+			c->type = config.policies[i].type;
+			break;
+		}
+	}
+
+
 	ulong cv = 0;
 	if(zwm_x11_atom_get(c->win, _ZWM_VIEW, XA_INTEGER, &cv)){
 		c->view = -1;
@@ -154,6 +165,13 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	zwm_client_update_hints(c);
 
 	zwm_client_update_name(c);
+
+	for(i =0; i<16 && config.policies[i].cname; i++){
+		if(strcmp(c->cname, config.policies[i].cname) == 0){
+			c->type = config.policies[i].type;
+			break;
+		}
+	}
 
 	switch (c->type) {
 		case ZwmDesktopWindow:
@@ -234,6 +252,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes *wa)
 	}
 	zwm_layout_rearrange(True);
 	config.num_clients++;
+	session_dirty++;
 	return c;
 }
 
@@ -279,6 +298,7 @@ void zwm_client_unmanage(Client *c)
 	zwm_event_emit(ZwmClientUnmap, c);
 	free(c);
 	config.num_clients--;
+	session_dirty++;
 }
 
 Client *zwm_client_lookup(Window w) 
@@ -487,6 +507,7 @@ void zwm_client_set_view(Client *c, int v)
 
 void zwm_client_update_name(Client *c)
 {
+			int i;
 	zwm_x11_atom_list(c->win, _NET_WM_PID, AnyPropertyType, &c->pid, 1, NULL);
 	if(!zwm_x11_atom_text(c->win, _NET_WM_NAME, c->name, sizeof c->name))
 	zwm_x11_atom_text(c->win, WM_NAME, c->name, sizeof c->name);
@@ -507,7 +528,6 @@ void zwm_client_update_name(Client *c)
 
 			int count = fread(c->cmd, 1, 256, fp);
 			fclose(fp);
-			int i;
 			for(i = 0; i<count; i++){
 				if(c->cmd[i] == 0){
 					c->cmd[i] = ' ';
@@ -520,6 +540,7 @@ void zwm_client_update_name(Client *c)
 			c->win, c->name, c->cname, c->cmd);
 	zwm_client_configure_window(c);
 	zwm_decor_dirty(c);
+
 }
 
 void zwm_client_toggle_floating(Client *c) {
