@@ -43,6 +43,19 @@ zwm_mouse_grab(Client *c, Bool focused)
 	}
 }
 
+static int warp = 1;
+
+void zwm_mouse_warp(Client *c)
+{
+	if(c && warp) {
+		XSelectInput(dpy, c->win, StructureNotifyMask | PropertyChangeMask );
+		XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w / 2, c->h / 2);
+		zwm_x11_flush_events(EnterWindowMask);
+		XSelectInput(dpy, c->win, StructureNotifyMask | PropertyChangeMask | EnterWindowMask);
+	}
+}
+
+
 static void 
 grab(Window win, unsigned int button)
 {

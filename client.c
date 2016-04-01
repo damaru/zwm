@@ -317,16 +317,6 @@ Bool zwm_client_visible(Client *c, int view)
 		(c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) ;
 }
 
-void zwm_client_warp(Client *c)
-{
-	if(c) {
-		XSelectInput(dpy, c->win, StructureNotifyMask | PropertyChangeMask );
-		XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w / 2, c->h / 2);
-		zwm_x11_flush_events(EnterWindowMask);
-		XSelectInput(dpy, c->win, StructureNotifyMask | PropertyChangeMask | EnterWindowMask);
-	}
-}
-
 void zwm_client_refocus(void)
 {
 	Client *c = head;
@@ -372,7 +362,7 @@ void zwm_client_raise(Client *c, Bool warp)
 	zwm_client_setstate(c, NormalState);
 	if (warp) {
 		zwm_layout_rearrange(True);
-		zwm_client_warp(c);
+		zwm_mouse_warp(c);
 	}
 	zwm_client_configure_window(c);
 }

@@ -276,7 +276,6 @@ void zwm_client_unfullscreen(Client* c);
 void zwm_client_unmanage(Client* );
 void zwm_client_update_hints(Client *c);
 void zwm_client_update_name(Client* );
-void zwm_client_warp(Client* c);
 void zwm_client_zoom(Client* );
 
 int zwm_current_screen();
@@ -310,6 +309,7 @@ void zwm_layout_pop(void);
 void zwm_mouse_init(Display *dpy);
 void zwm_mouse_cleanup(Display *dpy);
 void zwm_mouse_grab(Client *c, Bool focused);
+void zwm_mouse_warp(Client* c);
 
 void zwm_panel_hide();
 void zwm_panel_init(void);

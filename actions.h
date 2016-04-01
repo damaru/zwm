@@ -204,24 +204,10 @@ static void run_once(const char *arg){
 	char data[1024];
 	char *cmd;
 	char *cls;
-	//Client *c = NULL;
 	strcpy(data,arg);
 	cls = strtok(data, ";");
 	cmd = cls + strlen(cls) + 1;
-#if 0
-	zwm_client_foreach(c) {
-		if(strcasecmp(c->cname, cls) == 0) {
-			zwm_client_zoom(c);
-			return;
-		}
-	}
-	zwm_client_foreach(c) {
-		if(strcasestr(c->name, cls)) {
-			zwm_client_zoom(c);
-			return;
-		}
-	}
-#endif
+
 	if (!pull(arg))
 		zwm_util_spawn(cmd);
 }
@@ -293,6 +279,12 @@ static void close_window(const char *arg) {
 	}
 }
 
+static void duplicate_window(const char *arg) {
+	if (sel && sel->cmd[0]) {
+		zwm_util_spawn(sel->cmd);
+	}
+}
+
 static void  toggle_floating(const char *arg) {
 	if (sel) {
 		zwm_client_toggle_floating(sel);
@@ -307,7 +299,7 @@ static void do_focus(Client *c)
 {
 	if (c) {
 		zwm_client_raise(c, False);
-		zwm_client_warp(c);
+		zwm_mouse_warp(c);
 	}
 }
 

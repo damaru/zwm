@@ -97,6 +97,7 @@ ZwmConfig config =
 		{"Alt-b", banish_all, NULL},
 		{"Alt-Shift-b", banish_non_class, NULL},
 		{"Alt-c", banish_class, NULL},
+		{"Alt-d", duplicate_window, NULL},
 		{"Alt-Shift-1", set_view, "0"},
 		{"Alt-Shift-2", set_view, "1"},
 		{"Alt-Shift-3", set_view, "2"},
