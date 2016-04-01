@@ -1,5 +1,6 @@
 all:
 	cscope -b
+	- mkdir build
 	cd build && cmake ../ && make
 	cd hack && make
 clean:
