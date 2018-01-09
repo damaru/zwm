@@ -14,7 +14,7 @@ static inline void zwm_menu(Client *c) { run_once("zmenu;dwmenu"); }
 static inline void zwm_browser(Client *c) { run_once("zweb;zweb"); }
 #endif
 
-ZwmConfig config = 
+ZwmConfig config =
 {
 	.num_views = 1,
 	.border_width = 1,
@@ -73,8 +73,6 @@ ZwmConfig config =
 		[13] = "➃",
 	},
 	.keys = {
-		{"Super-Tab", screen_next, ""},
-		{"Super-j", screen_next, ""},
 		{"Ctrl-Alt-j", screen_next, ""},
 
 		{"Super-1", warp_to_screen, "0"},
@@ -134,11 +132,11 @@ ZwmConfig config =
 		{"Ctrl-Alt-q", zwm_wm_quit, NULL},
 		{"Ctrl-Alt-Return", iconify, NULL},
 		{"Ctrl-Alt-r", zwm_wm_restart, NULL},
-		{"Ctrl-Shift-Alt-r", zwm_wm_fallback, "gala"},
-		{"Ctrl-Shift-Return", zwm_util_spawn, "simshell"},
+		{"Ctrl-Shift-Alt-r", zwm_wm_fallback, "gnome-shell"},
 
 		{"Alt-p", run_once, "zmenu;dwmenu"},
-		{"Alt-Shift-Return", run_once, "Screen;xterm -title Screen -class Screen -e screen -Rd"},
+		{"Alt-a", run_once, "atom;atom"},
+		{"Alt-Shift-Return", run_once, "Screen;shell"},
 		{"Alt-x", zwm_util_spawn, "xterm"},
 		{"Alt-f", run_once, "firefox"},
 		{"Super_L", zwm_util_follow, "xterm"},
@@ -169,5 +167,3 @@ ZwmConfig config =
 		{NULL, 0}
 	},
 };
-
-

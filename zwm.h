@@ -63,6 +63,7 @@ typedef struct
 {
 	const char *cname;
 	int type;
+	ZwmGeom pos;
 } ZwmPolicy;
 
 /* client */

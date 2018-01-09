@@ -5,6 +5,8 @@
 #include <X11/Xatom.h>
 #include <sys/utsname.h>
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 /* prototypes */
 static void __e_hack_set_properties(Display *display, Window window);

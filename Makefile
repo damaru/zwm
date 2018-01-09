@@ -20,3 +20,8 @@ backup:
 restore:clean
 	cd .. && dnld nwm.tgz
 	cd .. && tar zxvf nwm.tgz
+
+
+dep-install:
+	sudo apt-get install -y build-essential libx11-dev libxft-dev libxext-dev libxinerama-dev
+
