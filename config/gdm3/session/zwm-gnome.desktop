@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=zwm-gnome
+NoDisplay=true
+Comment=improved dynamic tiling window manager
+Exec=zwm-gnome
+X-GNOME-WMName=zwm-gnome
+X-GNOME-Autostart-Phase=WindowManager
+X-GNOME-Provides=windowmanager
+X-GNOME-Autostart-Notify=false

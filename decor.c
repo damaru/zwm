@@ -10,7 +10,7 @@ Colormap cmap;
 static int date_width;
 static int char_width;
 static char title[1024];
-static GC gc;
+GC gc;
 
 static ulong alloc_color(const char *colstr);
 static void set_xcolor(unsigned long tcolor, unsigned short alpha);
@@ -65,6 +65,9 @@ void zwm_decor_init(void)
 		config.icon_y = info.height + (config.title_height - info.height)/2 + 1;
 	}
 
+	config.icon_width = info.width + 2;
+	config.icon_height = info.height ;
+
 	config.title_y = config.title_height - xfont->descent - 2;
 }
 
@@ -89,15 +92,17 @@ void decor_win_follow(Client *c)
 
 
 	int ty = config.title_y;
-	char n[256];
+	char n[255];
 
 	XSetWindowBackground(dpy, c->frame, fill);
 	XSetWindowBorder(dpy, c->frame, bcolor);
 
 	XSetForeground(dpy, gc, fill);
 	XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, c->h);
-	sprintf(n, "%s %s : %s",config.viewnames[c->oldpos.view], c->key, c->name);
-	draw_text(c, xfont, fill, tcolor, shadow, 3, ty, n); 
+	if(snprintf(n, 255 , "%s %s : %s",config.viewnames[c->oldpos.view], c->key, c->name) < 0){
+		n[255] = 0;
+	}
+	draw_text(c, xfont, fill, tcolor, shadow, 3, ty, n);
 }
 
 
@@ -147,35 +152,15 @@ void zwm_decor_update(Client *c)
 		XSetForeground(dpy, gc, fill);
 		XFillRectangle (dpy, c->frame, gc, 0, 0, c->w, c->h);
 
-		draw_text(c, xfont, fill, tcolor, shadow, vx, ty, vtxt); 
-		sprintf(n, "%s %s", c->isfloating?"▬":views[c->view].layout->symbol, c->name );
-		draw_text(c, xfont, fill, tcolor, shadow, tx, ty, n); 
-//		draw_text(c, xfont, fill, tcolor, shadow, tx + config.button_width, ty, c->name); 
+		draw_text(c, xfont, fill, tcolor, shadow, vx, ty, vtxt);
+		if(snprintf(n, 255, "%s %s", c->isfloating?"▬":views[c->view].layout->symbol, c->name ) < 0){
+			n[255] = 0;
+		}
+		draw_text(c, xfont, fill, tcolor, shadow, tx, ty, n);
 		if(c->focused){
 			get_status(title, 1024);
-			char tmp[256];
-			char cap[32];
-
-			sprintf(tmp, "%s[%lu]",title, c->ucount/60);
-			strcpy(title,tmp);
-			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - 20 - char_width, ty, title); 
-			draw_text(c, ifont, fill, tcolor, shadow, iw, config.icon_y, icons); 
-
-			FILE *b = fopen("/sys/class/power_supply/BAT0/capacity", "r");
-			if(b) {
-				fgets(cap, 32, b);
-				cap[3] = 0;
-				int p = atoi(cap) ;
-				if(p != 100) {
-					//int x = iw - date_width - 20 - char_width - 15;
-					int x = iw - config.button_width;
-					XSetForeground(dpy, gc, config.xcolor_ftitle);
-					XFillRectangle (dpy, c->frame, gc, x, 2, 8, ty);
-					XSetForeground(dpy, gc, config.xcolor_nborder);
-					XFillRectangle (dpy, c->frame, gc, x, 2, 8, (ty) * (100-p) / 100 );
-				}
-				fclose(b);
-			}
+			draw_text(c, xfont, fill, tcolor, shadow, iw - date_width - config.systray_width, ty, title);
+			draw_text(c, ifont, fill, tcolor, shadow, iw, config.icon_y, icons);
 		}
 	}
 }

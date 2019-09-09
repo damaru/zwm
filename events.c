@@ -82,7 +82,8 @@ void zwm_event_loop(void) {
 				c->dirty = 0;
 			}
 		}
-	//	if(session_dirty)
+
+        if(session_dirty && !quit)
 			zwm_session_save();
 
 		if(!quit && ev_wait() ==  0 && sel) {
@@ -118,13 +119,7 @@ static int ev_wait(void) {
 	FD_SET(fd, &fds);
 	t.tv_sec = config.sleep_time;
 	t.tv_usec = 0;
-	int tcount = time(NULL);
 	int ret  = select(fd + 1, &fds, 0, &fds, &t);
-	tcount = time(NULL) - tcount;
-	if(sel){
-		sel->ucount += tcount;
-		zwm_x11_atom_set(sel->win, _ZWM_COUNT, XA_INTEGER, &sel->ucount, 1);
-	}
 	return ret;
 }
 
@@ -242,17 +237,20 @@ static void ev_enter(XEvent *e) {
 	if((c = zwm_client_lookup(ev->window)) && c->frame == ev->window)
 		zwm_client_focus(c);
 }
-
 static void ev_property(XEvent *e) {
 	Client *c;
 	Window trans;
 	XPropertyEvent *ev = &e->xproperty;
 	DBG_ENTER();
+
 	if(ev->state == PropertyDelete)
 		return; /* ignore */
-	if((c = zwm_client_lookup(ev->window))){ 
+
+    ZWM_DEBUG("PROP %ld %s %lx\n",ev->atom, XGetAtomName(ev->display,ev->atom), ev->window);
+	if((c = zwm_client_lookup(ev->window))){
 		switch (ev->atom) {
-			default: break;
+			default:
+                break;
 			case XA_WM_TRANSIENT_FOR:
 				XGetTransientForHint(dpy, ev->window, &trans);
 				if((zwm_client_lookup(trans) != NULL))
@@ -264,9 +262,9 @@ static void ev_property(XEvent *e) {
 			case XA_WM_HINTS:        //todo
 				break;
 		}
-		if(ev->atom == XA_WM_NAME || ev->atom == _NET_WM_NAME)
-			zwm_client_update_name(c);
-	}
+        if(ev->atom ==  XA_WM_NAME || ev->atom == _NET_WM_NAME)
+			    zwm_client_update_name(c);
+ 	}
 }
 
 static void ev_unmap(XEvent *e) {

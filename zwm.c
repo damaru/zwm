@@ -22,9 +22,30 @@ static void wm_signal(int s);
 #include "layouts.h"
 #include "config.h"
 
+#include <X11/Xproto.h>
+
+static int
+zwm_error(Display *dpy, XErrorEvent *ee)
+{
+	if (ee->error_code == BadWindow
+	|| (ee->request_code == X_SetInputFocus && ee->error_code == BadMatch)
+	|| (ee->request_code == X_PolyText8 && ee->error_code == BadDrawable)
+	|| (ee->request_code == X_PolyFillRectangle && ee->error_code == BadDrawable)
+	|| (ee->request_code == X_PolySegment && ee->error_code == BadDrawable)
+	|| (ee->request_code == X_ConfigureWindow && ee->error_code == BadMatch)
+	|| (ee->request_code == X_GrabButton && ee->error_code == BadAccess)
+	|| (ee->request_code == X_GrabKey && ee->error_code == BadAccess)
+	|| (ee->request_code == X_CopyArea && ee->error_code == BadDrawable))
+		return 0;
+	fprintf(stderr, "zwm: fatal error: request code=%d, error code=%d\n",
+		ee->request_code, ee->error_code);
+//	return xerrorxlib(dpy, ee); /* may call exit */
+    return 0;
+}
+
+
 int main(int argc, char* argv[])
 {
-	struct stat stb;
 	setlocale(LC_ALL, getenv("LANG"));
 
 	if (!(dpy = XOpenDisplay(getenv("DISPLAY")))) {
@@ -36,16 +57,13 @@ int main(int argc, char* argv[])
 	scr = DefaultScreen(dpy);
 	root = RootWindow(dpy, scr);
 
-	if (stat("/usr/lib/libxwmhacks.so", &stb) == 0) {
-		setenv("LD_PRELOAD", "/usr/lib/libxwmhacks.so", 1);
-	}
-
 	wm_check();
 
 	wm_init();
 	signal(SIGINT, wm_signal);
 	signal(SIGTERM, wm_signal);
 	signal(SIGHUP, wm_signal);
+	XSetErrorHandler(zwm_error);
 	zwm_event_loop();
 	zwm_wm_quit(NULL);
 	wm_cleanup();
@@ -107,6 +125,7 @@ void zwm_util_spawn(const char* cmd)
 		shell = "/bin/sh";
 	if (!cmd)
 		return;
+    strcpy(config._lastcmd, cmd);
 	if (fork() == 0) {
 		if (fork() == 0) {
 			if (dpy)
@@ -125,6 +144,7 @@ void zwm_wm_quit(const char* arg)
 {
 	zwm_session_save();
 	Client* c = head;
+    session_dirty = -200;
 	while (c) {
 		zwm_client_unmanage(c);
 		c = head;
@@ -141,10 +161,10 @@ static int wm_error(Display* dsply, XErrorEvent* ee)
 
 static void wm_check(void)
 {
-	XSetErrorHandler(wm_error);
+	void *o = XSetErrorHandler(wm_error);
 	XSelectInput(dpy, root, SubstructureRedirectMask);
 	XSync(dpy, False);
-	XSetErrorHandler(NULL);
+	XSetErrorHandler(o);
 }
 
 static void wm_numlock_init(void)
@@ -165,6 +185,7 @@ static int wm_error_dummy(Display* dpy, XErrorEvent* ee)
 {
 	return 0;
 }
+
 
 static void wm_init(void)
 {
@@ -193,11 +214,13 @@ static void wm_init(void)
 	XChangeWindowAttributes(dpy, root, CWEventMask | CWCursor, &swa);
 	XSelectInput(dpy, root, swa.event_mask);
 
-	zwm_util_spawn("~/.zwm/init");
 	zwm_decor_init();
+    zwm_systray_new();
 	zwm_client_scan();
+    printf("config.numclients: %d\n",config.num_clients);
 	if (config.num_clients == 0)
 		zwm_session_restore();
+    zwm_util_spawn("zwm-session");
 }
 
 static void wm_cleanup(void)

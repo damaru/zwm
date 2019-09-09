@@ -1,7 +1,7 @@
 #include "zwm.h"
-#include <string.h>
-#include <stdio.h>
 #include <X11/extensions/shape.h>
+#include <stdio.h>
+#include <string.h>
 
 unsigned int num_floating = 0;
 static int privcount = 0;
@@ -73,7 +73,7 @@ void zwm_client_setstate(Client* c, int state)
 
 void zwm_client_scan(void)
 {
-	Window* wins = NULL, d1, d2;
+	Window *wins = NULL, d1, d2;
 	XWindowAttributes wa;
 	unsigned int num;
 	int i;
@@ -110,7 +110,6 @@ Client* zwm_client_manage(Window w, XWindowAttributes* wa)
 	int scr = zwm_current_screen();
 	int vew = zwm_current_view();
 	int i;
-	char ins[64];
 
 	if (vew >= ZWM_ZEN_VIEW) {
 		vew = screen[scr].prev;
@@ -128,11 +127,11 @@ Client* zwm_client_manage(Window w, XWindowAttributes* wa)
 
 	Client* c = zwm_util_malloc(sizeof(Client) + (sizeof(void*) * privcount));
 	c->win = w;
-	c->ucount = 0;
 	c->isfloating = False;
 	c->state = NormalState;
 	c->border = config.border_width;
 	c->type = window_type(w);
+	zwm_client_update_name(c);
 
 	for (i = 0; i < 16 && config.policies[i].cname; i++) {
 		if (strcmp(c->cname, config.policies[i].cname) == 0) {
@@ -150,10 +149,6 @@ Client* zwm_client_manage(Window w, XWindowAttributes* wa)
 		view_set(c, vew);
 	}
 
-	if (zwm_x11_atom_get(c->win, _ZWM_COUNT, XA_INTEGER, &cv)) {
-		c->ucount = cv;
-	}
-
 	c->w = wa->width;
 	c->h = wa->height;
 	c->x = (screen[scr].w - c->w) / 2;
@@ -169,6 +164,9 @@ Client* zwm_client_manage(Window w, XWindowAttributes* wa)
 		if (strcmp(c->cname, config.policies[i].cname) == 0) {
 			c->type = config.policies[i].type;
 			c->x = config.policies[i].pos.x;
+			if (c->x < 0) {
+				c->x = screen[0].w + config.policies[i].pos.x;
+			}
 			c->y = config.policies[i].pos.y;
 			c->w = config.policies[i].pos.w;
 			c->h = config.policies[i].pos.h;
@@ -205,6 +203,10 @@ Client* zwm_client_manage(Window w, XWindowAttributes* wa)
 			c->type = ZwmNormalWindow;
 			zwm_client_fullscreen(c);
 			break;
+		case ZwmFixedWindow:
+			c->hastitle = 0;
+			XMapWindow(dpy, w);
+			break;
 		case ZwmNormalWindow:
 			c->hastitle = 1;
 			break;
@@ -233,24 +235,24 @@ Client* zwm_client_manage(Window w, XWindowAttributes* wa)
 	}
 
 	zwm_decor_update(c);
-	if (zwm_x11_atom_text(c->win, _ZWM_INSERT, ins, 32)) {
-		if (strcmp(ins, "START") == 0) {
-			zwm_client_push_head(c);
-		} else {
-			zwm_client_push_tail(c);
-		}
-	} else {
-		if (config.attach_last) {
-			zwm_client_push_tail(c);
-		} else {
-			zwm_client_push_head(c);
-		}
-	}
+    if (config.attach_last) {
+            zwm_client_push_tail(c);
+    } else {
+            char zwm_insert[64];
+            zwm_util_getenv(c->pid, "ZWM_INSERT", zwm_insert);
+            if(strcmp(zwm_insert, "START") == 0){
+                    zwm_client_push_head(c);
+            } else if (strcmp(config._lastcmd, c->cmd) == 0) {
+                    zwm_client_push_head(c);
+            } else {
+                    zwm_client_push_tail(c);
+            }
+    }
 	zwm_view_rescan();
 	zwm_event_emit(ZwmClientMap, c);
 	zwm_layout_dirty();
 	zwm_client_configure_window(c);
-	if (c->view == vew) {
+	if (config.focus_new && c->view == vew) {
 		zwm_client_raise(c, True);
 	}
 	zwm_layout_rearrange(True);
@@ -271,6 +273,7 @@ void zwm_client_unmanage(Client* c)
 
 	if (c->frame) {
 		free(c->draw);
+		zwm_systray_detach();
 		XDestroyWindow(dpy, c->frame);
 	}
 
@@ -301,6 +304,7 @@ void zwm_client_unmanage(Client* c)
 	free(c);
 	config.num_clients--;
 	session_dirty++;
+	zwm_session_save();
 }
 
 Client* zwm_client_lookup(Window w)
@@ -504,7 +508,6 @@ void zwm_client_update_name(Client* c)
 	if (!zwm_x11_atom_text(c->win, _NET_WM_NAME, c->name, sizeof c->name))
 		zwm_x11_atom_text(c->win, WM_NAME, c->name, sizeof c->name);
 	zwm_x11_atom_text(c->win, WM_CLASS, c->cname, sizeof c->cname);
-	//	if(!zwm_x11_atom_text(c->win, WM_COMMAND, c->cmd, sizeof c->cmd)){
 	char path[256];
 	sprintf(path, "/proc/%d/cmdline", (int)c->pid);
 	FILE* fp = fopen(path, "r");
@@ -525,9 +528,9 @@ void zwm_client_update_name(Client* c)
 				c->cmd[i] = ' ';
 			}
 		}
+		c->cmd[i-1] = 0;
 		c->cmd[count] = 0;
 	}
-	//	}
 	ZWM_DEBUG("%X: name:%s, clas:%s, cmd:%s\n",
 	    c->win, c->name, c->cname, c->cmd);
 	zwm_client_configure_window(c);
@@ -590,11 +593,12 @@ static int window_type(Window w)
 		unsigned long n = zwm_x11_atom_list(w, _NET_WM_WINDOW_TYPE, XA_ATOM,
 		    a, 32, &left);
 		for (i = 0; i < n; i++) {
-#define CHECK_RET(t, r)                                               \
-	do {                                                          \
-		if (a[i] == t) { /*printf("%d: %s\n",__LINE__, #r);*/ \
-			return r;                                     \
-		}                                                     \
+#define CHECK_RET(t, r)                                   \
+	do {                                              \
+		if (a[i] == t) {                          \
+			printf("%d: %s\n", __LINE__, #r); \
+			return r;                         \
+		}                                         \
 	} while (0)
 			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASHSCREEN, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_SPLASH, ZwmSplashWindow);
@@ -605,6 +609,7 @@ static int window_type(Window w)
 			CHECK_RET(_NET_WM_WINDOW_TYPE_DESKTOP, ZwmDesktopWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLBAR, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_DND, ZwmSplashWindow);
+			CHECK_RET(_NET_WM_WINDOW_TYPE_COMBO, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_MENU, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_DROPDOWN_MENU, ZwmSplashWindow);
 			CHECK_RET(_NET_WM_WINDOW_TYPE_TOOLTIP, ZwmSplashWindow);

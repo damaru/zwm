@@ -35,5 +35,7 @@ add_executable(
 	session.c 
 	view.c 
 	zwm.c 
+	systray.c
+	util.c
 	)
 target_link_libraries(zwm ${LIBS})

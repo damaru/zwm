@@ -49,11 +49,23 @@ void zwm_layout_moveresize(Client *c, int x, int y, int w, int h)
 	c->h  = h;
 }
 
+void zwm_layout_autofact(Client *c)
+{
+    if (config.autofact > 0) {
+            if (c->x < 20){
+                    views[zwm_current_view()].mwfact = config.mwfact;
+            } else {
+                    views[zwm_current_view()].mwfact = 1 - config.mwfact;
+            }
+    }
+    zwm_layout_dirty();
+}
+
 void zwm_layout_animate(void)
 {
 	int i;
 	Client *c;
-	
+
 	zwm_client_foreach(c) {
 		if (c->noanim) {
 			continue;
@@ -64,7 +76,7 @@ void zwm_layout_animate(void)
 		c->dh = (c->h - c->oldpos.h)/config.anim_steps;
 		int w = c->w>c->oldpos.w?c->w:c->oldpos.w;
 		int h = c->h>c->oldpos.h?c->h:c->oldpos.h;
-		XMoveResizeWindow(dpy, c->win, c->border, config.title_height, 
+		XMoveResizeWindow(dpy, c->win, c->border, config.title_height,
 				w-2*c->border, h-config.title_height-2*c->border);
 		XSync(dpy, False);
 	}
@@ -81,11 +93,11 @@ void zwm_layout_animate(void)
 			c->oldpos.y += c->dy;
 			c->oldpos.w += c->dw;
 			c->oldpos.h += c->dh;
-			if(abs(c->y - c->oldpos.y) > 0 || 
+			if(abs(c->y - c->oldpos.y) > 0 ||
 				abs(c->x - c->oldpos.x) > 0 ||
 				abs(c->w - c->oldpos.w) > 0 ||
 				abs(c->h - c->oldpos.h) > 0 ) {
-				XMoveResizeWindow(dpy, c->frame, 
+				XMoveResizeWindow(dpy, c->frame,
 						c->oldpos.x,
 						c->oldpos.y,
 						c->oldpos.w,
@@ -102,12 +114,12 @@ void zwm_layout_arrange(void)
 	int i;
 	Client *c;
 
-	if (!head) 
+	if (!head)
 		return;
 
 	zwm_client_foreach(c) {
 		c->noanim = 0;
-		if( (c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) && 
+		if( (c->type == ZwmNormalWindow || c->type == ZwmDialogWindow) &&
 			(!zwm_client_visible(c, c->view) || c->isfloating) ) {
 			if (c->bpos.w == 0) {
 				zwm_client_save_geometry(c, &c->bpos);
@@ -119,7 +131,7 @@ void zwm_layout_arrange(void)
 			c->bpos.w = 0;
 		}
 	}
-	
+
 	for(i = 0; i < config.screen_count; i++) {
 		views[screen[i].view].layout->func(i, screen[i].view);
 	}

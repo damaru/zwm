@@ -1,0 +1,14 @@
+#!/bin/sh
+
+#stalonetray &
+
+#compton --blur-method kawase --blur-strength 3  --dbus --glx-swap-method 2 &
+
+killall classicmenu-indicator ; classicmenu-indicator &
+
+#setxkbmap "us,in(kan-kagapa)" -option 'grp:rwin_toggle'
+killall gxkb ; gxkb &
+
+nm-applet &
+killall pasystray ; pasystray &
+

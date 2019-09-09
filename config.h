@@ -10,7 +10,7 @@
 
 #if 0
 static inline void zwm_mail(Client *c) { run_once("zmail;zmail"); }
-static inline void zwm_menu(Client *c) { run_once("zmenu;dwmenu"); }
+static inline void zwm_menu(Client *c) { run_once(""rofi;rofi -show drun -show-icons";"); }
 static inline void zwm_browser(Client *c) { run_once("zweb;zweb"); }
 #endif
 
@@ -18,7 +18,8 @@ ZwmConfig config =
 {
 	.num_views = 1,
 	.border_width = 1,
-	.attach_last = 1,
+	.attach_last = 0,
+	.focus_new = 0,
 	.focus_border_color = FOCUS_BG,
 	.focus_bg_color = FOCUS_BG,
 	.focus_shadow_color = SHADOW,
@@ -30,8 +31,8 @@ ZwmConfig config =
 	.float_bg_color = FLOAT_BG,
 	.root_bg_color = ROOT_BG,
 	.date_fmt = "%a %d %b, %l:%M %p ",
-	.menucmd = "dwmenu",
-	.opacity = 0.85,
+	.menucmd = "rofi -show drun -show-icons",
+	.opacity = 0.95,
 	.anim_steps = 100,
 	.show_title = 1,
 	.font = "-*-dejavu sans mono-bold-r-*-*-14-*-*-*-*-*-*-*",
@@ -40,6 +41,7 @@ ZwmConfig config =
 	.minh = 200,
 	.minw = 400,
 	.mwfact = 0.5,
+	.autofact = 0.6,
 	.zen_wallpaper = 1,
 	.sleep_time = 10,
 	.buttons = {
@@ -114,33 +116,34 @@ ZwmConfig config =
 		{"Alt-F11", fullscreen, NULL},
 		{"Alt-F10", toggle_panel, NULL},
 
-		{"Alt-Shift-Up", mwfact, "0.05"},
-		{"Alt-Shift-Down", mwfact, "-0.05"},
+		{"Alt-Shift-Up", mwfact, "0.10"},
+		{"Alt-Shift-Down", mwfact, "-0.10"},
 
 		{"Alt-Return", zwm_zen, NULL},
 		{"Alt-Shift-r", show_all, NULL},
 
 		{"Alt-Shift-space", toggle_floating, NULL},
 		{"Alt-space", zwm_layout_set, NULL},
-		{"Alt-s", toggle, "sparkfile;xterm -T sparkfile -class sparkfile -tn xterm-256color -e vim ~/Dropbox/sync/sparkfile.txt"},
 		{"Alt-Shift-h", client_zoom, NULL},
 		{"Alt-Shift-j", move_next, NULL},
 		{"Alt-Shift-k", move_prev, NULL},
 		{"Alt-Tab", zwm_cycle, NULL},
 		{"Alt-Shift-Tab", zwm_cycle2, NULL},
-		{"Ctrl-Alt-l", zwm_util_spawn, "standby"},
-		{"Ctrl-Alt-q", zwm_wm_quit, NULL},
-		{"Ctrl-Alt-Return", iconify, NULL},
-		{"Ctrl-Alt-r", zwm_wm_restart, NULL},
+		{"Super-l", zwm_util_spawn, "standby"},
+		{"Super-q", zwm_wm_quit, NULL},
+		{"Super-Return", iconify, NULL},
+		{"Super-r", zwm_wm_restart, NULL},
+		{"Super-t", zwm_wm_fallback, "/home/damaru/projects/zwm/build/zwm"},
+		{"Super-d", zwm_wm_fallback, "/home/damaru/source/dwm/dwmtmp"},
 		{"Ctrl-Shift-Alt-r", zwm_wm_fallback, "gnome-shell"},
 
-		{"Alt-p", run_once, "zmenu;dwmenu"},
+		{"Alt-w", run_once, "rofi;rofi -show window"},
+		{"Alt-p", run_once, "rofi;rofi -show drun -show-icons -display-drun  ': '"},
 		{"Alt-a", run_once, "atom;atom"},
-		{"Alt-Shift-Return", run_once, "Screen;shell"},
-		{"Alt-x", zwm_util_spawn, "xterm"},
-		{"Alt-f", run_once, "firefox"},
-		{"Super_L", zwm_util_follow, "xterm"},
-
+		{"Alt-Shift-Return", toggle, "Screen;shell"},
+		{"Alt-x", zwm_util_spawn, "/home/damaru/.local/kitty.app/bin/kitty"},
+		{"Alt-f", toggle, "firefox;firefox"},
+		{"Super-Tab", zwm_util_follow, "kitty"},
 		{NULL, NULL, NULL},
 	},
 
@@ -150,20 +153,19 @@ ZwmConfig config =
 	},
 
 	.layouts = {
-		{ tile, "tile", 0, "▤" },
 		{ monocle, "monocle", 0, "□" },
+		{ tile, "tile", 0, "▤" },
 		{ floating, "float", 1, "▭" },
 		{ zen, "zen", 1, "◉" },
-		{ grid, "grid", 0, "▦" },
+		{ grid, "grid", 1, "▦" },
 		{ l_fullscreen, "fullscreen", 1, "■" },
 		{NULL, NULL, 0},
 	},
 
 	.policies = {
 		{"Wine",ZwmDialogWindow},
-		{"wingpanel",ZwmDockWindow},
 		{"plank",ZwmDockWindow},
-		{"iexplore.exe",ZwmDialogWindow},
+		{"panel",ZwmDockWindow},
 		{NULL, 0}
 	},
 };
