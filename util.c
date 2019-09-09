@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int zwm_util_getenv(unsigned long pid, const char* key, char* value)
+int zwm_util_getenv(unsigned long pid, const char* key, char* value, int len)
 {
 	char path[1024];
 	sprintf(path, "/proc/%lu/environ", pid);
@@ -27,7 +27,8 @@ int zwm_util_getenv(unsigned long pid, const char* key, char* value)
 				//printf("[%s, %s]",k,v);
 				if (strcmp(k, key) == 0) {
 					//printf("%s %s\n",k,v);
-					strcpy(value, v);
+					strncpy(value, v, len);
+                    value[len]=0;
 					return strlen(value);
 				}
 				c = environ;

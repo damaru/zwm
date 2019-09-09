@@ -190,7 +190,6 @@ typedef struct
 
 	ZwmPolicy policies[16];
 
-    char _lastcmd[1024];
 } ZwmConfig;
 
 extern ZwmConfig config;
@@ -369,6 +368,6 @@ void zwm_focus_prev(const char*);
 void zwm_session_save(void);
 void zwm_session_restore(void);
 
-int zwm_util_getenv(unsigned long pid, const char* key, char* value);
+int zwm_util_getenv(unsigned long pid, const char* key, char* value, int len);
 
 #endif

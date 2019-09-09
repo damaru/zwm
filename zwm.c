@@ -125,7 +125,6 @@ void zwm_util_spawn(const char* cmd)
 		shell = "/bin/sh";
 	if (!cmd)
 		return;
-    strcpy(config._lastcmd, cmd);
 	if (fork() == 0) {
 		if (fork() == 0) {
 			if (dpy)

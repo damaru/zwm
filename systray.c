@@ -65,22 +65,7 @@ static Client *wintosystrayicon(Window w);
 /* variables */
 static Systray *systray =  NULL;
 
-GC gc;
-
-static unsigned long alloc_color(const char *colstr) {
-	Colormap cmap = DefaultColormap(dpy, scr);
-	gc = XCreateGC(dpy, root, 0, NULL);
-	XColor color;
-
-	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
-	{
-		fprintf(stderr, "unable to allocate color\n");
-	}
-	return color.pixel;
-}
-
 static const unsigned int systrayspacing = 2;   /* systray spacing */
-
 
 void
 clientmessage(XEvent *e)
@@ -382,7 +367,7 @@ wintosystrayicon(Window w) {
 
 
 void zwm_systray_new(void)
-{ 
+{
     XClassHint hint = { "zwmt", "ZWMT" };
    	XSetWindowAttributes wa;
 	unsigned int x = 1000;
@@ -452,10 +437,10 @@ void zwm_systray_update(void){
 	    XMoveResizeWindow(dpy, systray->win, x, 0, w, config.title_height);
     }
 
-	wc.x = sel?(sel->x+sel->w-w-config.icon_width):screen[0].w-w-config.icon_width; 
-	//wc.y = sel?sel->y:0; 
-	wc.y = 0; 
-    wc.width = w; 
+	wc.x = sel?(sel->x+sel->w-w-config.icon_width):screen[0].w-w-config.icon_width;
+	//wc.y = sel?sel->y:0;
+	wc.y = 0;
+    wc.width = w;
     wc.height = config.title_height;
     config.systray_width = w;
 	//XConfigureWindow(dpy, systray->win, CWX|CWY|CWWidth|CWHeight, &wc);
