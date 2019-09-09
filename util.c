@@ -14,7 +14,6 @@ int zwm_util_getenv(unsigned long pid, const char* key, char* value)
 	//printf("path: %s\n",path);
 	int fd = open(path, O_RDONLY);
 	if (fd > 0) {
-		int i = 0;
 		char environ[1024 * 64];
 		char* c = environ;
 		while (read(fd, c, 1)) {
@@ -38,6 +37,7 @@ int zwm_util_getenv(unsigned long pid, const char* key, char* value)
 		}
 		close(fd);
 	}
+    return 0;
 }
 
 #if TEST
