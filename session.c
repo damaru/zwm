@@ -101,7 +101,7 @@ void zwm_session_save(void)
 	char* path = NULL;
 	FILE* sf = open_config_file("/zwm/session.json", "w+", NULL, &path);
 	if (path) {
-		printf(":SAVED %s\n", path);
+		//printf(":SAVED %s\n", path);
 		Client* c;
 		if (sf) {
 			zwm_client_foreach(c)
@@ -120,7 +120,7 @@ void zwm_session_restore(void)
 	char* fpath;
 	char cmds[256][256];
 	FILE* sf = open_config_file("/zwm/session.json", "r", NULL, &fpath);
-	printf(":LOAD %s\n", fpath);
+	//printf(":LOAD %s\n", fpath);
 	int i = 0, j = 0;
 	if (sf) {
 		while (fgets(cmds[i], 256, sf)) {

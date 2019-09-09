@@ -239,7 +239,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes* wa)
             zwm_client_push_tail(c);
     } else {
             char zwm_insert[1024];
-            zwm_util_getenv(c->pid, "ZWM_INSERT", zwm_insert, 1023);
+            zwm_util_getenv(c->pid, "ZWM_INSERT", zwm_insert, 1020);
             if(strcmp(zwm_insert, "START") == 0){
                     zwm_client_push_head(c);
             } else {
