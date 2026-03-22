@@ -1,5 +1,4 @@
 all: build
-	cscope -b
 	cd build && cmake ../ && make
 	cd hack && make
 build:

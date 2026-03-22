@@ -256,6 +256,7 @@ Client* zwm_client_manage(Window w, XWindowAttributes* wa)
 	zwm_layout_rearrange(True);
 	config.num_clients++;
 	session_dirty++;
+	zwm_mouse_warp(c);
 	return c;
 }
 

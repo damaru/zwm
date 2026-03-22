@@ -1,7 +1,7 @@
 #include <string.h>
 
-#define FOCUS_FG "#F0F0F0"
-#define FOCUS_BG "#5F87D7"
+#define FOCUS_FG "#FfFfFf"
+#define FOCUS_BG "#0D73CC"
 #define SHADOW "#444"
 #define FG  "#C9C9C9"
 #define BG  "#5C5C5C"
@@ -33,11 +33,13 @@ ZwmConfig config =
 	.date_fmt = "%a %d %b, %l:%M %p ",
 	.menucmd = "rofi -show drun -show-icons",
 	.opacity = 0.95,
-	.anim_steps = 100,
+	.anim_steps = 0,
 	.show_title = 1,
-	.font = "-*-dejavu sans mono-bold-r-*-*-14-*-*-*-*-*-*-*",
- 	.icons = "-*-webdings-bold-r-*-*-16-*-*-*-*-*-*-*",
-	.title_height = 20,
+	.font = "-*-dejavu sans mono-bold-r-*-*-12-*-*-*-*-*-*-*",
+	//.font = "-*-JetBrains Mono-r-*-*-10-*-*-*-*-*-*-*",
+	//.font = "JetBrains Mono",
+ 	.icons = "-*-webdings-bold-r-*-*-12-*-*-*-*-*-*-*",
+	.title_height = 40,
 	.minh = 200,
 	.minw = 400,
 	.mwfact = 0.5,
@@ -139,11 +141,13 @@ ZwmConfig config =
 
 		{"Alt-w", run_once, "rofi;rofi -show window"},
 		{"Alt-p", run_once, "rofi;rofi -show drun -show-icons -display-drun  ': '"},
-		{"Alt-a", run_once, "atom;atom"},
-		{"Alt-Shift-Return", toggle, "Screen;shell"},
-		{"Alt-x", zwm_util_spawn, "/home/damaru/.local/kitty.app/bin/kitty"},
+		{"Alt-Shift-Return", run_once, "Screen;/home/damaru/bin/shell"},
+		{"Alt-x", zwm_util_spawn, "urxvt"},
+		{"Alt-e", toggle, "code;code"},
 		{"Alt-f", toggle, "firefox;firefox"},
-		{"Super-Tab", zwm_util_follow, "kitty"},
+		{"Alt-s", toggle, "skypeforlinux;skypeforlinux"},
+		{"Alt-r", run_once, "ranger;/home/damaru/bin/files"},
+		{"Super-Tab", zwm_util_follow, "alacritty"},
 		{NULL, NULL, NULL},
 	},
 
